@@ -1,26 +1,59 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f9fa;
+  --foreground: #191c1e;
+  --brand-green: #136b3b;
+  --brand-green-dark: #0f5730;
+  --brand-mint: #e6f4ea;
+  --brand-lavender: #eae6f8;
+  --surface-card: #ffffff;
+  --text-muted: #6b7280;
+  --border-subtle: #dde3ea;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-plus-jakarta), 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --color-brand-green: #136b3b;
+  --color-brand-darkGreen: #0f5730;
+  --color-brand-accent: #187b44;
+  --color-brand-mint: #e6f4ea;
+  --color-brand-lavender: #eae6f8;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #f7f9fa;
+  color: #191c1e;
+  font-family: var(--font-plus-jakarta), 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
+
+/* Hide scrollbars for clean native app appearance */
+.hide-scrollbar::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar,
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  border-radius: 1rem;
+  border: 1px solid #dde3ea;
+}
+
+/* Tactile touch and click feedback */
+.touch-feedback:active {
+  opacity: 0.85;
+  transform: scale(0.985);
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
