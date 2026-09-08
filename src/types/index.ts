@@ -72,6 +72,19 @@ export interface CollectorLocation {
   updated_at: string;
 }
 
+export interface NearbyKabadiwala {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  distanceKm?: number;
+  address: string;
+  phone?: string;
+  rating?: number;
+  acceptedMaterials?: string[];
+  type: 'scrap_dealer' | 'recycling_center' | 'collector';
+}
+
 export const WASTE_CATEGORY_LABELS: Record<WasteCategory, { label: string; icon: string; color: string; estRatePerKg: string }> = {
   PAPER: { label: 'Paper & Cardboard', icon: '📦', color: 'bg-amber-100 text-amber-800 border-amber-300', estRatePerKg: '₹12 - ₹18' },
   PLASTIC: { label: 'Plastics & Bottles', icon: '🍾', color: 'bg-blue-100 text-blue-800 border-blue-300', estRatePerKg: '₹15 - ₹25' },

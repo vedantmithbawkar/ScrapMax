@@ -2,8 +2,13 @@
 
 import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
-import { fixLeafletIcon, householdLocationIcon, collectorLocationIcon } from '@/lib/leaflet/icon-fix';
-import { PickupRequest } from '@/types';
+import {
+  fixLeafletIcon,
+  householdLocationIcon,
+  collectorLocationIcon,
+  kabadiwalaLocationIcon,
+} from '@/lib/leaflet/icon-fix';
+import { PickupRequest, NearbyKabadiwala } from '@/types';
 
 interface MapCoreProps {
   center: [number, number];
@@ -13,6 +18,8 @@ interface MapCoreProps {
   requests?: PickupRequest[];
   onSelectRequest?: (req: PickupRequest) => void;
   collectorPos?: [number, number] | null;
+  nearbyKabadiwalas?: NearbyKabadiwala[];
+  onSelectKabadiwala?: (k: NearbyKabadiwala) => void;
   className?: string;
 }
 
@@ -50,6 +57,8 @@ export default function LeafletMapCore({
   requests = [],
   onSelectRequest,
   collectorPos,
+  nearbyKabadiwalas = [],
+  onSelectKabadiwala,
   className = 'h-[400px] w-full',
 }: MapCoreProps) {
   useEffect(() => {
@@ -73,7 +82,7 @@ export default function LeafletMapCore({
           <Marker position={selectedPos} icon={householdLocationIcon}>
             <Popup autoPan={false}>
               <div className="text-xs font-semibold p-1">
-                📌 Pickup Location<br />
+                📌 Your Pickup Pin<br />
                 Lat: {selectedPos[0].toFixed(4)}, Lng: {selectedPos[1].toFixed(4)}
               </div>
             </Popup>
@@ -90,6 +99,55 @@ export default function LeafletMapCore({
             </Popup>
           </Marker>
         )}
+
+        {/* Nearby Kabadiwalas & Scrap Centers Markers */}
+        {nearbyKabadiwalas.map((kabadi) => (
+          <Marker
+            key={kabadi.id}
+            position={[kabadi.latitude, kabadi.longitude]}
+            icon={kabadiwalaLocationIcon}
+            eventHandlers={{
+              click: () => onSelectKabadiwala && onSelectKabadiwala(kabadi),
+            }}
+          >
+            <Popup autoPan={false}>
+              <div className="text-xs p-1.5 space-y-1.5 min-w-[180px]">
+                <div className="flex items-start justify-between gap-1">
+                  <p className="font-bold text-[#191C1E] text-xs leading-snug">{kabadi.name}</p>
+                  {kabadi.distanceKm !== undefined && (
+                    <span className="text-[10px] bg-amber-100 text-amber-900 font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">
+                      {kabadi.distanceKm} km
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-[#526056] leading-tight">{kabadi.address}</p>
+                {kabadi.rating && (
+                  <p className="text-[11px] font-bold text-amber-600">★ {kabadi.rating} Rated Dealer</p>
+                )}
+                {kabadi.acceptedMaterials && kabadi.acceptedMaterials.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {kabadi.acceptedMaterials.slice(0, 3).map((mat, mIdx) => (
+                      <span
+                        key={mIdx}
+                        className="text-[9.5px] bg-[#EAF5EE] text-[#136B3B] px-1.5 py-0.5 rounded font-semibold"
+                      >
+                        {mat}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {kabadi.phone && (
+                  <a
+                    href={`tel:${kabadi.phone}`}
+                    className="mt-1 inline-flex items-center justify-center gap-1 w-full py-1 bg-[#136B3B] hover:bg-[#0F5730] text-white text-[10px] font-bold rounded-lg transition"
+                  >
+                    📞 Call {kabadi.phone}
+                  </a>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
 
         {/* Multiple Request Markers for Collector Map View */}
         {requests.map((req) => (
