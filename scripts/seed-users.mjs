@@ -22,6 +22,7 @@ console.log('========================================================');
 console.log('🌱 SAMPAH JUJUR - SUPABASE USER & DATA SEEDING UTILITY');
 console.log('========================================================');
 console.log('Supabase URL:', supabaseUrl);
+console.log('Anon Key Present:', !!supabaseAnonKey);
 console.log('Service Role Key Present:', !!serviceRoleKey);
 
 if (!serviceRoleKey) {
@@ -138,6 +139,10 @@ async function seed() {
         scheduled_date: new Date().toISOString().split('T')[0],
         notes: 'Cardboard boxes and plastic bottles bundled near the gate.',
         total_estimated_weight_kg: 14.5,
+        photos: [
+          'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
+          'https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80',
+        ],
       })
       .select()
       .single();
@@ -152,12 +157,14 @@ async function seed() {
           category: 'PAPER',
           approx_weight_kg: 8.5,
           notes: 'Bundled newspapers and cardboard boxes',
+          photos: ['https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80'],
         },
         {
           request_id: req.id,
           category: 'PLASTIC',
           approx_weight_kg: 6.0,
           notes: 'Cleaned PET bottles',
+          photos: ['https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80'],
         },
       ]);
       if (wErr) {

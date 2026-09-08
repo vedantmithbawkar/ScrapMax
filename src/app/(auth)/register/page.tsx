@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/common/Navbar';
@@ -12,7 +12,10 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [role, setRole] = useState<UserRole>('household');
+  const roleParam = searchParams.get('role');
+  const [role, setRole] = useState<UserRole>(
+    roleParam === 'collector' ? 'collector' : 'household'
+  );
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -20,13 +23,6 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-
-  useEffect(() => {
-    const roleParam = searchParams.get('role');
-    if (roleParam === 'collector' || roleParam === 'household') {
-      setRole(roleParam);
-    }
-  }, [searchParams]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/common/Navbar';
-import { Recycle, Truck, ShieldCheck, MapPin, Sparkles, ArrowRight, Wallet, Leaf } from 'lucide-react';
+import { Recycle, Truck, MapPin, Sparkles, Wallet, Leaf } from 'lucide-react';
 
 export default function LandingPage() {
   return (

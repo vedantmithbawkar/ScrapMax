@@ -13,13 +13,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [rateLimitNotice, setRateLimitNotice] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
-    setRateLimitNotice(false);
 
     const supabase = createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -32,9 +30,6 @@ export default function LoginPage() {
         setErrorMsg(
           'Invalid login credentials. If you have not created this user in your Supabase project yet, please create an account on the Register page first.'
         );
-      } else if (error.message.includes('rate limit')) {
-        setRateLimitNotice(true);
-        setErrorMsg(error.message);
       } else {
         setErrorMsg(error.message);
       }

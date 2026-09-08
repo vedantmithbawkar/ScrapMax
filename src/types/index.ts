@@ -35,6 +35,7 @@ export interface PickupRequest {
   scheduled_date: string;
   notes?: string;
   total_estimated_weight_kg?: number;
+  photos?: string[];
   created_at: string;
   updated_at: string;
   // Joined fields

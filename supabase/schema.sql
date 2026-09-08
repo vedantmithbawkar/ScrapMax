@@ -28,9 +28,13 @@ CREATE TABLE IF NOT EXISTS public.pickup_requests (
   scheduled_date DATE NOT NULL,
   notes TEXT,
   total_estimated_weight_kg DECIMAL(8, 2) DEFAULT 0,
+  photos TEXT[] DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration safety: add photos column if table already exists
+ALTER TABLE public.pickup_requests ADD COLUMN IF NOT EXISTS photos TEXT[] DEFAULT '{}';
 
 -- 3. WASTE ITEMS TABLE
 CREATE TABLE IF NOT EXISTS public.waste_items (
@@ -201,3 +205,30 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ========================================================
+-- 8. STORAGE BUCKET FOR SCRAP PHOTOS
+-- ========================================================
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('pickup-photos', 'pickup-photos', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- Storage policies
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Public Access to Scrap Photos'
+  ) THEN
+    CREATE POLICY "Public Access to Scrap Photos"
+      ON storage.objects FOR SELECT
+      USING (bucket_id = 'pickup-photos');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated Scrap Photo Upload'
+  ) THEN
+    CREATE POLICY "Authenticated Scrap Photo Upload"
+      ON storage.objects FOR INSERT TO authenticated
+      WITH CHECK (bucket_id = 'pickup-photos');
+  END IF;
+END $$;

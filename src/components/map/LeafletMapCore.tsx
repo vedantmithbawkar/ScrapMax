@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import { fixLeafletIcon, householdLocationIcon, collectorLocationIcon } from '@/lib/leaflet/icon-fix';
 import { PickupRequest } from '@/types';
 
@@ -24,6 +24,21 @@ function ClickHandler({ onSelectPos }: { onSelectPos?: (lat: number, lng: number
       }
     },
   });
+  return null;
+}
+
+function MapViewController({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (map && map.getContainer()) {
+      try {
+        // Use animate: false to prevent PosAnimation race conditions on unmount
+        map.setView(center, map.getZoom(), { animate: false });
+      } catch {
+        // Suppress teardown errors
+      }
+    }
+  }, [center, map]);
   return null;
 }
 
@@ -50,12 +65,13 @@ export default function LeafletMapCore({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
+        <MapViewController center={center} />
         <ClickHandler onSelectPos={onSelectPos} />
 
         {/* Selected Marker for Household Location Pickup selection */}
         {selectedPos && (
           <Marker position={selectedPos} icon={householdLocationIcon}>
-            <Popup>
+            <Popup autoPan={false}>
               <div className="text-xs font-semibold p-1">
                 📌 Pickup Location<br />
                 Lat: {selectedPos[0].toFixed(4)}, Lng: {selectedPos[1].toFixed(4)}
@@ -67,7 +83,7 @@ export default function LeafletMapCore({
         {/* Collector Live Position Marker */}
         {collectorPos && (
           <Marker position={collectorPos} icon={collectorLocationIcon}>
-            <Popup>
+            <Popup autoPan={false}>
               <div className="text-xs font-semibold p-1 text-blue-600">
                 🚚 Collector Live Location
               </div>
@@ -85,7 +101,7 @@ export default function LeafletMapCore({
               click: () => onSelectRequest && onSelectRequest(req),
             }}
           >
-            <Popup>
+            <Popup autoPan={false}>
               <div className="text-xs p-1 space-y-1">
                 <p className="font-bold text-slate-900">{req.address}</p>
                 <p className="text-emerald-600 font-semibold">Status: {req.status.toUpperCase()}</p>

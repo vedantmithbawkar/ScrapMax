@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { ChatMessage, UserProfile } from '@/types';
-import { Send, User } from 'lucide-react';
+import { Send } from 'lucide-react';
 
 interface ChatWindowProps {
   requestId: string;

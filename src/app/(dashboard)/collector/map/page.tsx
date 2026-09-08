@@ -7,7 +7,7 @@ import MapContainer from '@/components/map/MapContainer';
 import RequestCard from '@/components/request/RequestCard';
 import { PickupRequest } from '@/types';
 import { createClient } from '@/lib/supabase/client';
-import { MapPin, Navigation, ArrowLeft } from 'lucide-react';
+import { MapPin, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 const MOCK_MAP_REQUESTS: PickupRequest[] = [
@@ -21,6 +21,9 @@ const MOCK_MAP_REQUESTS: PickupRequest[] = [
     scheduled_date: 'Today · 5:30 PM',
     notes: 'Paper & plastic recyclables ready',
     total_estimated_weight_kg: 18.5,
+    photos: [
+      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
+    ],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     waste_items: [{ category: 'PAPER', approx_weight_kg: 18.5 }],
@@ -35,6 +38,9 @@ const MOCK_MAP_REQUESTS: PickupRequest[] = [
     scheduled_date: 'Today · 6:00 PM',
     notes: 'Electronic waste and computer scrap',
     total_estimated_weight_kg: 35.0,
+    photos: [
+      'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80',
+    ],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     waste_items: [{ category: 'E_WASTE', approx_weight_kg: 35.0 }],
@@ -49,6 +55,9 @@ const MOCK_MAP_REQUESTS: PickupRequest[] = [
     scheduled_date: 'Today · 6:30 PM',
     notes: 'Glass bottles and aluminum cans',
     total_estimated_weight_kg: 22.0,
+    photos: [
+      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
+    ],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     waste_items: [{ category: 'GLASS', approx_weight_kg: 22.0 }],

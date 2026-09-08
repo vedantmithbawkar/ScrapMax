@@ -7,7 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
-import { Truck, MapPin, CheckCircle2, History, Filter } from 'lucide-react';
+import { MapPin, History, Filter } from 'lucide-react';
 
 const DEMO_COLLECTOR_REQUESTS: PickupRequest[] = [
   {
@@ -20,11 +20,23 @@ const DEMO_COLLECTOR_REQUESTS: PickupRequest[] = [
     scheduled_date: 'Today · 5:30 PM',
     notes: 'Items packed in bags in garage.',
     total_estimated_weight_kg: 28.5,
+    photos: [
+      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80',
+    ],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     waste_items: [
-      { category: 'PAPER', approx_weight_kg: 15.0 },
-      { category: 'PLASTIC', approx_weight_kg: 13.5 },
+      {
+        category: 'PAPER',
+        approx_weight_kg: 15.0,
+        photos: ['https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80'],
+      },
+      {
+        category: 'PLASTIC',
+        approx_weight_kg: 13.5,
+        photos: ['https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80'],
+      },
     ],
   },
   {
@@ -37,11 +49,23 @@ const DEMO_COLLECTOR_REQUESTS: PickupRequest[] = [
     scheduled_date: 'Today · 6:00 PM',
     notes: 'Copper scrap and e-waste motherboards',
     total_estimated_weight_kg: 42.0,
+    photos: [
+      'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
+    ],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     waste_items: [
-      { category: 'E_WASTE', approx_weight_kg: 22.0 },
-      { category: 'METAL', approx_weight_kg: 20.0 },
+      {
+        category: 'E_WASTE',
+        approx_weight_kg: 22.0,
+        photos: ['https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80'],
+      },
+      {
+        category: 'METAL',
+        approx_weight_kg: 20.0,
+        photos: ['https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80'],
+      },
     ],
   },
 ];
@@ -53,8 +77,6 @@ export default function CollectorDashboard() {
   useEffect(() => {
     async function loadCollectorData() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
       const { data } = await supabase
         .from('pickup_requests')
         .select('*, waste_items(*)')

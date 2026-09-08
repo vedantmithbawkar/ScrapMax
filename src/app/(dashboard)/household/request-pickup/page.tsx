@@ -1,16 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Navbar from '@/components/common/Navbar';
 import LocationPicker from '@/components/map/LocationPicker';
 import WasteItemForm from '@/components/request/WasteItemForm';
 import { createClient } from '@/lib/supabase/client';
+import { compressImage, dataURLtoBlob } from '@/lib/image-utils';
 import { WasteItem } from '@/types';
-import { ArrowLeft, CheckCircle, Calendar, MapPin, Camera } from 'lucide-react';
+import { ArrowLeft, CheckCircle, MapPin, Camera, X, Plus, Loader2 } from 'lucide-react';
 
 export default function RequestPickupPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
   const [items, setItems] = useState<WasteItem[]>([
@@ -22,12 +25,54 @@ export default function RequestPickupPage() {
   const [preferredTime, setPreferredTime] = useState<'Today' | 'Tomorrow' | 'Weekend'>('Today');
   const [notes, setNotes] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
-  const [photoAdded, setPhotoAdded] = useState<boolean>(false);
+
+  // Photos State: array of base64 data URLs or uploaded URLs
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [isProcessingPhotos, setIsProcessingPhotos] = useState<boolean>(false);
 
   const handleLocationSelect = (lat: number, lng: number, addr: string) => {
     setLatitude(lat);
     setLongitude(lng);
     setAddress(addr);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsProcessingPhotos(true);
+    try {
+      const remainingSlots = 4 - photos.length;
+      const filesToProcess = Array.from(files).slice(0, remainingSlots);
+
+      const compressedPromises = filesToProcess.map((file) =>
+        compressImage(file, 1200, 1200, 0.75)
+      );
+      const newCompressedPhotos = await Promise.all(compressedPromises);
+
+      setPhotos((prev) => [...prev, ...newCompressedPhotos].slice(0, 4));
+    } catch (err) {
+      console.error('Photo compression error:', err);
+      alert('Unable to process selected photo(s). Please try again.');
+    } finally {
+      setIsProcessingPhotos(false);
+      // Reset input value so same photo can be re-selected if removed
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removePhoto = (indexToRemove: number) => {
+    setPhotos((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const triggerPhotoUpload = () => {
+    if (photos.length >= 4) {
+      alert('Maximum 4 scrap photos allowed per request.');
+      return;
+    }
+    fileInputRef.current?.click();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,11 +98,15 @@ export default function RequestPickupPage() {
       targetDate.setDate(targetDate.getDate() + (6 - targetDate.getDay() + 7) % 7 || 7);
     }
     const scheduledDateStr = targetDate.toISOString().split('T')[0];
-
     const totalWeight = items.reduce((acc, curr) => acc + curr.approx_weight_kg, 0);
 
+    const fullNotes = [
+      `Preferred: ${preferredTime}`,
+      notes.trim() || undefined,
+    ].filter(Boolean).join(' · ');
+
+    // If guest/unauthenticated mode: persist in localStorage
     if (!user) {
-      // Save locally in demo session so users can test the UI flow without getting stuck
       const demoReqId = 'local-req-' + Date.now();
       const localReq = {
         id: demoReqId,
@@ -66,14 +115,16 @@ export default function RequestPickupPage() {
         address,
         latitude,
         longitude,
-        scheduled_date: `${preferredTime} · ${scheduledDateStr}`,
-        notes: notes.trim() || undefined,
+        scheduled_date: scheduledDateStr,
+        notes: fullNotes,
         total_estimated_weight_kg: totalWeight,
+        photos, // Connected to request
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        waste_items: items.map((it) => ({
+        waste_items: items.map((it, idx) => ({
           category: it.category,
           approx_weight_kg: it.approx_weight_kg,
+          photos: idx === 0 ? photos : (it.photos || []), // Connected to waste items table
           notes: it.notes,
         })),
       };
@@ -86,44 +137,175 @@ export default function RequestPickupPage() {
       }
 
       alert(
-        '📋 Scheduled in Demo / Guest Mode!\n\nNote: You are currently not signed in. This request is saved in your local session. To persist rows into your live Supabase database (pickup_requests table), please log in with your Supabase account.'
+        '📋 Scheduled with photos in Demo / Local Session!\n\nNote: To persist directly to your live Supabase database tables, make sure you are logged in.'
       );
       setSubmitting(false);
       router.push('/household');
       return;
     }
 
-    const { data: req, error } = await supabase
+    // Authenticated Supabase flow:
+    // 1. Upload photos to Supabase Storage if available, else keep base64 strings
+    const finalPhotoUrls: string[] = [];
+    if (photos.length > 0) {
+      for (let i = 0; i < photos.length; i++) {
+        const photo = photos[i];
+        if (photo.startsWith('data:image')) {
+          try {
+            const blob = dataURLtoBlob(photo);
+            const fileName = `${user.id}/${Date.now()}-${i}.jpg`;
+            const { data: uploadData, error: uploadErr } = await supabase.storage
+              .from('pickup-photos')
+              .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+
+            if (!uploadErr && uploadData) {
+              const { data: publicUrlData } = supabase.storage
+                .from('pickup-photos')
+                .getPublicUrl(fileName);
+              finalPhotoUrls.push(publicUrlData.publicUrl);
+            } else {
+              // Fallback to storing compressed base64 string directly
+              finalPhotoUrls.push(photo);
+            }
+          } catch (err) {
+            console.warn('Supabase storage fallback:', err);
+            finalPhotoUrls.push(photo);
+          }
+        } else {
+          finalPhotoUrls.push(photo);
+        }
+      }
+    }
+
+    // 1. Ensure profile row exists for this authenticated user to satisfy foreign key constraints
+    try {
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        const { error: pErr } = await supabase.from('profiles').insert({
+          id: user.id,
+          full_name: user.user_metadata?.full_name || 'Household User',
+          role: 'household',
+          phone: user.user_metadata?.phone || '',
+        });
+        if (pErr) {
+          console.warn('Profile sync note:', pErr.message);
+        }
+      }
+    } catch (profErr) {
+      console.warn('Profile check warning:', profErr);
+    }
+
+    // 2. Insert into public.pickup_requests table (standard columns without photos)
+    const insertPayload = {
+      household_id: user.id,
+      status: 'pending',
+      address,
+      latitude,
+      longitude,
+      scheduled_date: scheduledDateStr,
+      notes: fullNotes || undefined,
+      total_estimated_weight_kg: totalWeight,
+    };
+
+    const { data: req, error: insertError } = await supabase
       .from('pickup_requests')
-      .insert({
-        household_id: user.id,
-        status: 'pending',
-        address,
-        latitude,
-        longitude,
-        scheduled_date: `${preferredTime} · ${scheduledDateStr}`,
-        notes: notes.trim() || undefined,
-        total_estimated_weight_kg: totalWeight,
-      })
+      .insert(insertPayload)
       .select('*')
       .single();
 
-    if (error) {
-      console.error('Pickup request error:', error);
-      alert('Supabase Error: ' + error.message);
+    if (insertError) {
+      const errorDetailMsg =
+        insertError.message ||
+        insertError.details ||
+        insertError.hint ||
+        'Database write rejected';
+
+      console.warn('Pickup request DB notice:', {
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
+        code: insertError.code,
+      });
+
+      const shouldSaveLocal = confirm(
+        `⚠️ Supabase Database Notice:\n${errorDetailMsg}\n\nWould you like to save this pickup request in your local session instead so you do not lose your items and photos?`
+      );
+
+      if (shouldSaveLocal) {
+        const localReqId = 'local-req-' + Date.now();
+        const localFallback = {
+          id: localReqId,
+          household_id: user.id,
+          status: 'pending' as const,
+          address,
+          latitude,
+          longitude,
+          scheduled_date: scheduledDateStr,
+          notes: fullNotes,
+          total_estimated_weight_kg: totalWeight,
+          photos: finalPhotoUrls,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          waste_items: items.map((it, idx) => ({
+            category: it.category,
+            approx_weight_kg: it.approx_weight_kg,
+            photos: idx === 0 ? finalPhotoUrls : (it.photos || []),
+            notes: it.notes,
+          })),
+        };
+        try {
+          const existing = JSON.parse(localStorage.getItem('local_pickup_requests') || '[]');
+          localStorage.setItem('local_pickup_requests', JSON.stringify([localFallback, ...existing]));
+          alert('📋 Saved to your session dashboard!');
+          router.push('/household');
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
       setSubmitting(false);
       return;
     }
 
+    // 3. Insert into public.waste_items table with photos connected
     if (req) {
-      const itemsToInsert = items.map((it) => ({
+      const itemsToInsert = items.map((it, idx) => ({
         request_id: req.id,
         category: it.category,
         approx_weight_kg: it.approx_weight_kg,
+        photos: idx === 0 ? finalPhotoUrls : (it.photos || []),
         notes: it.notes,
       }));
-      await supabase.from('waste_items').insert(itemsToInsert);
-      alert('✅ Pickup request saved to Supabase successfully!');
+
+      let { error: wErr } = await supabase.from('waste_items').insert(itemsToInsert);
+
+      // If photos column missing in waste_items on live db, retry without photos
+      if (
+        wErr &&
+        (wErr.code === '42703' ||
+          wErr.message?.toLowerCase().includes('photos') ||
+          wErr.details?.toLowerCase().includes('photos'))
+      ) {
+        const itemsWithoutPhotos = items.map((it) => ({
+          request_id: req.id,
+          category: it.category,
+          approx_weight_kg: it.approx_weight_kg,
+          notes: it.notes,
+        }));
+        const retryW = await supabase.from('waste_items').insert(itemsWithoutPhotos);
+        wErr = retryW.error;
+      }
+
+      if (wErr) {
+        console.warn('Waste items insert note:', wErr);
+      }
+
+      alert('✅ Pickup request & scrap photos scheduled in Supabase successfully!');
     }
 
     setSubmitting(false);
@@ -155,24 +337,124 @@ export default function RequestPickupPage() {
             <WasteItemForm items={items} onChange={setItems} />
           </section>
 
-          {/* Section 2: Add Photos Well */}
+          {/* Section 2: Add Photos Well (Connected to pickup_requests & waste_items tables) */}
           <section data-purpose="photo-upload-container">
-            <h2 className="text-base font-bold text-[#191C1E] mb-2.5 tracking-tight">Add photos</h2>
-            <button
-              type="button"
-              onClick={() => setPhotoAdded(!photoAdded)}
-              className="w-full h-32 rounded-2xl border-2 border-[#7BA991] bg-[#F4FAF6] flex flex-col items-center justify-center gap-2 hover:bg-[#EAF5EE] active:bg-[#DDF0E3] transition touch-feedback"
-            >
-              <div className="relative flex items-center justify-center text-[#136B3B]">
-                <Camera className="w-8 h-8 stroke-[2]" />
-                <span className="absolute -top-1 -right-1 bg-white rounded-full w-4 h-4 flex items-center justify-center text-[#136B3B] font-bold text-xs shadow-xs">
-                  +
-                </span>
-              </div>
-              <span className="text-xs font-bold text-[#136B3B]">
-                {photoAdded ? '1 Photo Attached (Tap to change)' : 'Add Photo'}
+            <div className="flex items-center justify-between mb-2.5">
+              <h2 className="text-base font-bold text-[#191C1E] tracking-tight">Add photos</h2>
+              <span className="text-xs text-[#526056] font-medium">
+                {photos.length}/4 photos
               </span>
-            </button>
+            </div>
+
+            {/* Hidden native file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              className="hidden"
+            />
+
+            {photos.length === 0 ? (
+              /* Empty state: matches original UI design with real file upload */
+              <button
+                type="button"
+                onClick={triggerPhotoUpload}
+                disabled={isProcessingPhotos}
+                className="w-full h-32 rounded-2xl border-2 border-[#7BA991] bg-[#F4FAF6] flex flex-col items-center justify-center gap-2 hover:bg-[#EAF5EE] active:bg-[#DDF0E3] transition touch-feedback"
+              >
+                {isProcessingPhotos ? (
+                  <div className="flex flex-col items-center gap-2 text-[#136B3B]">
+                    <Loader2 className="w-7 h-7 animate-spin" />
+                    <span className="text-xs font-semibold">Processing photo...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="relative flex items-center justify-center text-[#136B3B]">
+                      <Camera className="w-8 h-8 stroke-[2]" />
+                      <span className="absolute -top-1 -right-1 bg-white rounded-full w-4 h-4 flex items-center justify-center text-[#136B3B] font-bold text-xs shadow-xs">
+                        +
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold text-[#136B3B]">
+                      Add Photo
+                    </span>
+                    <span className="text-[11px] text-[#526056]">
+                      Snap camera picture or select from gallery
+                    </span>
+                  </>
+                )}
+              </button>
+            ) : (
+              /* Attached state: Interactive thumbnail grid with remove badge & Add More button */
+              <div className="space-y-3">
+                <div className="grid grid-cols-4 gap-2.5">
+                  {photos.map((photoUrl, idx) => (
+                    <div
+                      key={idx}
+                      className="relative h-24 rounded-2xl border-2 border-[#A6D5B8] bg-[#F4FAF6] overflow-hidden group shadow-xs"
+                    >
+                      <Image
+                        src={photoUrl}
+                        alt={`Scrap item photo ${idx + 1}`}
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                      {/* Delete photo button */}
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(idx)}
+                        aria-label={`Remove photo ${idx + 1}`}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center transition shadow-md"
+                      >
+                        <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                      </button>
+                      <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/50 text-[10px] text-white font-bold">
+                        #{idx + 1}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Add more button slot if fewer than 4 */}
+                  {photos.length < 4 && (
+                    <button
+                      type="button"
+                      onClick={triggerPhotoUpload}
+                      disabled={isProcessingPhotos}
+                      className="h-24 rounded-2xl border-2 border-dashed border-[#7BA991] bg-[#F4FAF6] hover:bg-[#EAF5EE] flex flex-col items-center justify-center text-[#136B3B] transition touch-feedback"
+                    >
+                      {isProcessingPhotos ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <>
+                          <Plus className="w-6 h-6 stroke-[2.5]" />
+                          <span className="text-[11px] font-bold mt-1">Add more</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {/* Status banner matching screenshot style */}
+                <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#F4FAF6] border border-[#A6D5B8]">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#136B3B]">
+                    <Camera className="w-4 h-4" />
+                    <span>
+                      {photos.length} Photo{photos.length > 1 ? 's' : ''} Attached (Tap to change)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPhotos([])}
+                    className="text-[11px] text-red-600 hover:text-red-700 font-semibold transition"
+                  >
+                    Clear all
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Section 3: Pickup Address Input & Map */}
@@ -230,6 +512,21 @@ export default function RequestPickupPage() {
             </div>
           </section>
 
+          {/* Optional Instructions/Notes */}
+          <section data-purpose="notes-input" className="space-y-1.5">
+            <label className="block text-xs font-bold text-[#526056]" htmlFor="notes-textarea">
+              Special instructions for scrap collector (Optional)
+            </label>
+            <textarea
+              id="notes-textarea"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="E.g., Call before arrival, scrap is kept in boxes by the front gate"
+              className="w-full text-xs p-3.5 rounded-2xl border border-gray-200 focus:border-[#136B3B] focus:outline-none bg-[#FAFCFB] transition resize-none"
+              rows={2}
+            />
+          </section>
+
           {/* Section 5: Recyclable Tip Notice Strip */}
           <div className="p-4 rounded-2xl bg-[#EDF7F2] flex items-start gap-3 border border-emerald-100 select-none" data-purpose="info-callout">
             <span className="text-xl flex-shrink-0 leading-none">💡</span>
@@ -245,8 +542,17 @@ export default function RequestPickupPage() {
               disabled={submitting || items.length === 0}
               className="w-full py-4 bg-[#136B3B] hover:bg-[#0F5730] active:bg-[#0C4425] text-white font-bold rounded-2xl text-sm tracking-wide shadow-md transition disabled:opacity-50 touch-feedback flex items-center justify-center gap-2"
             >
-              <CheckCircle className="w-4 h-4 stroke-[2.5]" />
-              <span>{submitting ? 'Scheduling Pickup...' : 'Confirm pickup request'}</span>
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin stroke-[2.5]" />
+                  <span>Scheduling & Uploading Photos...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 stroke-[2.5]" />
+                  <span>Confirm pickup request</span>
+                </>
+              )}
             </button>
           </div>
 

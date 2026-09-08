@@ -6,8 +6,8 @@ import Navbar from '@/components/common/Navbar';
 import BottomNav from '@/components/common/BottomNav';
 import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
-import { PickupRequest, UserProfile } from '@/types';
-import { PlusCircle, Recycle, Package, History, ArrowRight } from 'lucide-react';
+import { PickupRequest } from '@/types';
+import { Recycle, Package, ArrowRight } from 'lucide-react';
 
 const DEMO_HOUSEHOLD_REQUESTS: PickupRequest[] = [
   {
@@ -20,10 +20,18 @@ const DEMO_HOUSEHOLD_REQUESTS: PickupRequest[] = [
     scheduled_date: 'Today · 5:30 PM',
     notes: 'Please call before arriving. Cardboard boxes packed neat.',
     total_estimated_weight_kg: 8.5,
+    photos: [
+      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
+    ],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     waste_items: [
-      { category: 'PAPER', approx_weight_kg: 8.5, notes: 'Bundled newspapers & paper' },
+      {
+        category: 'PAPER',
+        approx_weight_kg: 8.5,
+        notes: 'Bundled newspapers & paper',
+        photos: ['https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80'],
+      },
     ],
   },
   {
@@ -37,10 +45,17 @@ const DEMO_HOUSEHOLD_REQUESTS: PickupRequest[] = [
     scheduled_date: '28 Aug · 11:00 AM',
     notes: 'Crushed PET bottles and containers',
     total_estimated_weight_kg: 5.2,
+    photos: [
+      'https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80',
+    ],
     created_at: new Date(Date.now() - 86400000).toISOString(),
     updated_at: new Date().toISOString(),
     waste_items: [
-      { category: 'PLASTIC', approx_weight_kg: 5.2 },
+      {
+        category: 'PLASTIC',
+        approx_weight_kg: 5.2,
+        photos: ['https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80'],
+      },
     ],
   },
   {
@@ -54,10 +69,17 @@ const DEMO_HOUSEHOLD_REQUESTS: PickupRequest[] = [
     scheduled_date: '24 Aug · 3:00 PM',
     notes: 'Aluminum cans and tin cans',
     total_estimated_weight_kg: 3.0,
+    photos: [
+      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
+    ],
     created_at: new Date(Date.now() - 172800000).toISOString(),
     updated_at: new Date().toISOString(),
     waste_items: [
-      { category: 'METAL', approx_weight_kg: 3.0 },
+      {
+        category: 'METAL',
+        approx_weight_kg: 3.0,
+        photos: ['https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80'],
+      },
     ],
   },
 ];
@@ -88,7 +110,7 @@ export default function HouseholdDashboard() {
           setUserName(user.user_metadata.full_name.split(' ')[0]);
         }
 
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('pickup_requests')
           .select('*, waste_items(*)')
           .eq('household_id', user.id)
