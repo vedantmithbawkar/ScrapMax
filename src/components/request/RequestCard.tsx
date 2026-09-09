@@ -197,6 +197,17 @@ export default function RequestCard({
               </button>
             )}
 
+            {/* Pay Now Button for Household on Accepted/In-Progress Pickups */}
+            {userRole === 'household' && (request.status === 'accepted' || request.status === 'in_progress') && (
+              <Link
+                href={`/household/payment/${request.id}`}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold transition shadow-xs"
+              >
+                <QrCode className="w-3.5 h-3.5" />
+                <span>Pay</span>
+              </Link>
+            )}
+
             {/* Collector Lifecycle Actions */}
             {userRole === 'collector' && onStatusUpdate && (
               <>
