@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Navbar from '@/components/common/Navbar';
 import BottomNav from '@/components/common/BottomNav';
 import { createClient } from '@/lib/supabase/client';
 import { UserProfile } from '@/types';
-import { ArrowLeft, User, MapPin, Star, Settings, ChevronRight } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Star, Settings, ChevronRight, ShieldCheck } from 'lucide-react';
 
 export default function UserProfilePage() {
   const router = useRouter();
@@ -93,6 +94,23 @@ export default function UserProfilePage() {
           {/* Action Menu List */}
           <section className="flex flex-col space-y-3 mt-6" data-purpose="profile-navigation-options">
             
+            {/* Safety Guidelines */}
+            <Link
+              href="/safety"
+              className="flex items-center justify-between bg-[#E6F4EA] px-5 py-4 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] border border-[#A6D5B8] hover:border-[#136B3B] transition touch-feedback cursor-pointer"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#136B3B]">
+                  <ShieldCheck className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div className="text-left">
+                  <span className="text-[16px] font-bold text-[#136B3B]">Safety &amp; Scrap Guidelines</span>
+                  <p className="text-xs text-[#526056] font-medium">Handling protocols &amp; audio guide</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-[#136B3B] stroke-[2.5]" />
+            </Link>
+
             {/* Personal Information */}
             <div className="flex items-center justify-between bg-white px-5 py-4 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] border border-gray-100 hover:border-gray-200 transition touch-feedback cursor-pointer">
               <div className="flex items-center gap-3.5">

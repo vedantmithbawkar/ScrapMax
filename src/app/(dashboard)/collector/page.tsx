@@ -7,7 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
-import { MapPin, History, Filter } from 'lucide-react';
+import { MapPin, History, Filter, ShieldCheck } from 'lucide-react';
 
 const DEMO_COLLECTOR_REQUESTS: PickupRequest[] = [
   {
@@ -135,13 +135,22 @@ export default function CollectorDashboard() {
             </p>
           </div>
 
-          <Link
-            href="/collector/map"
-            className="z-10 flex items-center gap-2 px-5 py-3 bg-white text-[#136B3B] font-bold rounded-full text-xs shadow-xs hover:bg-gray-50 transition"
-          >
-            <MapPin className="w-4 h-4" />
-            <span>Open Map Route</span>
-          </Link>
+          <div className="z-10 flex flex-wrap items-center gap-2.5">
+            <Link
+              href="/safety"
+              className="flex items-center gap-1.5 px-4 py-3 bg-white/15 hover:bg-white/25 text-white font-bold rounded-full text-xs transition"
+            >
+              <ShieldCheck className="w-4 h-4 text-[#A6D5B8]" />
+              <span>Safety Guide</span>
+            </Link>
+            <Link
+              href="/collector/map"
+              className="flex items-center gap-2 px-5 py-3 bg-white text-[#136B3B] font-bold rounded-full text-xs shadow-xs hover:bg-gray-50 transition"
+            >
+              <MapPin className="w-4 h-4" />
+              <span>Open Map Route</span>
+            </Link>
+          </div>
           <div className="absolute -right-8 -bottom-10 w-44 h-44 rounded-full bg-white/10 pointer-events-none" />
         </div>
 

@@ -1,0 +1,77 @@
+{
+  "common": {
+    "brandName": "Sampah Jujur",
+    "tagline": "Circular Recycling",
+    "requestPickup": "Request Pickup",
+    "sellRecyclables": "Sell Recyclables",
+    "collectorPortal": "Collector Portal",
+    "supabaseLive": "Supabase DB Live",
+    "or": "Or",
+    "loading": "Loading...",
+    "speakSection": "Listen to text",
+    "stopSpeaking": "Stop audio",
+    "ttsUnavailable": "Audio TTS not supported for this language on your browser"
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "activity": "Activity",
+    "requestPickup": "Request Pickup",
+    "availablePickups": "Available Pickups",
+    "mapRoute": "Map Route",
+    "profile": "Profile",
+    "safety": "Safety Guide",
+    "signIn": "Sign In",
+    "getStarted": "Get Started",
+    "logOut": "Log out"
+  },
+  "categories": {
+    "PAPER": "Paper & Cardboard",
+    "PLASTIC": "Plastics & Bottles",
+    "METAL": "Metals & Scrap",
+    "E_WASTE": "E-Waste & Electronics",
+    "GLASS": "Glass Bottles",
+    "ORGANIC": "Organic / Compost"
+  },
+  "status": {
+    "pending": "Pending Collector",
+    "accepted": "Collector Assigned",
+    "in_progress": "Pickup In Progress",
+    "completed": "Completed & Paid",
+    "cancelled": "Cancelled"
+  },
+  "landing": {
+    "badge": "Eco-Waste & Circular Logistics System",
+    "heroTitlePre": "Turn Your Household Waste Into Value with ",
+    "heroSubtitle": "Connect with trusted local collectors, schedule effortless door-step scrap pickups, track live routes, and redeem circular recycling value.",
+    "heroCardTitle": "Turn recyclables into value.",
+    "heroCardDesc": "Schedule a pickup from a nearby collector.",
+    "featureGpsTitle": "Zero-Key GPS Live Map",
+    "featureGpsDesc": "Interactive OpenStreetMap location picker with instant address reverse-geocoding for hassle-free collector dispatch.",
+    "featureValueTitle": "Transparent Fair Value",
+    "featureValueDesc": "Standardized market rates for Paper, Plastic, Metal, Glass, and E-Waste calculated transparently on pickup verification.",
+    "featureCoordTitle": "Real-Time Coordination",
+    "featureCoordDesc": "Live WebSocket chat directly between households and assigned collectors using Supabase Realtime messaging."
+  },
+  "safety": {
+    "title": "Safety & Scrap Handling Guidelines",
+    "subtitle": "Essential protocols for households and scrap collectors to ensure safe recycling, hygiene, and emergency protection.",
+    "listenAll": "Listen to full page",
+    "householdTitle": "Household Waste Segregation & Handling",
+    "householdItem1Title": "Segregate Recyclables at Source",
+    "householdItem1Desc": "Keep paper, plastic, metal, and glass in separate dry bins. Clean food residue from containers to prevent contamination and odor.",
+    "householdItem2Title": "Safe E-Waste & Battery Storage",
+    "householdItem2Desc": "Do not throw electronic scrap or lithium batteries into regular trash. Tape battery terminals and keep electronic scrap dry in a cool place.",
+    "householdItem3Title": "Sharp Objects & Broken Glass Handling",
+    "householdItem3Desc": "Wrap broken glass, metal edges, and sharp objects securely in thick cardboard or newspaper before handoff to prevent injury to scrap collectors.",
+    "collectorTitle": "Collector Field & Physical Safety Protocols",
+    "collectorItem1Title": "Personal Protective Equipment (PPE)",
+    "collectorItem1Desc": "Always wear cut-resistant gloves, heavy-duty closed footwear, and high-visibility vests during doorstep verification and transport.",
+    "collectorItem2Title": "Ergonomic Heavy Scrap Lifting",
+    "collectorItem2Desc": "Lift heavy scrap bags using legs, not back. Seek assistance for scrap bundles exceeding 25kg or use hand trolleys.",
+    "collectorItem3Title": "Hazardous & Bio-Medical Exclusions",
+    "collectorItem3Desc": "Refuse to collect medical waste, chemical containers, pressurized cylinders, or unidentified liquid drums. Report unsafe items immediately.",
+    "emergencyTitle": "Emergency Protocols & Helpline",
+    "emergencyDesc": "In case of chemical exposure, severe cuts, or physical hazard during pickup, stop work immediately and contact local emergency services or the ScrapMax Support Helpline at 1800-123-SCRAP."
+  }
+}

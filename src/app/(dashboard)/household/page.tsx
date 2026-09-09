@@ -7,7 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
-import { Recycle, Package, ArrowRight } from 'lucide-react';
+import { Recycle, Package, ArrowRight, ShieldCheck } from 'lucide-react';
 
 const DEMO_HOUSEHOLD_REQUESTS: PickupRequest[] = [
   {
@@ -182,12 +182,19 @@ export default function HouseholdDashboard() {
             <p className="text-[15px] text-[#A6D5B8] leading-normal font-normal">
               Schedule a pickup from a nearby collector.
             </p>
-            <div className="pt-4">
+            <div className="pt-4 flex flex-wrap items-center gap-3">
               <Link
                 href="/household/request-pickup"
                 className="inline-block bg-white text-[#136B3B] text-[15px] font-bold px-6 py-3 rounded-full hover:bg-slate-50 active:scale-[0.98] transition-all shadow-xs"
               >
                 Request pickup
+              </Link>
+              <Link
+                href="/safety"
+                className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-[13px] font-bold px-4 py-3 rounded-full transition-all"
+              >
+                <ShieldCheck className="w-4 h-4 text-[#A6D5B8]" />
+                <span>Safety Guide</span>
               </Link>
             </div>
           </div>
