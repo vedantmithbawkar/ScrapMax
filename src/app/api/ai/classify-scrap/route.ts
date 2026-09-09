@@ -4,7 +4,7 @@ import { WasteCategory, STANDARD_SCRAP_RATES, WASTE_CATEGORY_LABELS } from '@/ty
 export const dynamic = 'force-dynamic';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
 // Map specific detected materials to ScrapMax standard WasteCategory
 function mapToWasteCategory(material: string): WasteCategory {
@@ -131,29 +131,28 @@ Respond ONLY with a JSON object matching this schema:
       },
     };
 
-    const apiKey = process.env.GEMINI_API_KEY || '';
+    const apiKey = process.env.GEMINI_API_KEY || GEMINI_API_KEY || '';
     const candidateModels = Array.from(
       new Set(
         [
-          process.env.GEMINI_MODEL,
-          'gemini-flash-latest',
           'gemini-3.6-flash',
           'gemini-3.7-flash',
-          'gemini-flash-lite-latest',
-          'gemini-3.5-flash',
+          process.env.GEMINI_MODEL,
+          GEMINI_MODEL,
+          'gemini-3.1-flash-lite',
         ].filter(Boolean)
       )
     ) as string[];
 
     let geminiResult: any = null;
-    let successfulModel = candidateModels[0] || 'gemini-flash-latest';
+    let successfulModel = candidateModels[0] || 'gemini-3.6-flash';
 
     if (apiKey) {
       for (const modelName of candidateModels) {
         try {
           const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
           const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 12000);
+          const timer = setTimeout(() => controller.abort(), 15000);
 
           const response = await fetch(url, {
             method: 'POST',
@@ -254,15 +253,18 @@ Respond ONLY with a JSON object matching this schema:
       });
     }
 
-    // Safety fallback: if no AI could verify or key is missing, REJECT instead of pretending it's cardboard
+    // Safety fallback: if no AI could verify or key is missing, explain clearly
+    const fallbackNotice = !apiKey
+      ? 'GEMINI_API_KEY configure nahi hai. Kripya Vercel Settings -> Environment Variables mein GEMINI_API_KEY add karein.'
+      : 'Photo verify nahi ho payi ya camera angle clear nahi hai. Kripya kabaad (raddi, plastic bottle, loha, e-waste) ki saaf photo upload karein.';
+
     return NextResponse.json({
       success: true,
       isValidScrap: false,
-      rejectionReason:
-        'Photo mein koi recyclable scrap (kabaad) confirm nahi ho paya. Kripya kabaad (raddi, plastic bottle, loha, e-waste, glass) ki saaf photo upload karein.',
+      rejectionReason: fallbackNotice,
       detectedMaterial: 'non_scrap',
       confidence: 0,
-      reasoning: 'Image could not be verified as recyclable scrap by vision analysis.',
+      reasoning: !apiKey ? 'API Key missing.' : 'AI Vision models temporarily busy.',
       engine: 'ScrapMax Guardrail Engine',
       isRealAi: false,
     });
