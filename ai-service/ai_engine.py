@@ -47,7 +47,7 @@ MARKET_RATES = {
 }
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-PRIMARY_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+PRIMARY_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 
 def classify_and_grade_scrap_gemini(image_bytes: bytes, original_filename: str = "") -> dict:
     """
@@ -183,19 +183,21 @@ def classify_and_grade_scrap_gemini(image_bytes: bytes, original_filename: str =
     except Exception as e:
         logger.error(f"Gemini Vision quality inspection failed: {e}")
 
-    # Fallback with standard quality grading
+    # Safe rejection fallback: if AI vision could not verify scrap, do not pretend it's cardboard
     return {
-        "detected_material": "cardboard",
-        "confidence_score": 85.0,
+        "is_valid_scrap": False,
+        "rejection_reason": "Photo mein koi recyclable scrap (kabaad) confirm nahi ho paya. Kripya kabaad ki saaf photo upload karein.",
+        "detected_material": "non_scrap",
+        "confidence_score": 0.0,
         "moisture_status": "dry",
         "rust_status": "none",
         "contamination": "clean",
-        "recyclability_grade": "Grade A (Prime)",
+        "recyclability_grade": "Not Applicable",
         "deduction_percent": 0,
-        "quality_verdict": "Dry and clean condition verified.",
-        "reasoning": "Analyzed via fallback visual quality engine.",
-        "visual_quality": "good",
-        "engine": "ScrapMax Edge Fallback",
+        "quality_verdict": "Unverified / Non-scrap",
+        "reasoning": "Image could not be verified as recyclable scrap by vision analysis.",
+        "visual_quality": "poor",
+        "engine": "ScrapMax Guardrail Engine",
         "is_real_ai": False
     }
 

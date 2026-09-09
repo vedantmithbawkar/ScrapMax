@@ -131,38 +131,51 @@ Respond ONLY with a JSON object matching this schema:
       },
     };
 
+    const apiKey = process.env.GEMINI_API_KEY || '';
+    const candidateModels = Array.from(
+      new Set(
+        [
+          process.env.GEMINI_MODEL,
+          'gemini-flash-latest',
+          'gemini-3.6-flash',
+          'gemini-3.7-flash',
+          'gemini-flash-lite-latest',
+          'gemini-3.5-flash',
+        ].filter(Boolean)
+      )
+    ) as string[];
+
     let geminiResult: any = null;
-    let successfulModel = GEMINI_MODEL;
+    let successfulModel = candidateModels[0] || 'gemini-flash-latest';
 
-    // Fast and resilient request on Gemini Vision with automatic retry
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 15000);
+    if (apiKey) {
+      for (const modelName of candidateModels) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 12000);
 
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-        });
-        clearTimeout(timer);
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+          });
+          clearTimeout(timer);
 
-        if (response.ok) {
-          const data = await response.json();
-          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (rawText) {
-            geminiResult = JSON.parse(rawText);
-            successfulModel = GEMINI_MODEL;
-            break;
+          if (response.ok) {
+            const data = await response.json();
+            const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) {
+              geminiResult = JSON.parse(rawText);
+              successfulModel = modelName;
+              break;
+            }
+          } else {
+            console.warn(`Model ${modelName} returned status ${response.status}, trying next model...`);
           }
-        } else if (response.status === 503 && attempt === 0) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-      } catch (_err) {
-        if (attempt === 0) {
-          await new Promise((resolve) => setTimeout(resolve, 800));
+        } catch (_err) {
+          console.warn(`Model ${modelName} failed or timed out, trying next model...`);
         }
       }
     }
@@ -173,7 +186,7 @@ Respond ONLY with a JSON object matching this schema:
         geminiResult.is_valid_scrap !== false &&
         String(geminiResult.detected_material).toLowerCase() !== 'non_scrap';
 
-      // If photo is unrelated to scrap/waste (selfie, pet, food, random object, etc.)
+      // If photo is unrelated to scrap/waste (screenshot, selfie, pet, food, random object, etc.)
       if (!isValidScrap) {
         return NextResponse.json({
           success: true,
@@ -185,7 +198,7 @@ Respond ONLY with a JSON object matching this schema:
           reasoning:
             geminiResult.reasoning ||
             'Photo does not contain any recyclable scrap or waste material.',
-          confidence: Math.round(Number(geminiResult.confidence_score) || 92),
+          confidence: Math.round(Number(geminiResult.confidence_score) || 95),
           engine: `Gemini Vision (${successfulModel})`,
           isRealAi: true,
         });
@@ -218,7 +231,7 @@ Respond ONLY with a JSON object matching this schema:
         categoryName: labelInfo?.label || category,
         icon: labelInfo?.icon || '♻️',
         confidence: Math.round(Number(geminiResult.confidence_score) || 94),
-        reasoning: geminiResult.reasoning || 'Identified via Gemini 3.5 Multimodal Vision.',
+        reasoning: geminiResult.reasoning || 'Identified via Gemini Multimodal Vision.',
         visualQuality: geminiResult.visual_quality || (deduction === 0 ? 'good' : 'fair'),
         qualityInspection: {
           moistureStatus: moisture,
@@ -241,32 +254,16 @@ Respond ONLY with a JSON object matching this schema:
       });
     }
 
-    // Graceful fallback with standard clean quality inspection
-    const fallbackCategory: WasteCategory = 'PAPER';
-    const fallbackBaseRate = STANDARD_SCRAP_RATES[fallbackCategory];
+    // Safety fallback: if no AI could verify or key is missing, REJECT instead of pretending it's cardboard
     return NextResponse.json({
       success: true,
-      isValidScrap: true,
-      material: 'cardboard',
-      category: fallbackCategory,
-      categoryName: WASTE_CATEGORY_LABELS[fallbackCategory].label,
-      icon: WASTE_CATEGORY_LABELS[fallbackCategory].icon,
-      confidence: 85,
-      reasoning: 'Visual inspection completed via edge classifier.',
-      visualQuality: 'good',
-      qualityInspection: {
-        moistureStatus: 'dry',
-        rustStatus: 'none',
-        contamination: 'clean',
-        recyclabilityGrade: 'Grade A (Prime)',
-        deductionPercent: 0,
-        qualityVerdict: 'Standard dry condition verified.',
-      },
-      estimatedWeightRangeKg: '2 - 5 kg',
-      ratePerKg: fallbackBaseRate,
-      baseRatePerKg: fallbackBaseRate,
-      deductionPercent: 0,
-      engine: 'ScrapMax Local Edge Engine',
+      isValidScrap: false,
+      rejectionReason:
+        'Photo mein koi recyclable scrap (kabaad) confirm nahi ho paya. Kripya kabaad (raddi, plastic bottle, loha, e-waste, glass) ki saaf photo upload karein.',
+      detectedMaterial: 'non_scrap',
+      confidence: 0,
+      reasoning: 'Image could not be verified as recyclable scrap by vision analysis.',
+      engine: 'ScrapMax Guardrail Engine',
       isRealAi: false,
     });
   } catch (error: any) {
