@@ -34,8 +34,9 @@ export async function POST(req: Request) {
 
     if (contentType.includes('application/json')) {
       const body = await req.json();
-      const rawImage = body.imageBase64 || body.photo || '';
-      if (!rawImage) {
+      const inputVal = body.imageBase64 || body.photo || '';
+      const rawImage = Array.isArray(inputVal) ? inputVal.join('') : String(inputVal);
+      if (!rawImage || rawImage.trim() === '') {
         return NextResponse.json({ error: 'imageBase64 or photo is required' }, { status: 400 });
       }
 
