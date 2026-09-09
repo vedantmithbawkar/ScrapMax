@@ -9,7 +9,7 @@ import WasteItemForm from '@/components/request/WasteItemForm';
 import { createClient } from '@/lib/supabase/client';
 import { compressImage, dataURLtoBlob } from '@/lib/image-utils';
 import { WasteItem } from '@/types';
-import { ArrowLeft, CheckCircle, MapPin, Camera, X, Plus, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, MapPin, Camera, X, Plus, Loader2, Sparkles, Bot } from 'lucide-react';
 
 export default function RequestPickupPage() {
   const router = useRouter();
@@ -29,6 +29,76 @@ export default function RequestPickupPage() {
   // Photos State: array of base64 data URLs or uploaded URLs
   const [photos, setPhotos] = useState<string[]>([]);
   const [isProcessingPhotos, setIsProcessingPhotos] = useState<boolean>(false);
+
+  // Real Gemini AI Multimodal Vision & Quality Inspection State
+  const [isAiAnalyzing, setIsAiAnalyzing] = useState<boolean>(false);
+  const [aiResult, setAiResult] = useState<{
+    material: string;
+    category: WasteCategory;
+    categoryName: string;
+    icon: string;
+    confidence: number;
+    reasoning: string;
+    ratePerKg: number;
+    baseRatePerKg?: number;
+    deductionPercent?: number;
+    qualityInspection?: {
+      moistureStatus: string;
+      rustStatus: string;
+      contamination: string;
+      recyclabilityGrade: string;
+      deductionPercent: number;
+      qualityVerdict: string;
+    };
+    engine: string;
+    isRealAi: boolean;
+  } | null>(null);
+
+  const runAiClassification = async (photoDataUrl: string) => {
+    setIsAiAnalyzing(true);
+    try {
+      const res = await fetch('/api/ai/classify-scrap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: photoDataUrl }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAiResult(data);
+      }
+    } catch (err) {
+      console.error('AI classification error:', err);
+    } finally {
+      setIsAiAnalyzing(false);
+    }
+  };
+
+  const applyAiRecommendation = () => {
+    if (!aiResult) return;
+    const grade = aiResult.qualityInspection?.recyclabilityGrade || 'Grade A';
+    const moisture = aiResult.qualityInspection?.moistureStatus !== 'dry' ? ` [${aiResult.qualityInspection?.moistureStatus} moisture]` : '';
+    const rust = aiResult.qualityInspection?.rustStatus !== 'none' ? ` [${aiResult.qualityInspection?.rustStatus}]` : '';
+    const noteText = `AI Verified: ${aiResult.categoryName} • ${grade}${moisture}${rust} (${aiResult.confidence}% conf)`;
+
+    setItems((prev) => {
+      // If only placeholder item exists, replace it
+      if (prev.length === 1 && prev[0].category === 'PAPER' && prev[0].notes === 'Bundled newspapers') {
+        return [{
+          category: aiResult.category,
+          approx_weight_kg: 5.0,
+          notes: noteText
+        }];
+      }
+      return [
+        ...prev,
+        {
+          category: aiResult.category,
+          approx_weight_kg: 5.0,
+          notes: noteText
+        }
+      ];
+    });
+  };
 
   const handleLocationSelect = (lat: number, lng: number, addr: string) => {
     setLatitude(lat);
@@ -51,6 +121,11 @@ export default function RequestPickupPage() {
       const newCompressedPhotos = await Promise.all(compressedPromises);
 
       setPhotos((prev) => [...prev, ...newCompressedPhotos].slice(0, 4));
+
+      // Trigger Gemini Multimodal Vision classification on the first uploaded photo
+      if (newCompressedPhotos.length > 0) {
+        runAiClassification(newCompressedPhotos[0]);
+      }
     } catch (err) {
       console.error('Photo compression error:', err);
       alert('Unable to process selected photo(s). Please try again.');
@@ -447,12 +522,145 @@ export default function RequestPickupPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setPhotos([])}
-                    className="text-[11px] text-red-600 hover:text-red-700 font-semibold transition"
+                    onClick={() => {
+                      setPhotos([]);
+                      setAiResult(null);
+                    }}
+                    className="text-[11px] text-red-600 hover:text-red-700 font-semibold transition cursor-pointer"
                   >
                     Clear all
                   </button>
                 </div>
+
+                {/* Gemini AI Multimodal Vision Analysis Result */}
+                {isAiAnalyzing && (
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200 flex items-center gap-3 animate-pulse shadow-xs">
+                    <div className="w-9 h-9 rounded-xl bg-[#136B3B] flex items-center justify-center text-white shrink-0 shadow-xs">
+                      <Sparkles className="w-5 h-5 animate-spin" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-emerald-950">ScrapMax Gemini AI Vision</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800 font-semibold">
+                          Analyzing Image Pixels...
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-emerald-800 mt-0.5">
+                        Scanning scrap material, textures & purity from uploaded photo...
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {aiResult && !isAiAnalyzing && (
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-[#F4FAF6] via-white to-emerald-50/60 border-2 border-[#A6D5B8] shadow-xs space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-2xl">{aiResult.icon}</span>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="text-sm font-bold text-[#191C1E]">
+                              AI Detected: {aiResult.categoryName}
+                            </h4>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              {aiResult.confidence}% Confidence
+                            </span>
+                            {/* Quality Recyclability Grade Badge */}
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              aiResult.qualityInspection?.recyclabilityGrade?.includes('Grade A')
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : aiResult.qualityInspection?.recyclabilityGrade?.includes('Grade B')
+                                ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                : 'bg-red-100 text-red-800 border border-red-300'
+                            }`}>
+                              {aiResult.qualityInspection?.recyclabilityGrade || 'Grade A (Prime)'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] text-[#526056] font-medium mt-0.5 flex-wrap">
+                            <span className="flex items-center gap-1">
+                              <Bot className="w-3.5 h-3.5 text-emerald-700" />
+                              {aiResult.engine}
+                            </span>
+                            <span>•</span>
+                            <span>
+                              Rate: <strong className="text-emerald-900 font-bold">₹{aiResult.ratePerKg}/kg</strong>
+                              {aiResult.baseRatePerKg && aiResult.deductionPercent && aiResult.deductionPercent > 0 ? (
+                                <span className="ml-1 text-[10px] text-red-600 line-through">
+                                  ₹{aiResult.baseRatePerKg}/kg
+                                </span>
+                              ) : null}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={applyAiRecommendation}
+                        className="px-3 py-1.5 rounded-xl bg-[#136B3B] hover:bg-[#0E522C] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs shrink-0 touch-feedback cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                        Auto-Add to Items
+                      </button>
+                    </div>
+
+                    {/* Condition & Quality Inspection Badges */}
+                    <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                      {/* Moisture Status */}
+                      <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 ${
+                        aiResult.qualityInspection?.moistureStatus === 'dry'
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                          : aiResult.qualityInspection?.moistureStatus === 'damp'
+                          ? 'bg-amber-50 text-amber-800 border border-amber-300'
+                          : 'bg-red-50 text-red-800 border border-red-300 animate-pulse'
+                      }`}>
+                        💧 Moisture: {
+                          aiResult.qualityInspection?.moistureStatus === 'soaked_wet'
+                            ? 'Soaked Wet (Gilla)'
+                            : aiResult.qualityInspection?.moistureStatus === 'damp'
+                            ? 'Damp / Moist'
+                            : 'Dry (Clean)'
+                        }
+                      </span>
+
+                      {/* Rust Status */}
+                      <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 ${
+                        aiResult.qualityInspection?.rustStatus === 'none'
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                          : aiResult.qualityInspection?.rustStatus === 'surface_rust'
+                          ? 'bg-amber-50 text-amber-800 border border-amber-300'
+                          : 'bg-red-50 text-red-800 border border-red-300'
+                      }`}>
+                        ⚙️ Rust: {
+                          aiResult.qualityInspection?.rustStatus === 'heavy_corrosion'
+                            ? 'Heavy Junk Corrosion'
+                            : aiResult.qualityInspection?.rustStatus === 'surface_rust'
+                            ? 'Surface Rust'
+                            : 'None (Clean)'
+                        }
+                      </span>
+
+                      {/* Purity / Contamination */}
+                      <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-gray-50 text-gray-700 border border-gray-200 flex items-center gap-1">
+                        🧼 Purity: {aiResult.qualityInspection?.contamination || 'clean'}
+                      </span>
+                    </div>
+
+                    {/* Quality Deduction Alert if wet or rusted */}
+                    {aiResult.deductionPercent && aiResult.deductionPercent > 0 ? (
+                      <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
+                        <strong>⚠️ Quality Deduction ({aiResult.deductionPercent}%):</strong> {
+                          aiResult.qualityInspection?.qualityVerdict || 'Condition penalty applied due to moisture or corrosion.'
+                        }
+                      </div>
+                    ) : null}
+
+                    <div className="pt-2 border-t border-emerald-100 flex items-start gap-2">
+                      <span className="text-[11px] text-emerald-900 bg-emerald-100/60 px-2 py-1.5 rounded-lg w-full leading-relaxed">
+                        <strong>Visual Inspection:</strong> {aiResult.reasoning}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </section>
