@@ -9,7 +9,7 @@ import WasteItemForm from '@/components/request/WasteItemForm';
 import { createClient } from '@/lib/supabase/client';
 import { compressImage, dataURLtoBlob } from '@/lib/image-utils';
 import { WasteItem, WasteCategory } from '@/types';
-import { ArrowLeft, CheckCircle, MapPin, Camera, X, Plus, Loader2, Sparkles, Bot } from 'lucide-react';
+import { ArrowLeft, CheckCircle, MapPin, Camera, X, Plus, Loader2, Sparkles, Bot, AlertTriangle } from 'lucide-react';
 
 export default function RequestPickupPage() {
   const router = useRouter();
@@ -33,13 +33,16 @@ export default function RequestPickupPage() {
   // Real Gemini AI Multimodal Vision & Quality Inspection State
   const [isAiAnalyzing, setIsAiAnalyzing] = useState<boolean>(false);
   const [aiResult, setAiResult] = useState<{
-    material: string;
-    category: WasteCategory;
-    categoryName: string;
-    icon: string;
-    confidence: number;
-    reasoning: string;
-    ratePerKg: number;
+    isValidScrap?: boolean;
+    rejectionReason?: string;
+    detectedMaterial?: string;
+    material?: string;
+    category?: WasteCategory;
+    categoryName?: string;
+    icon?: string;
+    confidence?: number;
+    reasoning?: string;
+    ratePerKg?: number;
     baseRatePerKg?: number;
     deductionPercent?: number;
     qualityInspection?: {
@@ -50,8 +53,8 @@ export default function RequestPickupPage() {
       deductionPercent: number;
       qualityVerdict: string;
     };
-    engine: string;
-    isRealAi: boolean;
+    engine?: string;
+    isRealAi?: boolean;
   } | null>(null);
 
   const runAiClassification = async (photoDataUrl: string) => {
@@ -74,17 +77,18 @@ export default function RequestPickupPage() {
   };
 
   const applyAiRecommendation = () => {
-    if (!aiResult) return;
+    if (!aiResult || aiResult.isValidScrap === false || !aiResult.category) return;
+    const category: WasteCategory = aiResult.category;
     const grade = aiResult.qualityInspection?.recyclabilityGrade || 'Grade A';
     const moisture = aiResult.qualityInspection?.moistureStatus !== 'dry' ? ` [${aiResult.qualityInspection?.moistureStatus} moisture]` : '';
     const rust = aiResult.qualityInspection?.rustStatus !== 'none' ? ` [${aiResult.qualityInspection?.rustStatus}]` : '';
-    const noteText = `AI Verified: ${aiResult.categoryName} • ${grade}${moisture}${rust} (${aiResult.confidence}% conf)`;
+    const noteText = `AI Verified: ${aiResult.categoryName || category} • ${grade}${moisture}${rust} (${aiResult.confidence}% conf)`;
 
     setItems((prev) => {
       // If only placeholder item exists, replace it
       if (prev.length === 1 && prev[0].category === 'PAPER' && prev[0].notes === 'Bundled newspapers') {
         return [{
-          category: aiResult.category,
+          category,
           approx_weight_kg: 5.0,
           notes: noteText
         }];
@@ -92,7 +96,7 @@ export default function RequestPickupPage() {
       return [
         ...prev,
         {
-          category: aiResult.category,
+          category,
           approx_weight_kg: 5.0,
           notes: noteText
         }
@@ -552,7 +556,35 @@ export default function RequestPickupPage() {
                   </div>
                 )}
 
-                {aiResult && !isAiAnalyzing && (
+                {/* Invalid / Unrelated Photo Warning Card */}
+                {aiResult && !isAiAnalyzing && aiResult.isValidScrap === false && (
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-red-50 via-rose-50 to-amber-50/50 border-2 border-red-300 shadow-xs space-y-2">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <AlertTriangle className="w-5 h-5 stroke-[2.5]" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-sm font-bold text-red-950">
+                            ❌ Invalid Photo: Recyclable Scrap Not Found
+                          </h4>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 border border-red-300">
+                            Rejected by AI
+                          </span>
+                        </div>
+                        <p className="text-xs text-red-800 font-medium mt-1 leading-relaxed">
+                          {aiResult.rejectionReason || "Ye photo kisi recyclable kabaad ya scrap material ki nahi lag rahi hai. Kripya kabaad (paper, plastic, metal, e-waste, glass) ki saaf photo upload karein."}
+                        </p>
+                        <p className="text-[11px] text-red-600/90 mt-1">
+                          💡 <strong>Allowed Materials:</strong> Cardboard / raddi, plastic containers/bottles, iron/steel junk, cables/e-waste, or glass bottles.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Valid Gemini AI Multimodal Vision Analysis Result */}
+                {aiResult && !isAiAnalyzing && aiResult.isValidScrap !== false && (
                   <div className="p-4 rounded-2xl bg-gradient-to-br from-[#F4FAF6] via-white to-emerald-50/60 border-2 border-[#A6D5B8] shadow-xs space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2.5">

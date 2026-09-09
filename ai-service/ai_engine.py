@@ -71,10 +71,13 @@ def classify_and_grade_scrap_gemini(image_bytes: bytes, original_filename: str =
         pil_img.save(buffer, format="JPEG", quality=85)
         base64_data = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-        categories_str = ", ".join(list(MARKET_RATES.keys()) + ["other"])
         prompt_text = (
-            "You are an expert scrap, e-waste, and material recycling quality inspector in India. "
-            "Inspect this image with extreme care for BOTH material identification AND physical quality/defects: "
+            "You are an expert recyclable scrap and material valuation inspector in India. "
+            "CRITICAL FIRST STEP: Determine whether the image actually contains recyclable scrap or discarded waste material. "
+            "If the image is unrelated (e.g. human face, selfie, person, animal, food dish, furniture, nature, vehicle in use, clothing, meme, or screenshot): "
+            "Set 'is_valid_scrap': false, 'rejection_reason': 'Ye photo recyclable kabaad/scrap ki nahi hai.', 'detected_material': 'non_scrap'. "
+            "If it DOES contain recyclable scrap: "
+            "Set 'is_valid_scrap': true, 'rejection_reason': null. "
             f"1. Material Category: exactly one of [{categories_str}]. "
             "2. Moisture / Water Soaking: 'dry' | 'damp' | 'soaked_wet' (Look for water stains, dark damp patches, or sogginess on cardboard/paper). "
             "3. Rust & Oxidation: 'none' | 'surface_rust' | 'heavy_corrosion' (For iron/steel junk). "
@@ -83,7 +86,7 @@ def classify_and_grade_scrap_gemini(image_bytes: bytes, original_filename: str =
             "6. Deduction Percent: integer 0 to 50 (penalty for water weight inflation, rust loss, or heavy impurities). "
             "7. Quality Verdict: Concise Hindi/English explanation of physical condition and quality rating. "
             "Return ONLY a valid JSON object matching: "
-            '{"detected_material": "string", "confidence_score": 92.5, '
+            '{"is_valid_scrap": true, "rejection_reason": null, "detected_material": "string", "confidence_score": 92.5, '
             '"moisture_status": "dry", "rust_status": "none", '
             '"contamination": "clean", "recyclability_grade": "Grade A (Prime)", '
             '"deduction_percent": 0, "quality_verdict": "string", "reasoning": "string"}'
@@ -117,6 +120,18 @@ def classify_and_grade_scrap_gemini(image_bytes: bytes, original_filename: str =
                     raw_text = res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
                     parsed = json.loads(raw_text)
 
+                    is_valid = parsed.get("is_valid_scrap", True) and str(parsed.get("detected_material", "")).lower() != "non_scrap"
+                    if not is_valid:
+                        return {
+                            "is_valid_scrap": False,
+                            "rejection_reason": parsed.get("rejection_reason", "Ye photo kisi recyclable kabaad ya scrap material ki nahi lag rahi hai."),
+                            "detected_material": "non_scrap",
+                            "confidence_score": float(parsed.get("confidence_score", 90.0)),
+                            "reasoning": str(parsed.get("reasoning", "Unrelated photo detected.")),
+                            "engine": f"Gemini Multimodal Vision ({PRIMARY_MODEL})",
+                            "is_real_ai": True
+                        }
+
                     detected = str(parsed.get("detected_material", "")).lower().strip()
                     if detected not in MARKET_RATES and detected != "other":
                         matched = next((k for k in MARKET_RATES if k in detected), "other")
@@ -141,6 +156,7 @@ def classify_and_grade_scrap_gemini(image_bytes: bytes, original_filename: str =
                     verdict = str(parsed.get("quality_verdict", parsed.get("reasoning", "Material inspected.")))
 
                     return {
+                        "is_valid_scrap": True,
                         "detected_material": detected,
                         "confidence_score": round(confidence, 1),
                         "moisture_status": moisture,
