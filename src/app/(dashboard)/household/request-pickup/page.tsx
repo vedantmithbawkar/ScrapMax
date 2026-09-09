@@ -33,6 +33,7 @@ export default function RequestPickupPage() {
   // Real Gemini AI Multimodal Vision & Quality Inspection State
   const [isAiAnalyzing, setIsAiAnalyzing] = useState<boolean>(false);
   const [aiResult, setAiResult] = useState<{
+    isKeyMissing?: boolean;
     isValidScrap?: boolean;
     rejectionReason?: string;
     detectedMaterial?: string;
@@ -556,8 +557,35 @@ export default function RequestPickupPage() {
                   </div>
                 )}
 
+                {/* API Key Missing Setup Card */}
+                {aiResult && !isAiAnalyzing && aiResult.isKeyMissing && (
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50/50 border-2 border-amber-300 shadow-xs space-y-2">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <Bot className="w-5 h-5 stroke-[2.5]" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-sm font-bold text-amber-950">
+                            ⚙️ Vercel Setup Required: GEMINI_API_KEY Missing
+                          </h4>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900 border border-amber-300">
+                            Action Needed on Vercel
+                          </span>
+                        </div>
+                        <p className="text-xs text-amber-900 font-medium mt-1 leading-relaxed">
+                          {aiResult.rejectionReason}
+                        </p>
+                        <p className="text-[11px] text-amber-800 mt-1">
+                          💡 <strong>How to fix:</strong> Go to Vercel Dashboard ➔ Project Settings ➔ Environment Variables ➔ Add <code>GEMINI_API_KEY</code> ➔ Click Redeploy.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Invalid / Unrelated Photo Warning Card */}
-                {aiResult && !isAiAnalyzing && aiResult.isValidScrap === false && (
+                {aiResult && !isAiAnalyzing && !aiResult.isKeyMissing && aiResult.isValidScrap === false && (
                   <div className="p-4 rounded-2xl bg-gradient-to-br from-red-50 via-rose-50 to-amber-50/50 border-2 border-red-300 shadow-xs space-y-2">
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">

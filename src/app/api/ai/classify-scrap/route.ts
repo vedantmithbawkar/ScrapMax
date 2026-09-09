@@ -132,6 +132,22 @@ Respond ONLY with a JSON object matching this schema:
     };
 
     const apiKey = process.env.GEMINI_API_KEY || GEMINI_API_KEY || '';
+
+    if (!apiKey) {
+      return NextResponse.json({
+        success: true,
+        isKeyMissing: true,
+        isValidScrap: false,
+        rejectionReason:
+          'GEMINI_API_KEY configure nahi hai. Kripya Vercel Settings -> Environment Variables mein GEMINI_API_KEY add karke project ko Redeploy karein.',
+        detectedMaterial: 'non_scrap',
+        confidence: 0,
+        reasoning: 'GEMINI_API_KEY environment variable is not configured.',
+        engine: 'Setup Required',
+        isRealAi: false,
+      });
+    }
+
     const candidateModels = Array.from(
       new Set(
         [
