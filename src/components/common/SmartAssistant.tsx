@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, X, Send, Sparkles, HelpCircle, ChevronDown, CheckCircle2, DollarSign, Calendar, MapPin, Minimize2 } from 'lucide-react';
+import { Bot, X, Send, Sparkles, HelpCircle, ChevronDown, CheckCircle2, DollarSign, Calendar, MapPin, Minimize2, Trash2, ShieldCheck, TreePine } from 'lucide-react';
 import { STANDARD_SCRAP_RATES } from '@/types';
 
 interface Message {
@@ -9,33 +9,204 @@ interface Message {
   sender: 'bot' | 'user';
   text: string;
   time: string;
+  categoryBadge?: string;
   suggestedActions?: { label: string; action: () => void }[];
 }
 
-const FAQ_KNOWLEDGE_BASE = [
+interface IntentPattern {
+  id: string;
+  category: string;
+  keywords: string[];
+  patterns?: RegExp[];
+  response: (input: string) => string;
+  suggestions: string[];
+}
+
+// Levenshtein distance for fuzzy matching typos like "workd", "ratee", "scraap"
+function levenshteinDistance(s1: string, s2: string): number {
+  const m = s1.length;
+  const n = s2.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,      // deletion
+        dp[i][j - 1] + 1,      // insertion
+        dp[i - 1][j - 1] + cost // substitution
+      );
+    }
+  }
+  return dp[m][n];
+}
+
+function hasFuzzyWord(input: string, targets: string[]): boolean {
+  const words = input.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+  for (const word of words) {
+    for (const target of targets) {
+      if (word === target) return true;
+      if (target.length >= 4 && Math.abs(word.length - target.length) <= 2) {
+        const dist = levenshteinDistance(word, target);
+        if (dist <= 1 || (target.length >= 6 && dist <= 2)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+const COMPREHENSIVE_INTENTS: IntentPattern[] = [
+  // 1. HOW IT WORKS / GENERAL FLOW (Answers "how does it workd", "what is scrapmax", "explain process")
   {
-    keywords: ['rate', 'price', 'cost', 'how much', 'money', 'value'],
-    response: `Here are our standard verified scrap recycling rates:\n\n• 📦 Paper & Cardboard: ₹15/kg\n• 🍾 Plastics & Bottles: ₹20/kg\n• ⚙️ Metals & Iron Scrap: ₹65/kg\n• 💻 E-Waste & Electronics: ₹110/kg\n• 🥛 Glass Bottles: ₹8/kg\n• 🌱 Organic/Compost: ₹4/kg\n\nRates are updated transparently to prevent doorstep bargaining!`,
+    id: 'how_it_works',
+    category: 'System Workflow',
+    keywords: ['how', 'work', 'works', 'workd', 'working', 'process', 'explain', 'steps', 'flow', 'what is scrapmax', 'system'],
+    patterns: [/how.*work/i, /what.*do/i, /process/i, /explain/i],
+    response: () =>
+      `♻️ **Here is how ScrapMax works in 4 simple steps:**\n\n` +
+      `1️⃣ **Request Pickup:** Click "Request Pickup" to select your scrap items (Paper, Plastic, Metal, E-waste, Glass) and upload photos.\n` +
+      `2️⃣ **GPS Pinpoint:** Choose your address or use "Live GPS" to pinpoint your doorstep for nearby collectors.\n` +
+      `3️⃣ **Kabadiwala Arrives:** A verified local scrap collector accepts your request, navigates to your location, and weighs your materials on a digital scale.\n` +
+      `4️⃣ **Instant Payout & Receipt:** Receive instant payment via **UPI QR Code** (GPay/PhonePe/Paytm) or **Cash** + an official digital green recycling receipt with CO₂ saved credits!`,
+    suggestions: ['Current Scrap Rates', 'How Payment Works', 'Book a Pickup Now'],
   },
+
+  // 2. SCRAP RATES & PRICING
   {
-    keywords: ['pickup', 'schedule', 'book', 'request', 'collect'],
-    response: `To schedule a scrap pickup:\n1. Go to "Pickup" on the bottom navigation or click "Request Pickup".\n2. Select your scrap materials & approximate weights.\n3. Take or upload scrap photos for verification.\n4. Confirm your GPS location and select Today, Tomorrow, or Weekend! A nearby Kabadiwala will accept your request.`,
+    id: 'rates_and_prices',
+    category: 'Market Rates',
+    keywords: ['rate', 'rates', 'price', 'prices', 'cost', 'money', 'value', 'per kg', 'bhaav', 'kilo', 'rupees', 'worth'],
+    patterns: [/rate/i, /price/i, /how much/i, /worth/i, /cost/i],
+    response: () =>
+      `💰 **Official Verified Scrap Rates (Per Kilogram):**\n\n` +
+      `• 📦 **Paper & Cardboard:** ₹15 / kg\n` +
+      `• 🍾 **Plastics & PET Bottles:** ₹20 / kg\n` +
+      `• ⚙️ **Metals & Iron/Steel Scrap:** ₹65 / kg\n` +
+      `• 💻 **E-Waste & Electronics:** ₹110 / kg (Motherboards, batteries up to ₹200/kg)\n` +
+      `• 🥛 **Glass Bottles:** ₹8 / kg\n` +
+      `• 🌱 **Organic / Compost:** ₹4 / kg\n\n` +
+      `*All rates are standardized and auto-calculated during doorstep weighing to eliminate unfair bargaining.*`,
+    suggestions: ['How Doorstep Weighing Works', 'Book a Pickup Now', 'Accepted Materials'],
   },
+
+  // 3. DOORSTEP PAYMENT & UPI
   {
-    keywords: ['payment', 'pay', 'upi', 'cash', 'money transfer', 'receipt'],
-    response: `ScrapMax supports transparent doorstep payments!\nWhen the Kabadiwala weighs your scrap on their scale, they enter the verified kilograms into the app. You can receive payment immediately via Instant UPI (PhonePe, GPay, Paytm QR) or physical cash, complete with a digital proof receipt.`,
+    id: 'payment_flow',
+    category: 'Payment & UPI',
+    keywords: ['payment', 'pay', 'paid', 'upi', 'cash', 'qr', 'gpay', 'phonepe', 'paytm', 'receive', 'transfer', 'settlement'],
+    patterns: [/pay/i, /upi/i, /cash/i, /money/i, /settle/i],
+    response: () =>
+      `💳 **Doorstep Payment Options:**\n\n` +
+      `• 📱 **Instant UPI QR Code:** The collector taps "Weigh & Pay" on their portal, calculates the exact weight, and shows a dynamic QR code. Scan it with PhonePe, Google Pay, or Paytm to receive instant bank credit!\n` +
+      `• 💵 **Direct Cash Handover:** If you prefer physical cash, the collector pays you the exact verified amount on the spot.\n` +
+      `• 🧾 **Digital Handover Proof:** Both parties get an immutable receipt with a unique TXN ID, weights, and environmental offset logs.`,
+    suggestions: ['View Scrap Rates', 'How to Book Pickup', 'Are Collectors Verified?'],
   },
+
+  // 4. PICKUP BOOKING & SCHEDULING
   {
-    keywords: ['kabadiwala', 'collector', 'who', 'verify', 'safe'],
-    response: `All collectors on ScrapMax are verified local scrap hubs and informal waste recyclers. You can see their name, live GPS location, customer rating, and communicate via real-time chat directly inside the app.`,
+    id: 'booking_pickup',
+    category: 'Scheduling',
+    keywords: ['book', 'schedule', 'pickup', 'request', 'timing', 'slot', 'time', 'collect', 'doorstep'],
+    patterns: [/schedule/i, /book/i, /pickup/i, /when/i],
+    response: () =>
+      `📅 **Scheduling a Doorstep Pickup:**\n\n` +
+      `• You can select **Today**, **Tomorrow**, or **Weekend** slots.\n` +
+      `• Simply tap the **"Pickup"** tab at the bottom or the top "Request Pickup" button.\n` +
+      `• Add estimated weights and photos (helps collectors bring the right sized vehicle, e.g. e-rickshaw or mini-truck).\n` +
+      `• You can chat directly with your assigned collector via the in-app Realtime Chat!`,
+    suggestions: ['Open Pickup Form', 'What materials are accepted?', 'Track My Pickup'],
   },
+
+  // 5. KABADIWALA / COLLECTOR SAFETY & VERIFICATION
   {
-    keywords: ['segregate', 'dry', 'clean', 'condition', 'prepare'],
-    response: `Pro-tip for maximum value:\n• Keep paper dry and bundled.\n• Rinse plastic containers and crush PET bottles.\n• Keep metals separated.\nDry, clean recyclables receive prompt collector pickup and higher verified rates!`,
+    id: 'kabadiwala_safety',
+    category: 'Collector Network',
+    keywords: ['kabadiwala', 'collector', 'scrapper', 'dealer', 'trust', 'safe', 'safety', 'who', 'verified', 'background'],
+    patterns: [/who/i, /trust/i, /safe/i, /verified/i],
+    response: () =>
+      `🛡️ **Verified Collector Network:**\n\n` +
+      `• All scrap collectors & Kabadiwalas on ScrapMax are vetted with verified mobile numbers and local recycling licenses.\n` +
+      `• Our **OpenStreetMap Overpass engine** maps active local scrap hubs within 5km radius.\n` +
+      `• You can track the collector's approach on the live map and chat with them in real-time.\n` +
+      `• Clear customer star ratings and digital receipts ensure complete transparency.`,
+    suggestions: ['Current Scrap Rates', 'How does it work?', 'Contact Support'],
   },
+
+  // 6. ACCEPTED MATERIALS & SEGREGATION
   {
-    keywords: ['contact', 'help', 'support', 'issue'],
-    response: `For urgent pickup coordination, please use the in-app Realtime Chat with your assigned collector. For technical assistance or municipal recycling inquiries, you can reach out to support@scrapmax.org.`,
+    id: 'materials_segregation',
+    category: 'Materials Guide',
+    keywords: ['material', 'materials', 'items', 'accept', 'accepted', 'segregate', 'clean', 'dry', 'plastic', 'metal', 'copper', 'paper', 'battery'],
+    patterns: [/what.*recycle/i, /accept/i, /material/i, /segregat/i],
+    response: () =>
+      `📦 **Accepted Recyclable Materials:**\n\n` +
+      `• **Paper:** Newspapers, cardboard cartons, office paper, books, shredded paper.\n` +
+      `• **Plastics:** PET water bottles, milk pouches, hard plastic tubs, HDPE cans.\n` +
+      `• **Metals:** Iron, steel utensils, copper wires, brass, aluminum cans.\n` +
+      `• **E-Waste:** Old laptops, smartphones, PCBs, motherboards, lead-acid batteries, chargers.\n` +
+      `• **Glass:** Beverage and beer bottles, jars.\n\n` +
+      `*Tip: Keep recyclables dry and clean to fetch the highest market rate!*`,
+    suggestions: ['Check Rates for Materials', 'Book a Pickup', 'How Payment Works'],
+  },
+
+  // 7. ENVIRONMENTAL CARBON CREDITS & IMPACT
+  {
+    id: 'carbon_impact',
+    category: 'Sustainability',
+    keywords: ['impact', 'carbon', 'trees', 'green', 'environment', 'co2', 'offset', 'credit', 'sih', 'benefits'],
+    patterns: [/impact/i, /carbon/i, /tree/i, /environ/i, /co2/i],
+    response: () =>
+      `🌱 **Your Environmental Recycling Impact:**\n\n` +
+      `For every 10 kg of scrap recycled through ScrapMax:\n` +
+      `• 🌳 **~0.2 Trees Saved** from deforestation\n` +
+      `• ☁️ **~18 kg CO₂ Equivalent** emissions prevented\n` +
+      `• 💧 **~250 Litres of Water Conserved** compared to virgin manufacturing\n` +
+      `• 🚫 **100% Landfill Diversion** ensuring circular zero-waste economy!`,
+    suggestions: ['View My Recycling History', 'Current Scrap Rates', 'Book a Pickup'],
+  },
+
+  // 8. SIH HACKATHON / PROJECT PURPOSE
+  {
+    id: 'sih_project',
+    category: 'SIH Project Info',
+    keywords: ['sih', 'smart india hackathon', 'project', 'about', 'hackathon', 'team', 'mission'],
+    patterns: [/sih/i, /hackathon/i, /project/i],
+    response: () =>
+      `🏆 **Smart India Hackathon (SIH) Innovation:**\n\n` +
+      `ScrapMax is a **Circular Waste Logistics & Informal Sector Integration Platform** designed to solve Urban Solid Waste Management:\n` +
+      `• Formalizes unorganized Kabadiwalas with digital weighing & UPI payouts.\n` +
+      `• Provides citizens transparent rates, zero-bargaining, and GPS doorstep convenience.\n` +
+      `• Provides Urban Local Bodies (ULBs) real-time landfill diversion tracking and carbon analytics.`,
+    suggestions: ['How does it work?', 'View Current Scrap Rates', 'Test Doorstep Handover'],
+  },
+
+  // 9. GREETINGS & CASUAL
+  {
+    id: 'greetings',
+    category: 'Greeting',
+    keywords: ['hi', 'hello', 'hey', 'namaste', 'morning', 'afternoon', 'evening', 'good morning', 'hola'],
+    patterns: [/^(hi|hello|hey|namaste)/i],
+    response: () =>
+      `Namaste! 🙏 Welcome to ScrapMax. I'm your AI recycling guide.\n` +
+      `How can I help you today? You can ask me about scrap rates, booking pickups, doorstep UPI payouts, or how the platform works!`,
+    suggestions: ['How does it work?', 'Current Scrap Rates', 'How Payment Works'],
+  },
+
+  // 10. THANKS & APPRECIATION
+  {
+    id: 'appreciation',
+    category: 'Appreciation',
+    keywords: ['thanks', 'thank you', 'great', 'awesome', 'good', 'nice', 'ok', 'super'],
+    patterns: [/thank/i, /great/i, /awesome/i],
+    response: () =>
+      `You're very welcome! 🌿 Happy recycling with ScrapMax. Every piece of scrap diverted from the landfill makes our cities cleaner and greener! Let me know if you need anything else.`,
+    suggestions: ['Current Scrap Rates', 'Book a Pickup', 'How Payment Works'],
   },
 ];
 
@@ -46,12 +217,13 @@ export default function SmartAssistant() {
     {
       id: 'welcome-1',
       sender: 'bot',
-      text: "Namaste! 🙏 I'm ScrapMax AI, your circular waste and scrap assistant. How can I help you today?",
+      text: "Namaste! 🙏 I'm ScrapMax AI, your circular waste & recycling assistant.\n\nAsk me anything: scrap prices, doorstep pickups, UPI payments, or how our system works!",
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      categoryBadge: 'AI Assistant',
       suggestedActions: [
+        { label: 'How Does It Work?', action: () => handleSend('How does ScrapMax work?') },
         { label: 'Current Scrap Rates', action: () => handleSend('What are the current scrap rates?') },
-        { label: 'How to Schedule Pickup', action: () => handleSend('How do I book a pickup?') },
-        { label: 'Payment Options', action: () => handleSend('How does doorstep payment work?') },
+        { label: 'Doorstep UPI Payment', action: () => handleSend('How does doorstep payment work?') },
       ],
     },
   ]);
@@ -64,14 +236,64 @@ export default function SmartAssistant() {
     }
   }, [messages, isOpen]);
 
-  const findAnswer = (query: string): string => {
-    const clean = query.toLowerCase();
-    for (const item of FAQ_KNOWLEDGE_BASE) {
-      if (item.keywords.some((kw) => clean.includes(kw))) {
-        return item.response;
+  // AI Matching Engine with Regex Patterns, Multi-keyword scoring, and Fuzzy matching
+  const findSmartResponse = (query: string): { text: string; category?: string; suggestions: string[] } => {
+    const cleanQuery = query.toLowerCase().trim();
+
+    let bestMatch: IntentPattern | null = null;
+    let highestScore = 0;
+
+    for (const intent of COMPREHENSIVE_INTENTS) {
+      let score = 0;
+
+      // 1. Regex pattern matching (High confidence: +5)
+      if (intent.patterns) {
+        for (const pattern of intent.patterns) {
+          if (pattern.test(cleanQuery)) {
+            score += 5;
+          }
+        }
+      }
+
+      // 2. Direct keyword inclusion (+3 per keyword match)
+      for (const kw of intent.keywords) {
+        if (cleanQuery.includes(kw)) {
+          score += 3;
+        }
+      }
+
+      // 3. Fuzzy matching for typos (+2)
+      if (hasFuzzyWord(cleanQuery, intent.keywords)) {
+        score += 2;
+      }
+
+      if (score > highestScore) {
+        highestScore = score;
+        bestMatch = intent;
       }
     }
-    return `I can help you with scrap rates, doorstep pickup scheduling, Kabadiwala discovery, and instant UPI/cash payouts. Try asking "What are the scrap prices?" or "How does payment work?"`;
+
+    if (bestMatch && highestScore >= 2) {
+      return {
+        text: bestMatch.response(query),
+        category: bestMatch.category,
+        suggestions: bestMatch.suggestions,
+      };
+    }
+
+    // Default intelligent fallback with guided prompts
+    return {
+      text:
+        `I understand you're asking about "${query}".\n\n` +
+        `Here is what I can instantly assist you with:\n` +
+        `• 📦 **Scrap Rates:** Today's verified per-kg rates for paper, plastic, metals, e-waste.\n` +
+        `• 🚛 **How It Works:** Step-by-step door-step pickup, digital scale weighing, and UPI settlement.\n` +
+        `• 💳 **Payment:** Instant PhonePe/GPay UPI QR codes or cash on doorstep.\n` +
+        `• 📍 **GPS Tracking:** How nearby Kabadiwalas are assigned.\n\n` +
+        `Click any suggestion below or ask in your own words!`,
+      category: 'Help Guide',
+      suggestions: ['How does it work?', 'Current Scrap Rates', 'How Payment Works', 'Book a Pickup'],
+    };
   };
 
   const handleSend = (textToSend?: string) => {
@@ -88,17 +310,38 @@ export default function SmartAssistant() {
     setMessages((prev) => [...prev, userMsg]);
     if (!textToSend) setInput('');
 
-    // Simulate smart bot response
+    // Simulate smart AI typing response
     setTimeout(() => {
-      const reply = findAnswer(text);
+      const match = findSmartResponse(text);
       const botMsg: Message = {
         id: `bot-${Date.now()}`,
         sender: 'bot',
-        text: reply,
+        text: match.text,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        categoryBadge: match.category,
+        suggestedActions: match.suggestions.map((s) => ({
+          label: s,
+          action: () => handleSend(s),
+        })),
       };
       setMessages((prev) => [...prev, botMsg]);
-    }, 450);
+    }, 300);
+  };
+
+  const handleClearHistory = () => {
+    setMessages([
+      {
+        id: `welcome-${Date.now()}`,
+        sender: 'bot',
+        text: "Conversation reset! How can I assist you with your recycling today?",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        suggestedActions: [
+          { label: 'How Does It Work?', action: () => handleSend('How does ScrapMax work?') },
+          { label: 'Current Scrap Rates', action: () => handleSend('What are the current scrap rates?') },
+          { label: 'Doorstep UPI Payment', action: () => handleSend('How does doorstep payment work?') },
+        ],
+      },
+    ]);
   };
 
   return (
@@ -127,41 +370,59 @@ export default function SmartAssistant() {
         <div
           role="dialog"
           aria-modal="true"
-          className="w-[calc(100vw-2rem)] sm:w-96 h-[480px] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-6 transition-all"
+          className="w-[calc(100vw-2rem)] sm:w-[410px] h-[520px] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-6 transition-all"
         >
           {/* Header */}
-          <div className="px-4 py-3.5 bg-[#136B3B] text-white flex items-center justify-between shadow-xs">
+          <div className="px-4 py-3 bg-[#136B3B] text-white flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center">
                 <Bot className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-extrabold text-sm leading-tight">ScrapMax Assistant</h3>
+                <h3 className="font-extrabold text-sm leading-tight">ScrapMax AI Assistant</h3>
                 <span className="text-[10px] text-[#A6D5B8] flex items-center gap-1 font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
-                  Online &bull; Instant Scrap Answers
+                  Smart Recycling &amp; Logistics Engine
                 </span>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              aria-label="Close Assistant"
-              className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
-            >
-              <Minimize2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleClearHistory}
+                title="Clear conversation"
+                aria-label="Clear chat"
+                className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                aria-label="Minimize Assistant"
+                className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition"
+              >
+                <Minimize2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Messages Feed */}
-          <div className="flex-1 p-3.5 overflow-y-auto space-y-3 bg-[#F8FAF9] text-xs">
+          <div className="flex-1 p-3.5 overflow-y-auto space-y-3.5 bg-[#F8FAF9] text-xs">
             {messages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
+                {/* Category Badge for bot */}
+                {msg.sender === 'bot' && msg.categoryBadge && (
+                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#136B3B] bg-[#E6F4EA] px-2 py-0.5 rounded-full mb-1 border border-[#A6D5B8]">
+                    {msg.categoryBadge}
+                  </span>
+                )}
+
                 <div
-                  className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl whitespace-pre-line leading-relaxed ${
+                  className={`max-w-[88%] px-3.5 py-2.5 rounded-2xl whitespace-pre-line leading-relaxed ${
                     msg.sender === 'user'
                       ? 'bg-[#136B3B] text-white rounded-br-xs font-medium shadow-2xs'
                       : 'bg-white text-[#191C1E] rounded-bl-xs border border-gray-200 shadow-2xs'
@@ -191,9 +452,17 @@ export default function SmartAssistant() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick FAQ Strip */}
+          {/* Quick FAQ Bottom Strip */}
           <div className="px-3 py-1.5 bg-[#EDF7F2] border-t border-emerald-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-            <span className="text-[10.5px] font-bold text-[#136B3B] flex-shrink-0">Quick:</span>
+            <span className="text-[10.5px] font-bold text-[#136B3B] flex-shrink-0">Quick Topics:</span>
+            <button
+              type="button"
+              onClick={() => handleSend('How does ScrapMax work?')}
+              className="text-[10.5px] text-[#2B6B47] hover:underline flex-shrink-0 font-medium"
+            >
+              How It Works
+            </button>
+            <span className="text-gray-300">&bull;</span>
             <button
               type="button"
               onClick={() => handleSend('What are the scrap rates?')}
@@ -212,10 +481,10 @@ export default function SmartAssistant() {
             <span className="text-gray-300">&bull;</span>
             <button
               type="button"
-              onClick={() => handleSend('How do I book a pickup?')}
+              onClick={() => handleSend('What materials are accepted?')}
               className="text-[10.5px] text-[#2B6B47] hover:underline flex-shrink-0 font-medium"
             >
-              Book Pickup
+              Accepted Items
             </button>
           </div>
 
@@ -231,7 +500,7 @@ export default function SmartAssistant() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about rates, pickups, UPI..."
+              placeholder="Ask anything (e.g. how it works, rates, UPI)..."
               className="flex-1 px-3.5 py-2 bg-[#F8FAF9] border border-gray-200 rounded-full text-xs text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] transition"
             />
             <button
