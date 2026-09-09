@@ -1,0 +1,2 @@
+# Ignore Python AI microservice in Vercel Next.js deployment
+ai-service/

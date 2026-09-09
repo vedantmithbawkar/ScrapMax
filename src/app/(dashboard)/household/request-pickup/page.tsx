@@ -8,7 +8,7 @@ import LocationPicker from '@/components/map/LocationPicker';
 import WasteItemForm from '@/components/request/WasteItemForm';
 import { createClient } from '@/lib/supabase/client';
 import { compressImage, dataURLtoBlob } from '@/lib/image-utils';
-import { WasteItem } from '@/types';
+import { WasteItem, WasteCategory } from '@/types';
 import { ArrowLeft, CheckCircle, MapPin, Camera, X, Plus, Loader2, Sparkles, Bot } from 'lucide-react';
 
 export default function RequestPickupPage() {
