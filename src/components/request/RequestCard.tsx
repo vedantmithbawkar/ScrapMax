@@ -1,15 +1,16 @@
-'use client';
-
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { PickupRequest, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
-import { MapPin, MessageSquare, ChevronRight, CheckCircle2, Truck, Camera, X } from 'lucide-react';
+import { PickupRequest, PaymentDetails, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
+import { MapPin, MessageSquare, ChevronRight, CheckCircle2, Truck, Camera, X, Receipt, QrCode } from 'lucide-react';
+import HandoverModal from './HandoverModal';
+import ReceiptModal from './ReceiptModal';
 
 interface RequestCardProps {
   request: PickupRequest;
   userRole: 'household' | 'collector';
   onStatusUpdate?: (requestId: string, newStatus: PickupRequest['status']) => void;
+  onCompletePayment?: (requestId: string, payment: PaymentDetails) => Promise<void> | void;
 }
 
 function formatPickupDate(dateStr: string) {
@@ -34,8 +35,15 @@ function formatPickupDate(dateStr: string) {
   return dateStr;
 }
 
-export default function RequestCard({ request, userRole, onStatusUpdate }: RequestCardProps) {
+export default function RequestCard({
+  request,
+  userRole,
+  onStatusUpdate,
+  onCompletePayment,
+}: RequestCardProps) {
   const [selectedPhotoModal, setSelectedPhotoModal] = useState<string | null>(null);
+  const [showHandoverModal, setShowHandoverModal] = useState<boolean>(false);
+  const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
   const statusInfo = STATUS_LABELS[request.status];
 
   // Derive primary category icon & name
@@ -48,10 +56,8 @@ export default function RequestCard({ request, userRole, onStatusUpdate }: Reque
   // Aggregate photos from pickup_requests table and waste_items table
   const allPhotos: string[] = [
     ...(request.photos || []),
-    ...(request.waste_items?.flatMap((it) => it.photos || []) || []),
+    ...(request.waste_items?.flatMap((w) => w.photos || []) || []),
   ].filter((url, idx, self) => url && self.indexOf(url) === idx);
-
-  const displayDate = formatPickupDate(request.scheduled_date);
 
   return (
     <>
@@ -71,14 +77,14 @@ export default function RequestCard({ request, userRole, onStatusUpdate }: Reque
                 {request.waste_items && request.waste_items.length > 1 && ` +${request.waste_items.length - 1} more`}
               </h3>
               <p className="text-[13px] font-medium text-[#6B7280] mt-0.5">
-                {request.total_estimated_weight_kg || 5} kg · {displayDate}
+                {request.total_estimated_weight_kg || 5} kg · {formatPickupDate(request.scheduled_date)}
               </p>
             </div>
           </div>
 
           <div className="text-right flex-shrink-0">
             <span className="text-[18px] sm:text-[20px] font-extrabold text-[#136B3B] leading-tight block">
-              {estimatedPoints}
+              {request.payment ? `₹${request.payment.totalAmount}` : estimatedPoints}
             </span>
             <span
               className={`inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full mt-1 ${
@@ -106,7 +112,10 @@ export default function RequestCard({ request, userRole, onStatusUpdate }: Reque
         {request.waste_items && request.waste_items.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-0.5">
             {request.waste_items.map((item, idx) => {
-              const catInfo = WASTE_CATEGORY_LABELS[item.category];
+              const catInfo = WASTE_CATEGORY_LABELS[item.category] || {
+                label: item.category,
+                icon: '📦',
+              };
               return (
                 <span
                   key={idx}
@@ -176,6 +185,19 @@ export default function RequestCard({ request, userRole, onStatusUpdate }: Reque
               <span>Chat</span>
             </Link>
 
+            {/* Receipt Button for Completed Pickups */}
+            {request.status === 'completed' && (
+              <button
+                type="button"
+                onClick={() => setShowReceiptModal(true)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#E6F4EA] hover:bg-[#D4EBD9] text-[#136B3B] text-xs font-bold transition border border-[#A6D5B8] shadow-xs"
+              >
+                <Receipt className="w-3.5 h-3.5" />
+                <span>Receipt</span>
+              </button>
+            )}
+
+            {/* Collector Lifecycle Actions */}
             {userRole === 'collector' && onStatusUpdate && (
               <>
                 {request.status === 'pending' && (
@@ -200,11 +222,11 @@ export default function RequestCard({ request, userRole, onStatusUpdate }: Reque
 
                 {request.status === 'in_progress' && (
                   <button
-                    onClick={() => onStatusUpdate(request.id, 'completed')}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold rounded-xl shadow-xs transition"
+                    onClick={() => setShowHandoverModal(true)}
+                    className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold rounded-xl shadow-xs transition animate-pulse"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Complete</span>
+                    <span>Weigh &amp; Pay</span>
                   </button>
                 )}
               </>
@@ -212,6 +234,30 @@ export default function RequestCard({ request, userRole, onStatusUpdate }: Reque
           </div>
         </div>
       </article>
+
+      {/* Handover & Doorstep Payment Modal */}
+      {showHandoverModal && (
+        <HandoverModal
+          request={request}
+          onClose={() => setShowHandoverModal(false)}
+          onCompletePayment={async (reqId, payment) => {
+            if (onCompletePayment) {
+              await onCompletePayment(reqId, payment);
+            } else if (onStatusUpdate) {
+              onStatusUpdate(reqId, 'completed');
+            }
+            setShowHandoverModal(false);
+          }}
+        />
+      )}
+
+      {/* Digital Recycling Receipt Modal */}
+      {showReceiptModal && (
+        <ReceiptModal
+          request={request}
+          onClose={() => setShowReceiptModal(false)}
+        />
+      )}
 
       {/* Full-Screen Photo Inspection Lightbox Modal */}
       {selectedPhotoModal && (

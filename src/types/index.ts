@@ -24,6 +24,25 @@ export interface WasteItem {
   created_at?: string;
 }
 
+export type PaymentMethod = 'upi' | 'cash';
+
+export interface VerifiedWasteItem {
+  category: WasteCategory;
+  verifiedWeightKg: number;
+  ratePerKg: number;
+  subtotal: number;
+}
+
+export interface PaymentDetails {
+  transactionId: string;
+  method: PaymentMethod;
+  totalAmount: number;
+  timestamp: string;
+  items: VerifiedWasteItem[];
+  upiVpa?: string;
+  cashGivenBy?: string;
+}
+
 export interface PickupRequest {
   id: string;
   household_id: string;
@@ -36,6 +55,7 @@ export interface PickupRequest {
   notes?: string;
   total_estimated_weight_kg?: number;
   photos?: string[];
+  payment?: PaymentDetails;
   created_at: string;
   updated_at: string;
   // Joined fields
@@ -84,6 +104,15 @@ export interface NearbyKabadiwala {
   acceptedMaterials?: string[];
   type: 'scrap_dealer' | 'recycling_center' | 'collector';
 }
+
+export const STANDARD_SCRAP_RATES: Record<WasteCategory, number> = {
+  PAPER: 15,    // ₹15 / kg
+  PLASTIC: 20,  // ₹20 / kg
+  METAL: 65,    // ₹65 / kg
+  E_WASTE: 110, // ₹110 / kg
+  GLASS: 8,     // ₹8 / kg
+  ORGANIC: 4,   // ₹4 / kg
+};
 
 export const WASTE_CATEGORY_LABELS: Record<WasteCategory, { label: string; icon: string; color: string; estRatePerKg: string }> = {
   PAPER: { label: 'Paper & Cardboard', icon: '📦', color: 'bg-amber-100 text-amber-800 border-amber-300', estRatePerKg: '₹12 - ₹18' },

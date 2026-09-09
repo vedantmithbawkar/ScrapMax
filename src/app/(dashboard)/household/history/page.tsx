@@ -62,6 +62,12 @@ export default function RecyclingHistoryPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
+      let localList: PickupRequest[] = [];
+      try {
+        const raw = localStorage.getItem('local_pickup_requests');
+        if (raw) localList = JSON.parse(raw);
+      } catch {}
+
       if (user) {
         const { data } = await supabase
           .from('pickup_requests')
@@ -71,7 +77,11 @@ export default function RecyclingHistoryPage() {
 
         if (data && data.length > 0) {
           setLiveRequests(data as PickupRequest[]);
+        } else if (localList.length > 0) {
+          setLiveRequests(localList);
         }
+      } else if (localList.length > 0) {
+        setLiveRequests(localList);
       }
     }
     loadRequests();

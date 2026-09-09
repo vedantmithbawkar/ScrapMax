@@ -94,23 +94,68 @@ export default function CollectorDashboard() {
     const { data: { user } } = await supabase.auth.getUser();
 
     // Update in Supabase
-    await supabase
-      .from('pickup_requests')
-      .update({
-        status: newStatus,
-        collector_id: user?.id || 'demo-collector-id',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', requestId);
+    try {
+      await supabase
+        .from('pickup_requests')
+        .update({
+          status: newStatus,
+          collector_id: user?.id || 'demo-collector-id',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', requestId);
+    } catch (err) {
+      console.warn('Supabase status update notice:', err);
+    }
 
     // Local state update
-    setRequests((prev) =>
-      prev.map((req) =>
+    setRequests((prev) => {
+      const updated = prev.map((req) =>
         req.id === requestId
           ? { ...req, status: newStatus, collector_id: user?.id || 'demo-collector-id' }
           : req
-      )
-    );
+      );
+      try {
+        localStorage.setItem('local_pickup_requests', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const handleCompletePayment = async (requestId: string, payment: PickupRequest['payment']) => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    try {
+      await supabase
+        .from('pickup_requests')
+        .update({
+          status: 'completed',
+          collector_id: user?.id || 'demo-collector-id',
+          total_estimated_weight_kg: payment?.items.reduce((a, c) => a + c.verifiedWeightKg, 0),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', requestId);
+    } catch (err) {
+      console.warn('Supabase payment complete notice:', err);
+    }
+
+    setRequests((prev) => {
+      const updated = prev.map((req) =>
+        req.id === requestId
+          ? {
+              ...req,
+              status: 'completed' as const,
+              collector_id: user?.id || 'demo-collector-id',
+              payment,
+              total_estimated_weight_kg: payment?.items.reduce((a, c) => a + c.verifiedWeightKg, 0),
+            }
+          : req
+      );
+      try {
+        localStorage.setItem('local_pickup_requests', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
   };
 
   const filteredRequests = requests.filter((r) => {
@@ -185,6 +230,7 @@ export default function CollectorDashboard() {
                 request={req}
                 userRole="collector"
                 onStatusUpdate={handleStatusUpdate}
+                onCompletePayment={handleCompletePayment}
               />
             ))}
           </div>
