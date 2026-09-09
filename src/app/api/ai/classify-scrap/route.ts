@@ -131,7 +131,15 @@ Respond ONLY with a JSON object matching this schema:
       },
     };
 
-    const apiKey = process.env.GEMINI_API_KEY || GEMINI_API_KEY || '';
+    const rawKey =
+      process.env.GEMINI_API_KEY ||
+      process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
+      process.env.GEMINI_KEY ||
+      process.env.GOOGLE_API_KEY ||
+      process.env.GOOGLE_GEMINI_API_KEY ||
+      GEMINI_API_KEY ||
+      '';
+    const apiKey = rawKey.trim().replace(/^["']|["']$/g, '');
 
     if (!apiKey) {
       return NextResponse.json({
