@@ -76,7 +76,7 @@ CRITICAL FIRST STEP - VALIDITY CHECK:
 Determine whether the uploaded image actually contains recyclable scrap or discarded waste material (e.g., cardboard boxes, scrap paper/books, plastic bottles/containers, iron/steel scrap, e-waste/circuit boards/cables/batteries, machinery parts, glass bottles, metal cans).
 - If the image is unrelated to recyclable scrap — for example: a human person, selfie, face, body, animal, pet, cooked food, dish, scenery, nature, room/building interior, luxury furniture, clothing/shoes, vehicle in use, screenshot, meme, wallpaper, or random non-scrap object:
   Set "is_valid_scrap": false
-  Set "rejection_reason": A clear, polite explanation in simple Hinglish/English explaining what is in the photo and why it's not recyclable scrap (e.g. "Ye photo kabaad/scrap ki nahi hai. Photo mein insaan/khana/furniture dikh raha hai. Kripya recyclable scrap (jaise raddi, plastic bottle, loha, e-waste) ki photo upload karein.")
+  Set "rejection_reason": "No recyclable scrap material detected. The photo appears to show an unrelated subject. Please upload a clear photo of physical recyclable waste (cardboard, paper, plastic, metal, e-waste, or glass)."
   Set "detected_material": "non_scrap"
   Set "recyclability_grade": "Not Applicable"
   Set "deduction_percent": 0
@@ -139,7 +139,7 @@ Respond ONLY with a JSON object matching this schema:
         isKeyMissing: true,
         isValidScrap: false,
         rejectionReason:
-          'GEMINI_API_KEY configure nahi hai. Kripya Vercel Settings -> Environment Variables mein GEMINI_API_KEY add karke project ko Redeploy karein.',
+          'Gemini AI API key is not configured in Vercel. Please add GEMINI_API_KEY under Project Settings ➔ Environment Variables, then click Redeploy.',
         detectedMaterial: 'non_scrap',
         confidence: 0,
         reasoning: 'GEMINI_API_KEY environment variable is not configured.',
@@ -208,7 +208,7 @@ Respond ONLY with a JSON object matching this schema:
           isValidScrap: false,
           rejectionReason:
             geminiResult.rejection_reason ||
-            'Ye photo kisi recyclable kabaad ya scrap material ki nahi lag rahi hai. Kripya kabaad (paper, plastic, metal, e-waste, glass) ki saaf photo upload karein.',
+            'No recyclable scrap material detected in this photo. Please upload a clear photo of physical recyclable waste (cardboard, paper, plastic, metal, e-waste, or glass).',
           detectedMaterial: geminiResult.detected_material || 'non_scrap',
           reasoning:
             geminiResult.reasoning ||
@@ -271,8 +271,8 @@ Respond ONLY with a JSON object matching this schema:
 
     // Safety fallback: if no AI could verify or key is missing, explain clearly
     const fallbackNotice = !apiKey
-      ? 'GEMINI_API_KEY configure nahi hai. Kripya Vercel Settings -> Environment Variables mein GEMINI_API_KEY add karein.'
-      : 'Photo verify nahi ho payi ya camera angle clear nahi hai. Kripya kabaad (raddi, plastic bottle, loha, e-waste) ki saaf photo upload karein.';
+      ? 'Gemini AI API key is not configured in Vercel. Please add GEMINI_API_KEY under Project Settings ➔ Environment Variables, then click Redeploy.'
+      : 'Unable to verify recyclable scrap material in this image. Please ensure the scrap item is clearly visible, well-lit, and centered.';
 
     return NextResponse.json({
       success: true,

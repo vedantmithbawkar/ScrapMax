@@ -559,26 +559,29 @@ export default function RequestPickupPage() {
 
                 {/* API Key Missing Setup Card */}
                 {aiResult && !isAiAnalyzing && aiResult.isKeyMissing && (
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50/50 border-2 border-amber-300 shadow-xs space-y-2">
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                        <Bot className="w-5 h-5 stroke-[2.5]" />
+                  <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-50 to-orange-50/40 border-2 border-amber-300 shadow-xs space-y-3 transition-all">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/20">
+                        <Sparkles className="w-5 h-5 stroke-[2.5]" />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-bold text-amber-950">
-                            ⚙️ Vercel Setup Required: GEMINI_API_KEY Missing
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <h4 className="text-sm font-bold text-amber-950 tracking-tight">
+                            ⚙️ Gemini Vision API Key Required on Vercel
                           </h4>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900 border border-amber-300">
-                            Action Needed on Vercel
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-200 text-amber-900 border border-amber-300/80">
+                            Setup Needed
                           </span>
                         </div>
-                        <p className="text-xs text-amber-900 font-medium mt-1 leading-relaxed">
-                          {aiResult.rejectionReason}
+                        <p className="text-xs text-amber-900/90 font-medium leading-relaxed">
+                          {aiResult.rejectionReason || "The Gemini Multimodal Vision API key is not configured in your Vercel deployment."}
                         </p>
-                        <p className="text-[11px] text-amber-800 mt-1">
-                          💡 <strong>How to fix:</strong> Go to Vercel Dashboard ➔ Project Settings ➔ Environment Variables ➔ Add <code>GEMINI_API_KEY</code> ➔ Click Redeploy.
-                        </p>
+                        <div className="mt-2.5 p-2.5 rounded-xl bg-white/80 border border-amber-200/80 flex items-start gap-2">
+                          <span className="text-xs shrink-0">💡</span>
+                          <p className="text-[11px] text-amber-950 leading-relaxed">
+                            <strong>Quick Fix:</strong> Open <strong>Vercel Dashboard</strong> ➔ <strong>Project Settings</strong> ➔ <strong>Environment Variables</strong> ➔ Add <code className="px-1 py-0.5 rounded bg-amber-100 text-amber-900 font-mono text-[10px]">GEMINI_API_KEY</code> ➔ Click <strong>Redeploy</strong>.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -586,26 +589,29 @@ export default function RequestPickupPage() {
 
                 {/* Invalid / Unrelated Photo Warning Card */}
                 {aiResult && !isAiAnalyzing && !aiResult.isKeyMissing && aiResult.isValidScrap === false && (
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-red-50 via-rose-50 to-amber-50/50 border-2 border-red-300 shadow-xs space-y-2">
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-rose-500/10 via-rose-50 to-red-50/40 border-2 border-rose-300 shadow-xs space-y-3 transition-all">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-rose-600/20">
                         <AlertTriangle className="w-5 h-5 stroke-[2.5]" />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-bold text-red-950">
-                            ❌ Invalid Photo: Recyclable Scrap Not Found
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <h4 className="text-sm font-bold text-rose-950 tracking-tight">
+                            ❌ Invalid Scrap Photo: Non-Recyclable Object
                           </h4>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 border border-red-300">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-800 border border-rose-300/80">
                             Rejected by AI
                           </span>
                         </div>
-                        <p className="text-xs text-red-800 font-medium mt-1 leading-relaxed">
-                          {aiResult.rejectionReason || "Ye photo kisi recyclable kabaad ya scrap material ki nahi lag rahi hai. Kripya kabaad (paper, plastic, metal, e-waste, glass) ki saaf photo upload karein."}
+                        <p className="text-xs text-rose-900/90 font-medium leading-relaxed">
+                          {aiResult.rejectionReason || "No recyclable scrap material was identified in this photo. Please ensure your photo clearly depicts recyclable scrap or discarded waste."}
                         </p>
-                        <p className="text-[11px] text-red-600/90 mt-1">
-                          💡 <strong>Allowed Materials:</strong> Cardboard / raddi, plastic containers/bottles, iron/steel junk, cables/e-waste, or glass bottles.
-                        </p>
+                        <div className="mt-2.5 p-2.5 rounded-xl bg-white/80 border border-rose-200/80 flex items-start gap-2 text-[11px] text-rose-950">
+                          <span className="text-xs shrink-0">♻️</span>
+                          <span className="leading-relaxed">
+                            <strong>Accepted Items:</strong> Cardboard boxes, paper & newspapers, plastic containers/bottles, iron/steel scrap, e-waste/cables, or glass bottles.
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
