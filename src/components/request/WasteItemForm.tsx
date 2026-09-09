@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { WasteCategory, WasteItem, WASTE_CATEGORY_LABELS } from '@/types';
 import { Plus, Trash2, Package } from 'lucide-react';
+import { useI18n } from '@/i18n/context';
 
 interface WasteItemFormProps {
   items: WasteItem[];
@@ -10,6 +11,7 @@ interface WasteItemFormProps {
 }
 
 export default function WasteItemForm({ items, onChange }: WasteItemFormProps) {
+  const { t } = useI18n();
   const [selectedCategory, setSelectedCategory] = useState<WasteCategory>('PAPER');
   const [weight, setWeight] = useState<string>('5');
   const [notes, setNotes] = useState<string>('');
@@ -63,7 +65,7 @@ export default function WasteItemForm({ items, onChange }: WasteItemFormProps) {
                 }`}
               >
                 <span className="text-base select-none">{info.icon}</span>
-                <span>{info.label.split('&')[0].trim()}</span>
+                <span>{t('categoriesShort.' + cat)}</span>
               </button>
             );
           })}
@@ -149,7 +151,7 @@ export default function WasteItemForm({ items, onChange }: WasteItemFormProps) {
                   <div className="flex items-center gap-3">
                     <span className="text-xl select-none">{info.icon}</span>
                     <div>
-                      <p className="text-xs font-bold text-[#191C1E]">{info.label}</p>
+                      <p className="text-xs font-bold text-[#191C1E]">{t('categories.' + item.category)}</p>
                       {item.notes && <p className="text-[11px] text-[#6B7280]">{item.notes}</p>}
                     </div>
                   </div>

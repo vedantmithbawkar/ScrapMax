@@ -7,7 +7,11 @@ import mr from '@/messages/mr.json';
 
 export type SupportedLocale = 'en' | 'hi' | 'mr';
 
-const dictionaries: Record<SupportedLocale, Record<string, string | Record<string, string>>> = {
+export type Messages = {
+  [key: string]: string | Messages;
+};
+
+const dictionaries: Record<SupportedLocale, Messages> = {
   en,
   hi,
   mr,

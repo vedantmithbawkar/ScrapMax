@@ -73,5 +73,51 @@
     "collectorItem3Desc": "Refuse to collect medical waste, chemical containers, pressurized cylinders, or unidentified liquid drums. Report unsafe items immediately.",
     "emergencyTitle": "Emergency Protocols & Helpline",
     "emergencyDesc": "In case of chemical exposure, severe cuts, or physical hazard during pickup, stop work immediately and contact local emergency services or the ScrapMax Support Helpline at 1800-123-SCRAP."
+  },
+  "categoriesShort": {
+    "PAPER": "Paper",
+    "PLASTIC": "Plastic",
+    "METAL": "Metal",
+    "E_WASTE": "E-Waste",
+    "GLASS": "Glass",
+    "ORGANIC": "Organic"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to manage waste pickups and view Supabase data",
+      "demoLabel": "Quick Demo Autofill:",
+      "submit": "Sign In",
+      "submitting": "Signing in...",
+      "guestCta": "Explore as Guest (No Login Required)",
+      "noAccount": "Don't have an account?",
+      "createAccount": "Create one now"
+    },
+    "register": {
+      "title": "Create Your Account",
+      "subtitle": "Join Sampah Jujur circular waste recycling platform",
+      "selectRole": "Select Your Role",
+      "submit": "Register as {role}",
+      "submitting": "Creating account...",
+      "guestCta": "Explore as Guest (No Account Required)",
+      "hasAccount": "Already registered?",
+      "alreadyVerified": "Already verified?",
+      "signInHere": "Sign In Here",
+      "loading": "Loading Registration..."
+    },
+    "labels": {
+      "email": "Email Address",
+      "password": "Password",
+      "fullName": "Full Name",
+      "phone": "Phone Number"
+    },
+    "placeholders": {
+      "email": "name@example.com",
+      "fullName": "Sahil Doe"
+    },
+    "roles": {
+      "household": "🏠 Household",
+      "collector": "🚛 Collector"
+    }
   }
 }

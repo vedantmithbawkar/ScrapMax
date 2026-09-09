@@ -6,9 +6,11 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/common/Navbar';
 import { createClient } from '@/lib/supabase/client';
 import { Recycle, Lock, Mail, ArrowRight, Sparkles, AlertCircle, Info } from 'lucide-react';
+import { useI18n } from '@/i18n/context';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -70,15 +72,15 @@ export default function LoginPage() {
             <div className="inline-flex p-3 bg-[#E6F4EA] border border-[#A6D5B8] rounded-2xl text-[#136B3B] mb-1">
               <Recycle className="w-8 h-8 stroke-[2.2]" />
             </div>
-            <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">Welcome Back</h2>
-            <p className="text-xs text-[#6B7280]">Sign in to manage waste pickups and view Supabase data</p>
+            <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">{t('auth.login.title')}</h2>
+            <p className="text-xs text-[#6B7280]">{t('auth.login.subtitle')}</p>
           </div>
 
           {/* Quick Demo Buttons */}
           <div className="p-3.5 bg-[#F8FAF9] border border-gray-200 rounded-2xl space-y-2">
             <div className="flex items-center gap-1.5 text-xs text-[#526056] font-bold">
               <Sparkles className="w-3.5 h-3.5 text-[#136B3B]" />
-              <span>Quick Demo Autofill:</span>
+              <span>{t('auth.login.demoLabel')}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -86,14 +88,14 @@ export default function LoginPage() {
                 onClick={() => fillDemoAccount('household')}
                 className="px-3 py-2 bg-white hover:bg-emerald-50 text-xs font-bold text-[#136B3B] rounded-xl border border-gray-200 transition touch-feedback shadow-xs"
               >
-                🏠 Household
+                {t('auth.roles.household')}
               </button>
               <button
                 type="button"
                 onClick={() => fillDemoAccount('collector')}
                 className="px-3 py-2 bg-white hover:bg-slate-50 text-xs font-bold text-[#191C1E] rounded-xl border border-gray-200 transition touch-feedback shadow-xs"
               >
-                🚛 Collector
+                {t('auth.roles.collector')}
               </button>
             </div>
           </div>
@@ -123,7 +125,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-[#191C1E] mb-1.5">Email Address</label>
+              <label className="block text-xs font-bold text-[#191C1E] mb-1.5">{t('auth.labels.email')}</label>
               <div className="relative">
                 <input
                   type="email"
@@ -138,7 +140,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#191C1E] mb-1.5">Password</label>
+              <label className="block text-xs font-bold text-[#191C1E] mb-1.5">{t('auth.labels.password')}</label>
               <div className="relative">
                 <input
                   type="password"
@@ -157,13 +159,13 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold rounded-full shadow-sm transition touch-feedback"
             >
-              <span>{loading ? 'Signing in...' : 'Sign In'}</span>
+              <span>{loading ? t('auth.login.submitting') : t('auth.login.submit')}</span>
               <ArrowRight className="w-4 h-4 stroke-[2.5]" />
             </button>
 
             <div className="relative flex py-1 items-center">
               <div className="flex-grow border-t border-gray-200"></div>
-              <span className="flex-shrink mx-3 text-gray-400 text-xs uppercase tracking-wider font-semibold">Or</span>
+              <span className="flex-shrink mx-3 text-gray-400 text-xs uppercase tracking-wider font-semibold">{t('common.or')}</span>
               <div className="flex-grow border-t border-gray-200"></div>
             </div>
 
@@ -171,15 +173,15 @@ export default function LoginPage() {
               href="/household"
               className="w-full flex items-center justify-center gap-2 py-3 bg-[#F8FAF9] hover:bg-[#EAE6F8] text-[#191C1E] border border-gray-200 font-bold rounded-full text-xs transition touch-feedback"
             >
-              <span>Explore as Guest (No Login Required)</span>
+              <span>{t('auth.login.guestCta')}</span>
               <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
             </Link>
           </form>
 
           <p className="text-center text-xs text-[#6B7280]">
-            Don&apos;t have an account?{' '}
+            {t('auth.login.noAccount')}{' '}
             <Link href="/register" className="text-[#136B3B] font-bold hover:underline">
-              Create one now
+              {t('auth.login.createAccount')}
             </Link>
           </p>
 

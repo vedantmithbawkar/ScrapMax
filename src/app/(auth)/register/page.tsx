@@ -7,9 +7,11 @@ import Navbar from '@/components/common/Navbar';
 import { createClient } from '@/lib/supabase/client';
 import { UserRole } from '@/types';
 import { Recycle, User, Phone, Lock, Mail, Truck, ArrowRight } from 'lucide-react';
+import { useI18n } from '@/i18n/context';
 
 function RegisterForm() {
   const router = useRouter();
+  const { t } = useI18n();
   const searchParams = useSearchParams();
 
   const roleParam = searchParams.get('role');
@@ -85,13 +87,13 @@ function RegisterForm() {
   return (
     <div className="w-full max-w-md bg-white border border-gray-100 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">Create Your Account</h2>
-        <p className="text-xs text-[#6B7280]">Join Sampah Jujur circular waste recycling platform</p>
+        <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">{t('auth.register.title')}</h2>
+        <p className="text-xs text-[#6B7280]">{t('auth.register.subtitle')}</p>
       </div>
 
       {/* Role Choice Selector */}
       <div>
-        <label className="block text-xs font-bold text-[#191C1E] mb-2">Select Your Role</label>
+        <label className="block text-xs font-bold text-[#191C1E] mb-2">{t('auth.register.selectRole')}</label>
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
@@ -103,7 +105,7 @@ function RegisterForm() {
             }`}
           >
             <Recycle className="w-6 h-6 stroke-[2.2]" />
-            <span className="text-xs">🏠 Household</span>
+            <span className="text-xs">{t('auth.roles.household')}</span>
           </button>
 
           <button
@@ -116,7 +118,7 @@ function RegisterForm() {
             }`}
           >
             <Truck className="w-6 h-6 stroke-[2.2]" />
-            <span className="text-xs">🚛 Collector</span>
+            <span className="text-xs">{t('auth.roles.collector')}</span>
           </button>
         </div>
       </div>
@@ -131,9 +133,9 @@ function RegisterForm() {
         <div className="p-4 bg-[#E6F4EA] border border-[#A6D5B8] text-[#136B3B] rounded-2xl text-xs leading-relaxed space-y-2 font-medium">
           <p>{successMsg}</p>
           <p>
-            Already verified?{' '}
+            {t('auth.register.alreadyVerified')}{' '}
             <Link href="/login" className="underline font-bold text-[#136B3B]">
-              Sign In Here
+              {t('auth.register.signInHere')}
             </Link>
           </p>
         </div>
@@ -141,14 +143,14 @@ function RegisterForm() {
 
       <form onSubmit={handleRegister} className="space-y-4">
         <div>
-          <label className="block text-xs font-bold text-[#191C1E] mb-1.5">Full Name</label>
+          <label className="block text-xs font-bold text-[#191C1E] mb-1.5">{t('auth.labels.fullName')}</label>
           <div className="relative">
             <input
               type="text"
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="Sahil Doe"
+              placeholder={t('auth.placeholders.fullName')}
               className="w-full pl-10 pr-4 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-sm text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] transition"
             />
             <User className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
@@ -156,7 +158,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-[#191C1E] mb-1.5">Email Address</label>
+          <label className="block text-xs font-bold text-[#191C1E] mb-1.5">{t('auth.labels.email')}</label>
           <div className="relative">
             <input
               type="email"
@@ -171,7 +173,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-[#191C1E] mb-1.5">Phone Number</label>
+          <label className="block text-xs font-bold text-[#191C1E] mb-1.5">{t('auth.labels.phone')}</label>
           <div className="relative">
             <input
               type="tel"
@@ -186,7 +188,7 @@ function RegisterForm() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-[#191C1E] mb-1.5">Password</label>
+          <label className="block text-xs font-bold text-[#191C1E] mb-1.5">{t('auth.labels.password')}</label>
           <div className="relative">
             <input
               type="password"
@@ -205,13 +207,13 @@ function RegisterForm() {
           disabled={loading}
           className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold rounded-full shadow-sm transition touch-feedback"
         >
-          <span>{loading ? 'Creating account...' : `Register as ${role.toUpperCase()}`}</span>
+          <span>{loading ? t('auth.register.submitting') : t('auth.register.submit', { role: t('auth.roles.' + role) })}</span>
           <ArrowRight className="w-4 h-4 stroke-[2.5]" />
         </button>
 
         <div className="relative flex py-1 items-center">
           <div className="flex-grow border-t border-gray-200"></div>
-          <span className="flex-shrink mx-3 text-gray-400 text-xs uppercase tracking-wider font-semibold">Or</span>
+          <span className="flex-shrink mx-3 text-gray-400 text-xs uppercase tracking-wider font-semibold">{t('common.or')}</span>
           <div className="flex-grow border-t border-gray-200"></div>
         </div>
 
@@ -219,15 +221,15 @@ function RegisterForm() {
           href="/household"
           className="w-full flex items-center justify-center gap-2 py-3 bg-[#F8FAF9] hover:bg-[#EAE6F8] text-[#191C1E] border border-gray-200 font-bold rounded-full text-xs transition touch-feedback"
         >
-          <span>Explore as Guest (No Account Required)</span>
+          <span>{t('auth.register.guestCta')}</span>
           <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
         </Link>
       </form>
 
       <p className="text-center text-xs text-[#6B7280]">
-        Already registered?{' '}
+        {t('auth.register.hasAccount')}{' '}
         <Link href="/login" className="text-[#136B3B] font-bold hover:underline">
-          Sign In
+          {t('nav.signIn')}
         </Link>
       </p>
     </div>
@@ -235,11 +237,12 @@ function RegisterForm() {
 }
 
 export default function RegisterPage() {
+  const { t } = useI18n();
   return (
     <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans">
       <Navbar />
       <main className="flex-1 flex items-center justify-center p-4 py-8">
-        <Suspense fallback={<div className="text-[#6B7280] text-xs">Loading Registration...</div>}>
+        <Suspense fallback={<div className="text-[#6B7280] text-xs">{t('auth.register.loading')}</div>}>
           <RegisterForm />
         </Suspense>
       </main>

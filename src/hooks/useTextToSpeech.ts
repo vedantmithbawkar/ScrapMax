@@ -106,9 +106,18 @@ export function useTextToSpeech(): UseTextToSpeechReturn {
     [isSupported, voices, stop]
   );
 
-  // Clean up audio playback when component unmounts or route changes
+  // Clean up audio playback when component unmounts, route changes, or tab loses focus (visibilitychange)
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stop();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       stop();
     };
   }, [stop]);

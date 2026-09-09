@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { PickupRequest, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
+import { PickupRequest, WASTE_CATEGORY_LABELS } from '@/types';
 import { MapPin, MessageSquare, ChevronRight, CheckCircle2, Truck, Camera, X } from 'lucide-react';
+import { useI18n } from '@/i18n/context';
 
 interface RequestCardProps {
   request: PickupRequest;
@@ -35,8 +36,8 @@ function formatPickupDate(dateStr: string) {
 }
 
 export default function RequestCard({ request, userRole, onStatusUpdate }: RequestCardProps) {
+  const { t } = useI18n();
   const [selectedPhotoModal, setSelectedPhotoModal] = useState<string | null>(null);
-  const statusInfo = STATUS_LABELS[request.status];
 
   // Derive primary category icon & name
   const primaryItem = request.waste_items?.[0];
@@ -67,7 +68,7 @@ export default function RequestCard({ request, userRole, onStatusUpdate }: Reque
             </div>
             <div>
               <h3 className="text-[16px] sm:text-[17px] font-bold text-[#191C1E] leading-tight">
-                {primaryCatInfo ? primaryCatInfo.label.split('&')[0].trim() : 'Recyclables'}
+                {primaryItem ? t('categoriesShort.' + primaryItem.category) : 'Recyclables'}
                 {request.waste_items && request.waste_items.length > 1 && ` +${request.waste_items.length - 1} more`}
               </h3>
               <p className="text-[13px] font-medium text-[#6B7280] mt-0.5">
@@ -91,7 +92,7 @@ export default function RequestCard({ request, userRole, onStatusUpdate }: Reque
                   : 'bg-amber-50 text-amber-700'
               }`}
             >
-              {statusInfo.label}
+              {t('status.' + request.status)}
             </span>
           </div>
         </div>
