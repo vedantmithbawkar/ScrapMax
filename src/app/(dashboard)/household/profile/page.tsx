@@ -57,11 +57,11 @@ export default function UserProfilePage() {
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans pb-28">
+    <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans pb-32">
       <Navbar />
 
-      <main className="w-full max-w-[430px] sm:max-w-md mx-auto px-4 sm:px-5 pt-3 flex-1 flex flex-col justify-between">
-        <div className="flex-1 flex flex-col pb-6">
+      <main className="w-full max-w-md mx-auto px-4 sm:px-6 pt-3 flex-1 flex flex-col justify-between">
+        <div className="flex-1 flex flex-col pb-8">
           
           {/* Top Bar */}
           <header className="flex items-center gap-3 pt-2 pb-5" data-purpose="page-header">

@@ -100,34 +100,36 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
   return (
     <nav
       aria-label="Main Mobile Navigation"
-      className="fixed bottom-0 left-0 right-0 max-w-[430px] sm:max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-[#E5E7EB] pt-1.5 pb-3 px-4 flex justify-around items-center z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E5E7EB] pt-2 pb-3 px-4 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]"
     >
-      {tabs.map((tab) => {
-        return (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className="flex flex-col items-center group py-0.5 min-w-[60px] touch-feedback"
-          >
-            {tab.isActive ? (
-              <div className="w-14 h-8 rounded-full bg-[#EAE6F8] flex items-center justify-center transition-all">
-                {tab.icon(true)}
-              </div>
-            ) : (
-              <div className="w-14 h-8 rounded-full flex items-center justify-center transition-all group-hover:bg-[#F2F4F6]">
-                {tab.icon(false)}
-              </div>
-            )}
-            <span
-              className={`text-[11px] mt-0.5 tracking-tight ${
-                tab.isActive ? 'font-bold text-[#136B3B]' : 'font-medium text-[#6B7280]'
-              }`}
+      <div className="max-w-md mx-auto flex justify-around items-center">
+        {tabs.map((tab) => {
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className="flex flex-col items-center group py-0.5 min-w-[60px] touch-feedback"
             >
-              {tab.label}
-            </span>
-          </Link>
-        );
-      })}
+              {tab.isActive ? (
+                <div className="w-14 h-8 rounded-full bg-[#EAE6F8] flex items-center justify-center transition-all">
+                  {tab.icon(true)}
+                </div>
+              ) : (
+                <div className="w-14 h-8 rounded-full flex items-center justify-center transition-all group-hover:bg-[#F2F4F6]">
+                  {tab.icon(false)}
+                </div>
+              )}
+              <span
+                className={`text-[11px] mt-0.5 tracking-tight ${
+                  tab.isActive ? 'font-bold text-[#136B3B]' : 'font-medium text-[#6B7280]'
+                }`}
+              >
+                {tab.label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }

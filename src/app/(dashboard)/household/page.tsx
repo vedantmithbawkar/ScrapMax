@@ -138,10 +138,10 @@ export default function HouseholdDashboard() {
   const activePickup = requests.find((r) => r.status === 'pending' || r.status === 'accepted' || r.status === 'in_progress');
 
   return (
-    <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans selection:bg-[#E6F4EA]">
+    <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans selection:bg-[#E6F4EA] pb-24">
       <Navbar />
 
-      <main className="w-full max-w-[430px] sm:max-w-2xl lg:max-w-4xl mx-auto px-4 sm:px-6 pt-5 pb-28 space-y-6 flex-1">
+      <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-28 space-y-6 flex-1">
         
         {/* User Greeting Header */}
         <header className="flex items-center justify-between pt-1" data-purpose="user-header">

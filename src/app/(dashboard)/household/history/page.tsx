@@ -93,10 +93,10 @@ export default function RecyclingHistoryPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans pb-28">
+    <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans pb-32">
       <Navbar />
 
-      <div className="w-full max-w-[430px] sm:max-w-xl mx-auto px-4 sm:px-5 pt-3 flex-1">
+      <div className="w-full max-w-xl mx-auto px-4 sm:px-6 pt-3 flex-1">
         {/* Top Header */}
         <header className="flex items-center gap-3 pt-3 pb-3">
           <button

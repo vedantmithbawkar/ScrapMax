@@ -313,11 +313,11 @@ export default function RequestPickupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#191C1E] flex flex-col font-sans pb-28">
+    <div className="min-h-screen bg-white text-[#191C1E] flex flex-col font-sans pb-32">
       <Navbar />
 
       {/* Top Header */}
-      <header className="sticky top-16 z-30 bg-white/95 backdrop-blur border-b border-gray-100 px-4 sm:px-6 py-3.5 max-w-md mx-auto w-full flex items-center gap-3">
+      <header className="sticky top-16 z-30 bg-white/95 backdrop-blur border-b border-gray-100 px-4 sm:px-6 py-3.5 max-w-xl mx-auto w-full flex items-center gap-3">
         <button
           onClick={() => router.back()}
           aria-label="Go back"
@@ -329,7 +329,7 @@ export default function RequestPickupPage() {
         <h1 className="text-xl font-bold tracking-tight text-[#191C1E]">Request pickup</h1>
       </header>
 
-      <main className="px-4 sm:px-5 pt-5 space-y-7 max-w-md mx-auto w-full">
+      <main className="px-4 sm:px-6 pt-5 space-y-7 max-w-xl mx-auto w-full">
         <form onSubmit={handleSubmit} className="space-y-7">
           
           {/* Section 1: Recyclable Items & Weights */}
