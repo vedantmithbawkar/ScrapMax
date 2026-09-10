@@ -86,7 +86,7 @@ function RegisterForm() {
     <div className="w-full max-w-md bg-white border border-gray-100 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">Create Your Account</h2>
-        <p className="text-xs text-[#6B7280]">Join Sampah Jujur circular waste recycling platform</p>
+        <p className="text-xs text-[#6B7280]">Join AiCLE circular waste recycling platform</p>
       </div>
 
       {/* Role Choice Selector */}

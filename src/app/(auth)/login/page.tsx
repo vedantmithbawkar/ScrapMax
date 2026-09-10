@@ -51,10 +51,10 @@ export default function LoginPage() {
 
   const fillDemoAccount = (role: 'household' | 'collector') => {
     if (role === 'household') {
-      setEmail('household@sampahjujur.demo');
+      setEmail('household@aicle.demo');
       setPassword('demo123456');
     } else {
-      setEmail('collector@sampahjujur.demo');
+      setEmail('collector@aicle.demo');
       setPassword('demo123456');
     }
   };
@@ -220,7 +220,7 @@ export default function LoginPage() {
                       >
                         Supabase Dashboard &gt; Users
                       </a>
-                      , click <em>&quot;Add user&quot;</em> with email <code className="bg-gray-200 px-1 rounded">household@sampahjujur.demo</code> and password <code className="bg-gray-200 px-1 rounded">demo123456</code> with <strong>&quot;Auto Confirm User&quot;</strong> checked.
+                      , click <em>&quot;Add user&quot;</em> with email <code className="bg-gray-200 px-1 rounded">household@aicle.demo</code> and password <code className="bg-gray-200 px-1 rounded">demo123456</code> with <strong>&quot;Auto Confirm User&quot;</strong> checked.
                     </li>
                   </ol>
                 </div>

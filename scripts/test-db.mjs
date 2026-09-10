@@ -19,7 +19,7 @@ const supabaseAnonKey = keyMatch ? keyMatch[1].trim() : '';
 const serviceRoleKey = serviceKeyMatch ? serviceKeyMatch[1].trim() : '';
 
 console.log('========================================================');
-console.log('🔍 SAMPAH JUJUR - DATABASE INSERT & CONNECTIVITY TEST');
+console.log('🔍 AiCLE - DATABASE INSERT & CONNECTIVITY TEST');
 console.log('========================================================');
 console.log('Supabase URL:', supabaseUrl);
 console.log('Anon Key Present:', !!supabaseAnonKey);

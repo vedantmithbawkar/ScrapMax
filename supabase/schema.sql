@@ -1,5 +1,5 @@
 -- ========================================================
--- SAMPAH JUJUR - SUPABASE DATABASE SCHEMA
+-- AiCLE - SUPABASE DATABASE SCHEMA
 -- ========================================================
 
 -- Enable UUID Extension

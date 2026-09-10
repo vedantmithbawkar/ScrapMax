@@ -545,7 +545,7 @@ export default function RequestPickupPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-emerald-950">ScrapMax Gemini AI Vision</span>
+                        <span className="text-xs font-bold text-emerald-950">AiCLE Gemini AI Vision</span>
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800 font-semibold">
                           Analyzing Image Pixels...
                         </span>

@@ -1,4 +1,6 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AiCLE - Eco-Waste & Circular Recycling Platform
+
+AiCLE connects households with local scrap collectors for honest doorstep waste pickups, transparent rates, instant digital payments, and circular recycling.
 
 ## Getting Started
 

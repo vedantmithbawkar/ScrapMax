@@ -64,7 +64,7 @@ export default function ReceiptModal({ request, onClose }: ReceiptModalProps) {
             <div className="flex justify-between items-start border-b border-gray-100 pb-3">
               <div>
                 <h3 className="font-black text-sm text-[#136B3B] uppercase tracking-wider">
-                  ScrapMax Circular Receipt
+                  AiCLE Circular Receipt
                 </h3>
                 <p className="text-[11px] text-[#6B7280]">Govt. &amp; ULB Compliant Handover</p>
               </div>

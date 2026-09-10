@@ -19,7 +19,7 @@ const supabaseAnonKey = keyMatch ? keyMatch[1].trim() : '';
 const serviceRoleKey = serviceKeyMatch ? serviceKeyMatch[1].trim() : '';
 
 console.log('========================================================');
-console.log('🌱 SAMPAH JUJUR - SUPABASE USER & DATA SEEDING UTILITY');
+console.log('🌱 AiCLE - SUPABASE USER & DATA SEEDING UTILITY');
 console.log('========================================================');
 console.log('Supabase URL:', supabaseUrl);
 console.log('Anon Key Present:', !!supabaseAnonKey);
@@ -38,7 +38,7 @@ if (!serviceRoleKey) {
   console.log('💡 OR CREATE THE DEMO USER DIRECTLY IN SUPABASE DASHBOARD:');
   console.log('1. Go to: https://supabase.com/dashboard/project/qaoczojfnraivdhbxsab/auth/users');
   console.log('2. Click "Add user" -> "Create user"');
-  console.log('3. Email: household@sampahjujur.demo');
+  console.log('3. Email: household@aicle.demo');
   console.log('4. Password: demo123456');
   console.log('5. Check "Auto Confirm User"');
   console.log('6. Click "Create user"');
@@ -54,9 +54,9 @@ const adminSupabase = createClient(supabaseUrl, serviceRoleKey, {
 });
 
 async function seed() {
-  console.log('\n1. Creating or verifying Household Demo User (household@sampahjujur.demo)...');
+  console.log('\n1. Creating or verifying Household Demo User (household@aicle.demo)...');
   const { data: householdUser, error: hError } = await adminSupabase.auth.admin.createUser({
-    email: 'household@sampahjujur.demo',
+    email: 'household@aicle.demo',
     password: 'demo123456',
     email_confirm: true,
     user_metadata: {
@@ -69,9 +69,9 @@ async function seed() {
   let householdId = householdUser?.user?.id;
   if (hError) {
     if (hError.message.includes('already been registered') || hError.message.includes('already exists')) {
-      console.log('ℹ️ household@sampahjujur.demo already exists. Fetching user...');
+      console.log('ℹ️ household demo user already exists. Fetching user...');
       const { data: list } = await adminSupabase.auth.admin.listUsers();
-      const existing = list?.users?.find((u) => u.email === 'household@sampahjujur.demo');
+      const existing = list?.users?.find((u) => u.email === 'household@aicle.demo' || u.email === 'household@sampahjujur.demo');
       householdId = existing?.id;
     } else {
       console.error('❌ Error creating household user:', hError.message);
@@ -90,9 +90,9 @@ async function seed() {
     console.log('✔ Profile row upserted for Household user.');
   }
 
-  console.log('\n2. Creating or verifying Collector Demo User (collector@sampahjujur.demo)...');
+  console.log('\n2. Creating or verifying Collector Demo User (collector@aicle.demo)...');
   const { data: collectorUser, error: cError } = await adminSupabase.auth.admin.createUser({
-    email: 'collector@sampahjujur.demo',
+    email: 'collector@aicle.demo',
     password: 'demo123456',
     email_confirm: true,
     user_metadata: {
@@ -105,9 +105,9 @@ async function seed() {
   let collectorId = collectorUser?.user?.id;
   if (cError) {
     if (cError.message.includes('already been registered') || cError.message.includes('already exists')) {
-      console.log('ℹ️ collector@sampahjujur.demo already exists. Fetching user...');
+      console.log('ℹ️ collector demo user already exists. Fetching user...');
       const { data: list } = await adminSupabase.auth.admin.listUsers();
-      const existing = list?.users?.find((u) => u.email === 'collector@sampahjujur.demo');
+      const existing = list?.users?.find((u) => u.email === 'collector@aicle.demo' || u.email === 'collector@sampahjujur.demo');
       collectorId = existing?.id;
     } else {
       console.error('❌ Error creating collector user:', cError.message);
@@ -178,7 +178,7 @@ async function seed() {
   console.log('\n========================================================');
   console.log('🎉 SEEDING COMPLETE!');
   console.log('You can now log in directly at http://localhost:3000/login using:');
-  console.log('  Email: household@sampahjujur.demo');
+  console.log('  Email: household@aicle.demo');
   console.log('  Password: demo123456');
   console.log('========================================================\n');
 }

@@ -1,7 +1,7 @@
 {
-  "name": "ScrapMax - Circular Waste & Recycling",
-  "short_name": "ScrapMax",
-  "description": "Turn household recyclables into value with ScrapMax circular scrap pickups, smart alerts, and verified store map.",
+  "name": "AiCLE - Eco-Waste & Circular Recycling System",
+  "short_name": "AiCLE",
+  "description": "Turn household recyclables into value with AiCLE circular scrap pickups and live collector tracking.",
   "start_url": "/",
   "id": "/",
   "display": "standalone",

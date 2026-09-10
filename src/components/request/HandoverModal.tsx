@@ -92,7 +92,7 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
   };
 
   // Standard UPI URI standard format: upi://pay?pa=...&pn=...&am=...
-  const upiIntentUri = `upi://pay?pa=${encodeURIComponent(upiVpa)}&pn=${encodeURIComponent(request.household?.full_name || 'Citizen User')}&am=${totalPayout}&cu=INR&tn=${encodeURIComponent(`ScrapMax Pickup #${request.id.slice(0, 6)}`)}`;
+  const upiIntentUri = `upi://pay?pa=${encodeURIComponent(upiVpa)}&pn=${encodeURIComponent(request.household?.full_name || 'Citizen User')}&am=${totalPayout}&cu=INR&tn=${encodeURIComponent(`AiCLE Pickup #${request.id.slice(0, 6)}`)}`;
   // Free online SVG QR Code generator for quick camera scanning
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiIntentUri)}`;
 
@@ -352,7 +352,7 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
             <div className="p-4 sm:p-5 bg-white border border-gray-200 rounded-2xl shadow-xs space-y-3 text-xs" id="receipt-slip">
               <div className="flex justify-between items-start border-b border-gray-100 pb-3">
                 <div>
-                  <h3 className="font-black text-sm text-[#136B3B] uppercase tracking-wider">ScrapMax Circular Receipt</h3>
+                  <h3 className="font-black text-sm text-[#136B3B] uppercase tracking-wider">AiCLE Circular Receipt</h3>
                   <p className="text-[11px] text-[#6B7280]">Govt. &amp; ULB Compliant Handover Proof</p>
                 </div>
                 <div className="text-right">
