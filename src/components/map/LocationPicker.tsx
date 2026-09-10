@@ -15,9 +15,9 @@ interface LocationPickerProps {
 
 export default function LocationPicker({
   onLocationSelect,
-  defaultLat = 19.1726, // Default Mulund West, Mumbai MMR
-  defaultLng = 72.9565,
-  defaultAddress = 'LBS Marg, Mulund West, Mumbai',
+  defaultLat = 19.0760,
+  defaultLng = 72.8777,
+  defaultAddress = '',
 }: LocationPickerProps) {
   const [position, setPosition] = useState<[number, number]>([defaultLat, defaultLng]);
   const [address, setAddress] = useState<string>(defaultAddress);
@@ -42,6 +42,9 @@ export default function LocationPicker({
       if (data && data.display_name) {
         setAddress(data.display_name);
         onLocationSelect(lat, lng, data.display_name);
+        if (showKabadiwalas) {
+          loadNearbyKabadiwalas(lat, lng, data.display_name);
+        }
       } else {
         const fallbackStr = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
         setAddress(fallbackStr);
@@ -57,10 +60,6 @@ export default function LocationPicker({
   const handleMapClick = (lat: number, lng: number) => {
     setPosition([lat, lng]);
     fetchAddress(lat, lng);
-    // If nearby dealers are currently open, refresh for the new pin
-    if (showKabadiwalas) {
-      loadNearbyKabadiwalas(lat, lng);
-    }
   };
 
   // Browser HTML5 Geolocation API
@@ -77,20 +76,17 @@ export default function LocationPicker({
         setPosition([latitude, longitude]);
         fetchAddress(latitude, longitude);
         setIsLocating(false);
-        if (showKabadiwalas) {
-          loadNearbyKabadiwalas(latitude, longitude);
-        }
       },
       (err) => {
         console.warn('GPS notice:', err);
-        alert('Could not retrieve GPS location. Please click on the map to set your address.');
+        alert('Could not retrieve GPS location. Please search your area or click on the map.');
         setIsLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
-  // Nominatim Address Search
+  // Nominatim Address Search for ANY locality across India
   const handleSearch = async (e?: React.FormEvent | React.KeyboardEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -98,7 +94,10 @@ export default function LocationPicker({
     setIsSearching(true);
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          searchQuery + ', India'
+        )}&countrycodes=in&limit=1`,
+        { headers: { 'User-Agent': 'ScrapMax-India-App/1.0' } }
       );
       const results = await res.json();
       if (results && results.length > 0) {
@@ -108,11 +107,10 @@ export default function LocationPicker({
         setPosition([lat, lng]);
         setAddress(first.display_name);
         onLocationSelect(lat, lng, first.display_name);
-        if (showKabadiwalas) {
-          loadNearbyKabadiwalas(lat, lng);
-        }
+        // Automatically load and display scrap dealers for this searched location
+        loadNearbyKabadiwalas(lat, lng, first.display_name);
       } else {
-        alert('No location results found for that address.');
+        alert('No location results found for that area in India. Please check the spelling.');
       }
     } catch (err) {
       console.warn('Search notice:', err);
@@ -121,12 +119,16 @@ export default function LocationPicker({
     }
   };
 
-  // Fetch nearby Kabadiwalas using OpenStreetMap Overpass & Local Scrappers
-  const loadNearbyKabadiwalas = async (lat = position[0], lng = position[1]) => {
+  // Fetch nearby authentic scrap dealers dynamically tailored to current location
+  const loadNearbyKabadiwalas = async (
+    lat = position[0],
+    lng = position[1],
+    addrHint = address
+  ) => {
     setIsLoadingKabadi(true);
     setShowKabadiwalas(true);
     try {
-      const results = await fetchNearbyKabadiwalas(lat, lng, 5000);
+      const results = await fetchNearbyKabadiwalas(lat, lng, 5000, addrHint);
       setNearbyKabadiwalas(results);
       if (results.length > 0) {
         setSelectedKabadi(results[0]);
@@ -195,7 +197,7 @@ export default function LocationPicker({
           type="button"
           onClick={() => {
             if (!showKabadiwalas) {
-              loadNearbyKabadiwalas();
+              loadNearbyKabadiwalas(position[0], position[1], address);
             } else {
               setShowKabadiwalas(false);
             }

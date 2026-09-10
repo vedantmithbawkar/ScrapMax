@@ -19,9 +19,9 @@ export default function RequestPickupPage() {
   // Form State: strictly require photo upload and AI verification before items can be added
   const [items, setItems] = useState<WasteItem[]>([]);
   const [isAiAdded, setIsAiAdded] = useState<boolean>(false);
-  const [address, setAddress] = useState<string>('LBS Marg, Mulund West, Mumbai');
-  const [latitude, setLatitude] = useState<number>(19.1726);
-  const [longitude, setLongitude] = useState<number>(72.9565);
+  const [address, setAddress] = useState<string>('');
+  const [latitude, setLatitude] = useState<number>(19.0760);
+  const [longitude, setLongitude] = useState<number>(72.8777);
 
   // Auto-detect GPS on initial load across India
   useEffect(() => {
@@ -38,9 +38,9 @@ export default function RequestPickupPage() {
           } catch {}
         },
         () => {
-          // Keep Mulund West, Mumbai as default
+          // GPS denied or timed out; user can type or search any address
         },
-        { timeout: 5000 }
+        { timeout: 6000 }
       );
     }
   }, []);
