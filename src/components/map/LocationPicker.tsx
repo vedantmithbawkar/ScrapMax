@@ -15,9 +15,9 @@ interface LocationPickerProps {
 
 export default function LocationPicker({
   onLocationSelect,
-  defaultLat = 12.9716, // Default Bangalore / city center
-  defaultLng = 77.5946,
-  defaultAddress = '',
+  defaultLat = 19.1726, // Default Mulund West, Mumbai MMR
+  defaultLng = 72.9565,
+  defaultAddress = 'LBS Marg, Mulund West, Mumbai',
 }: LocationPickerProps) {
   const [position, setPosition] = useState<[number, number]>([defaultLat, defaultLng]);
   const [address, setAddress] = useState<string>(defaultAddress);

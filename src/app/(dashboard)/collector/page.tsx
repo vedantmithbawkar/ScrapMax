@@ -20,9 +20,9 @@ const DEMO_COLLECTOR_REQUESTS: PickupRequest[] = [
     id: 'req-c301-demo-uuid',
     household_id: 'user-h101',
     status: 'pending',
-    address: 'Indiranagar 100ft Road, Bangalore, Karnataka',
-    latitude: 12.9784,
-    longitude: 77.6408,
+    address: 'LBS Marg, Opp. Marathon Monte Carlo, Mulund West, Mumbai',
+    latitude: 19.1726,
+    longitude: 72.9565,
     scheduled_date: 'Today · 5:30 PM',
     notes: 'Items packed in bags in garage.',
     total_estimated_weight_kg: 28.5,
@@ -49,9 +49,9 @@ const DEMO_COLLECTOR_REQUESTS: PickupRequest[] = [
     id: 'req-c302-demo-uuid',
     household_id: 'user-h102',
     status: 'pending',
-    address: 'MG Road, Commercial Street, Bangalore',
-    latitude: 12.9756,
-    longitude: 77.6068,
+    address: 'Nehru Road, Near Mulund Railway Station West, Mulund West, Mumbai',
+    latitude: 19.1745,
+    longitude: 72.9535,
     scheduled_date: 'Today · 6:00 PM',
     notes: 'Copper scrap and e-waste motherboards',
     total_estimated_weight_kg: 42.0,
@@ -82,14 +82,58 @@ export default function CollectorDashboard() {
 
   useEffect(() => {
     async function loadCollectorData() {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('pickup_requests')
-        .select('*, waste_items(*)')
-        .order('created_at', { ascending: false });
+      // 1. Check local pickup requests created by households
+      try {
+        const raw = localStorage.getItem('local_pickup_requests');
+        if (raw) {
+          const local = JSON.parse(raw);
+          if (Array.isArray(local) && local.length > 0) {
+            // Migrate legacy Bangalore entries to Mulund
+            const migrated = local.map((req: PickupRequest) => {
+              if (
+                req.address?.includes('Indiranagar') ||
+                (Math.abs((req.latitude || 0) - 12.9784) < 0.1 &&
+                  Math.abs((req.longitude || 0) - 77.6408) < 0.1)
+              ) {
+                return {
+                  ...req,
+                  address: 'LBS Marg, Mulund West, Mumbai',
+                  latitude: 19.1726,
+                  longitude: 72.9565,
+                };
+              }
+              return req;
+            });
+            localStorage.setItem('local_pickup_requests', JSON.stringify(migrated));
 
-      if (data && data.length > 0) {
-        setRequests(data as PickupRequest[]);
+            setRequests((prev) => {
+              const combined = [...migrated, ...prev];
+              const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values());
+              return unique as PickupRequest[];
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Local request load notice:', err);
+      }
+
+      // 2. Query Supabase
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('pickup_requests')
+          .select('*, waste_items(*)')
+          .order('created_at', { ascending: false });
+
+        if (data && data.length > 0) {
+          setRequests((prev) => {
+            const combined = [...(data as PickupRequest[]), ...prev];
+            const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values());
+            return unique as PickupRequest[];
+          });
+        }
+      } catch (err) {
+        console.warn('Supabase collector load notice:', err);
       }
     }
     loadCollectorData();
@@ -99,34 +143,35 @@ export default function CollectorDashboard() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
+    const collectorObj = {
+      id: user?.id || 'collector-c201',
+      full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+      phone: '+91 98201 45892',
+      role: 'collector' as const,
+      rating: 4.9,
+      completed_pickups: 126,
+    };
+
     // Trigger live smart notifications
     if (newStatus === 'accepted') {
-      triggerCollectorAcceptedNotification('Verified ScrapMax Collector');
+      triggerCollectorAcceptedNotification('Ramesh Kumar (Verified Kabadiwala)');
     } else if (newStatus === 'in_progress') {
       triggerCollectorNearNotification(500);
     } else if (newStatus === 'completed') {
       triggerPickupCompletedNotification();
     }
 
-    // Update in Supabase
-    try {
-      await supabase
-        .from('pickup_requests')
-        .update({
-          status: newStatus,
-          collector_id: user?.id || 'demo-collector-id',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', requestId);
-    } catch (err) {
-      console.warn('Supabase status update notice:', err);
-    }
-
     // Local state update
     setRequests((prev) => {
       const updated = prev.map((req) =>
         req.id === requestId
-          ? { ...req, status: newStatus, collector_id: user?.id || 'demo-collector-id' }
+          ? {
+              ...req,
+              status: newStatus,
+              collector_id: collectorObj.id,
+              collector: collectorObj,
+              updated_at: new Date().toISOString(),
+            }
           : req
       );
       try {
@@ -134,6 +179,20 @@ export default function CollectorDashboard() {
       } catch {}
       return updated;
     });
+
+    // Update in Supabase
+    try {
+      await supabase
+        .from('pickup_requests')
+        .update({
+          status: newStatus,
+          collector_id: collectorObj.id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', requestId);
+    } catch (err) {
+      console.warn('Supabase status update notice:', err);
+    }
   };
 
   const handleCompletePayment = async (requestId: string, payment: PickupRequest['payment']) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Navbar from '@/components/common/Navbar';
@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client';
 import { compressImage, dataURLtoBlob } from '@/lib/image-utils';
 import { WasteItem, WasteCategory } from '@/types';
 import { ArrowLeft, CheckCircle, MapPin, Camera, X, Plus, Loader2, Sparkles, Bot, AlertTriangle } from 'lucide-react';
+import { reverseGeocodeCoords } from '@/lib/recycling-store-service';
 
 export default function RequestPickupPage() {
   const router = useRouter();
@@ -18,9 +19,31 @@ export default function RequestPickupPage() {
   // Form State: strictly require photo upload and AI verification before items can be added
   const [items, setItems] = useState<WasteItem[]>([]);
   const [isAiAdded, setIsAiAdded] = useState<boolean>(false);
-  const [address, setAddress] = useState<string>('Indiranagar 100ft Road, Bangalore');
-  const [latitude, setLatitude] = useState<number>(12.9716);
-  const [longitude, setLongitude] = useState<number>(77.5946);
+  const [address, setAddress] = useState<string>('LBS Marg, Mulund West, Mumbai');
+  const [latitude, setLatitude] = useState<number>(19.1726);
+  const [longitude, setLongitude] = useState<number>(72.9565);
+
+  // Auto-detect GPS on initial load across India
+  useEffect(() => {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setLatitude(lat);
+          setLongitude(lng);
+          try {
+            const locName = await reverseGeocodeCoords(lat, lng);
+            if (locName) setAddress(locName);
+          } catch {}
+        },
+        () => {
+          // Keep Mulund West, Mumbai as default
+        },
+        { timeout: 5000 }
+      );
+    }
+  }, []);
   const [preferredTime, setPreferredTime] = useState<'Today' | 'Tomorrow' | 'Weekend'>('Today');
   const [notes, setNotes] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);

@@ -9,8 +9,8 @@ import { MessageSquare, MapPin, Clock, ChevronRight } from 'lucide-react';
 const DEMO_CHATS = [
   {
     requestId: 'req-c301-demo-uuid',
-    householdName: 'Household — Indiranagar',
-    address: 'Indiranagar 100ft Road, Bangalore',
+    householdName: 'Household — Mulund West',
+    address: 'LBS Marg, Opp. Marathon Monte Carlo, Mulund West, Mumbai',
     status: 'accepted',
     lastMessage: 'Items packed in bags in garage.',
     time: '5 min ago',
@@ -18,8 +18,8 @@ const DEMO_CHATS = [
   },
   {
     requestId: 'req-c302-demo-uuid',
-    householdName: 'Household — MG Road',
-    address: 'MG Road, Commercial Street, Bangalore',
+    householdName: 'Household — Mulund Station',
+    address: 'Nehru Road, Near Mulund Railway Station West, Mulund West, Mumbai',
     status: 'in_progress',
     lastMessage: 'I\'ll be there in 10 minutes!',
     time: '1 hr ago',
