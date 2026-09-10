@@ -7,7 +7,8 @@ import BottomNav from '@/components/common/BottomNav';
 import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Star } from 'lucide-react';
+import RatingModal from '@/components/request/RatingModal';
 
 const DEMO_HISTORY_LOGS = [
   {
@@ -56,6 +57,7 @@ export default function RecyclingHistoryPage() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<'All' | 'Completed' | 'Pending'>('All');
   const [liveRequests, setLiveRequests] = useState<PickupRequest[]>([]);
+  const [selectedLogToRate, setSelectedLogToRate] = useState<{ id: string; category: string } | null>(null);
 
   useEffect(() => {
     async function loadRequests() {
@@ -188,13 +190,32 @@ export default function RecyclingHistoryPage() {
               {/* Sub-divider line */}
               <hr className="border-t border-gray-100 mb-2.5" />
 
-              <p className="text-[12px] font-medium text-[#6B7280] tracking-normal">
-                {log.notes}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[12px] font-medium text-[#6B7280] tracking-normal">
+                  {log.notes}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSelectedLogToRate({ id: log.id, category: log.category })}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs transition"
+                >
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                  <span>Rate</span>
+                </button>
+              </div>
             </article>
           ))}
         </section>
       </div>
+
+      {/* Rating & Review Modal */}
+      {selectedLogToRate && (
+        <RatingModal
+          requestId={selectedLogToRate.id}
+          collectorName={`${selectedLogToRate.category} Pickup Partner`}
+          onClose={() => setSelectedLogToRate(null)}
+        />
+      )}
 
       {/* Docked Stitch Bottom Navigation */}
       <BottomNav role="household" />
