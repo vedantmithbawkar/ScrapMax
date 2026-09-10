@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { PickupRequest, PaymentDetails, PaymentMethod, VerifiedWasteItem, STANDARD_SCRAP_RATES, WASTE_CATEGORY_LABELS, WasteCategory } from '@/types';
-import { X, CheckCircle2, QrCode, Banknote, ShieldCheck, Scale, ArrowRight, Sparkles, ExternalLink, Printer } from 'lucide-react';
+import { X, CheckCircle2, QrCode, Banknote, Scale, ArrowRight, Sparkles, ExternalLink, Printer } from 'lucide-react';
 
 interface HandoverModalProps {
   request: PickupRequest;
@@ -30,7 +30,6 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
   const [items, setItems] = useState<VerifiedWasteItem[]>(initialItems);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi');
   const [upiVpa, setUpiVpa] = useState<string>('kabadiwala@upi');
-  const [customNote, setCustomNote] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [completedPayment, setCompletedPayment] = useState<PaymentDetails | null>(null);
 

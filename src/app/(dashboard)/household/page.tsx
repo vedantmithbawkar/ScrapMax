@@ -248,24 +248,6 @@ export default function HouseholdDashboard() {
             </Link>
           </div>
 
-          {/* Pay Collector Card - shown when there's an active accepted pickup */}
-          {activePickup && (activePickup.status === 'accepted' || activePickup.status === 'in_progress') && (
-            <Link
-              href={`/household/payment/${activePickup.id}`}
-              className="bg-[#136B3B] rounded-3xl p-5 text-left flex flex-col justify-between h-[100px] shadow-xs hover:shadow-md transition active:scale-[0.98] touch-feedback"
-            >
-              <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">
-                  <IndianRupee className="w-5 h-5 stroke-[2.2]" />
-                </div>
-                <ArrowRight className="w-5 h-5 text-white/60" />
-              </div>
-              <div>
-                <p className="font-bold text-white text-[16px] leading-tight">Pay collector</p>
-                <p className="text-xs text-[#A6D5B8] font-medium mt-0.5">UPI &middot; QR code &middot; GPay &middot; PhonePe</p>
-              </div>
-            </Link>
-          )}
         </section>
 
         {/* Active Pickup Section */}
@@ -275,8 +257,8 @@ export default function HouseholdDashboard() {
               <h3 className="text-lg font-bold text-[#191C1E] tracking-tight">
                 Active pickup
               </h3>
-              <Link href={`/chat/${activePickup.id}`} className="text-xs font-bold text-[#136B3B] hover:underline">
-                View Chat
+              <Link href={`/household/track/${activePickup.id}`} className="text-xs font-bold text-[#136B3B] hover:underline">
+                Track &amp; Chat
               </Link>
             </div>
             
@@ -295,13 +277,20 @@ export default function HouseholdDashboard() {
                 </div>
               </div>
               
-              <Link
-                href={`/chat/${activePickup.id}`}
-                className="flex items-center space-x-1 text-xs font-bold text-[#136B3B] hover:opacity-80 transition"
-              >
-                <span>Track</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/household/track/${activePickup.id}`}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-[#EAF5EE] border border-[#A6D5B8] text-[#136B3B] text-xs font-bold rounded-xl hover:bg-[#D4EBD9] transition"
+                >
+                  <span>Track</span>
+                </Link>
+                <Link
+                  href={`/household/track/${activePickup.id}`}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-[#136B3B] text-white text-xs font-bold rounded-xl hover:bg-[#0F5730] transition"
+                >
+                  <span>Chat</span>
+                </Link>
+              </div>
             </div>
           </section>
         )}

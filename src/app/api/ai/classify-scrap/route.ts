@@ -168,7 +168,7 @@ Respond ONLY with a JSON object matching this schema:
       )
     ) as string[];
 
-    let geminiResult: any = null;
+    let geminiResult: Record<string, unknown> | null = null;
     let successfulModel = candidateModels[0] || 'gemini-3.6-flash';
 
     if (apiKey) {
@@ -190,14 +190,14 @@ Respond ONLY with a JSON object matching this schema:
             const data = await response.json();
             const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
             if (rawText) {
-              geminiResult = JSON.parse(rawText);
+              geminiResult = JSON.parse(rawText) as Record<string, unknown>;
               successfulModel = modelName;
               break;
             }
           } else {
             console.warn(`Model ${modelName} returned status ${response.status}, trying next model...`);
           }
-        } catch (_err) {
+        } catch {
           console.warn(`Model ${modelName} failed or timed out, trying next model...`);
         }
       }
@@ -292,10 +292,11 @@ Respond ONLY with a JSON object matching this schema:
       engine: 'ScrapMax Guardrail Engine',
       isRealAi: false,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in /api/ai/classify-scrap:', error);
+    const message = error instanceof Error ? error.message : 'Internal server error during classification';
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error during classification' },
+      { success: false, error: message },
       { status: 500 }
     );
   }

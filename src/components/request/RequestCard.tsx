@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { PickupRequest, PaymentDetails, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
-import { MapPin, MessageSquare, ChevronRight, CheckCircle2, Truck, Camera, X, Receipt, QrCode } from 'lucide-react';
+import { MapPin, MessageSquare, ChevronRight, CheckCircle2, Truck, Camera, X, Receipt, Flag, Star } from 'lucide-react';
 import HandoverModal from './HandoverModal';
 import ReceiptModal from './ReceiptModal';
+import ReportModal from './ReportModal';
+import RatingModal from './RatingModal';
 
 interface RequestCardProps {
   request: PickupRequest;
@@ -44,6 +46,22 @@ export default function RequestCard({
   const [selectedPhotoModal, setSelectedPhotoModal] = useState<string | null>(null);
   const [showHandoverModal, setShowHandoverModal] = useState<boolean>(false);
   const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
+  const [showReportModal, setShowReportModal] = useState<boolean>(false);
+  const [showRatingModal, setShowRatingModal] = useState<boolean>(false);
+  const [userRating, setUserRating] = useState<number | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem(`scrapmax_rating_${request.id}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed?.rating ?? null;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  });
+
   const statusInfo = STATUS_LABELS[request.status];
 
   // Derive primary category icon & name
@@ -177,13 +195,23 @@ export default function RequestCard({
           </p>
 
           <div className="flex items-center gap-2">
-            <Link
-              href={`/chat/${request.id}`}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#F4FAF6] hover:bg-[#E6F4EA] text-[#136B3B] text-xs font-bold transition border border-[#DDE3EA]"
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>Chat</span>
-            </Link>
+            {userRole === 'household' ? (
+              <Link
+                href={`/household/track/${request.id}`}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#F4FAF6] hover:bg-[#E6F4EA] text-[#136B3B] text-xs font-bold transition border border-[#DDE3EA]"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Chat</span>
+              </Link>
+            ) : (
+              <Link
+                href={`/collector/chat/${request.id}`}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#F4FAF6] hover:bg-[#E6F4EA] text-[#136B3B] text-xs font-bold transition border border-[#DDE3EA]"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Chat</span>
+              </Link>
+            )}
 
             {/* Receipt Button for Completed Pickups */}
             {request.status === 'completed' && (
@@ -197,15 +225,34 @@ export default function RequestCard({
               </button>
             )}
 
-            {/* Pay Now Button for Household on Accepted/In-Progress Pickups */}
-            {userRole === 'household' && (request.status === 'accepted' || request.status === 'in_progress') && (
-              <Link
-                href={`/household/payment/${request.id}`}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold transition shadow-xs"
+            {/* Rate Experience Button for Completed Pickups — household only */}
+            {request.status === 'completed' && userRole === 'household' && (
+              <button
+                type="button"
+                id={`rate-btn-${request.id}`}
+                onClick={() => setShowRatingModal(true)}
+                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition border shadow-xs ${
+                  userRating
+                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
+                    : 'bg-white hover:bg-amber-50 text-amber-700 border-amber-200'
+                }`}
               >
-                <QrCode className="w-3.5 h-3.5" />
-                <span>Pay</span>
-              </Link>
+                <Star className={`w-3.5 h-3.5 ${userRating ? 'fill-amber-400 text-amber-500' : 'text-amber-500'}`} />
+                <span>{userRating ? `${userRating}★ Rated` : 'Rate'}</span>
+              </button>
+            )}
+
+            {/* Report Problem Button — household only */}
+            {userRole === 'household' && (
+              <button
+                type="button"
+                id={`report-btn-${request.id}`}
+                onClick={() => setShowReportModal(true)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 text-xs font-bold transition border border-red-100"
+              >
+                <Flag className="w-3.5 h-3.5" />
+                <span>Report</span>
+              </button>
             )}
 
             {/* Collector Lifecycle Actions */}
@@ -270,6 +317,15 @@ export default function RequestCard({
         />
       )}
 
+      {/* Report / Problem Modal */}
+      {showReportModal && (
+        <ReportModal
+          requestId={request.id}
+          requestAddress={request.address}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
+
       {/* Full-Screen Photo Inspection Lightbox Modal */}
       {selectedPhotoModal && (
         <div
@@ -307,6 +363,16 @@ export default function RequestCard({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Rating & Review Modal */}
+      {showRatingModal && (
+        <RatingModal
+          requestId={request.id}
+          collectorName={request.collector?.full_name || 'Kabadiwala Partner'}
+          onClose={() => setShowRatingModal(false)}
+          onRatingSubmitted={(r) => setUserRating(r)}
+        />
       )}
     </>
   );
