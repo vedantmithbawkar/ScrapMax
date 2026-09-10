@@ -34,39 +34,61 @@ const DEMO_PAYMENT_DATA = {
 const UPI_APPS = [
   {
     id: 'gpay',
+    name: 'Google Pay',
     shortName: 'GPay',
-    emoji: '🟢',
-    color: 'bg-[#4285F4]',
-    hoverColor: 'hover:bg-[#3367D6]',
+    logo: '/payment-apps/gpay.jpg',
+    bgColor: '#ffffff',
+    borderColor: '#4285F4',
+    textColor: '#3C4043',
+    badgeColor: '#4285F4',
     scheme: (upi: string, amount: number, note: string) =>
-      `tez://upi/pay?pa=${upi}&pn=ScrapMax&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`,
+      `tez://upi/pay?pa=${encodeURIComponent(upi)}&pn=ScrapMax&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}`,
+    fallbackScheme: (upi: string, amount: number, note: string) =>
+      `gpay://upi/pay?pa=${encodeURIComponent(upi)}&pn=ScrapMax&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}`,
   },
   {
     id: 'phonepe',
+    name: 'PhonePe',
     shortName: 'PhonePe',
-    emoji: '💜',
-    color: 'bg-[#5F259F]',
-    hoverColor: 'hover:bg-[#4A1A7E]',
+    logo: '/payment-apps/phonepe.jpg',
+    bgColor: '#ffffff',
+    borderColor: '#5F259F',
+    textColor: '#5F259F',
+    badgeColor: '#5F259F',
     scheme: (upi: string, amount: number, note: string) =>
-      `phonepe://pay?pa=${upi}&pn=ScrapMax&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`,
+      `phonepe://pay?pa=${encodeURIComponent(upi)}&pn=ScrapMax&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}`,
+    fallbackScheme: (upi: string, amount: number, note: string) =>
+      `upi://pay?pa=${encodeURIComponent(upi)}&pn=ScrapMax&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}`,
   },
   {
     id: 'paytm',
+    name: 'Paytm',
     shortName: 'Paytm',
-    emoji: '🔵',
-    color: 'bg-[#00BAF2]',
-    hoverColor: 'hover:bg-[#009BC9]',
+    // Official SVG from pwebassets.paytm.com (Paytm press kit header logo)
+    logo: '/payment-apps/paytm.svg',
+    bgColor: '#ffffff',
+    borderColor: '#002970',
+    textColor: '#002970',
+    badgeColor: '#00BAF2',
     scheme: (upi: string, amount: number, note: string) =>
-      `paytmmp://pay?pa=${upi}&pn=ScrapMax&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`,
+      `paytmmp://pay?pa=${encodeURIComponent(upi)}&pn=ScrapMax&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}`,
+    fallbackScheme: (upi: string, amount: number, note: string) =>
+      `upi://pay?pa=${encodeURIComponent(upi)}&pn=ScrapMax&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}`,
   },
   {
     id: 'bhim',
+    name: 'BHIM UPI',
     shortName: 'BHIM',
-    emoji: '🇮🇳',
-    color: 'bg-[#00529C]',
-    hoverColor: 'hover:bg-[#003E75]',
+    // SVG matching NPCI BHIM brand: grey italic letters + tricolor arrows + subtitle
+    logo: '/payment-apps/bhim.svg',
+    bgColor: '#ffffff',
+    borderColor: '#E5E7EB',
+    textColor: '#374151',
+    badgeColor: '#F97316',
     scheme: (upi: string, amount: number, note: string) =>
-      `upi://pay?pa=${upi}&pn=ScrapMax&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`,
+      `upi://pay?pa=${encodeURIComponent(upi)}&pn=ScrapMax&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}`,
+    fallbackScheme: (upi: string, amount: number, note: string) =>
+      `upi://pay?pa=${encodeURIComponent(upi)}&pn=ScrapMax&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}`,
   },
 ];
 
@@ -82,6 +104,7 @@ export default function PaymentPage() {
   const [activeTab, setActiveTab] = useState<'apps' | 'qr'>('apps');
   const [copied, setCopied] = useState(false);
   const [paymentDone, setPaymentDone] = useState(false);
+  const [selectedApp, setSelectedApp] = useState<string | null>(null);
 
   const data = { ...DEMO_PAYMENT_DATA, requestId };
 
@@ -112,7 +135,27 @@ export default function PaymentPage() {
   };
 
   const openApp = (app: (typeof UPI_APPS)[0]) => {
+<<<<<<< HEAD
     window.location.assign(app.scheme(data.collectorUpi, totalAmount, paymentNote));
+=======
+    setSelectedApp(app.id);
+    const deepLink = app.scheme(data.collectorUpi, totalAmount, paymentNote);
+
+    // Try to open the app via its custom scheme
+    // If it fails (app not installed), browser will stay on page
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    // Use location.href for the deep link — works on mobile browsers
+    window.location.href = deepLink;
+
+    // Cleanup iframe after short delay
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      setSelectedApp(null);
+    }, 1500);
+>>>>>>> 3901a7b (feat: add track/chat pages, role-aware chat links, real UPI app logos, spinner on payment)
   };
 
   const confirmPayment = () => {
@@ -142,7 +185,7 @@ export default function PaymentPage() {
     <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans pb-32">
       <Navbar />
 
-      <header className="sticky top-16 z-30 bg-white/95 backdrop-blur border-b border-gray-100 px-4 sm:px-6 py-3.5 max-w-xl mx-auto w-full flex items-center gap-3">
+      <header className="sticky top-16 z-30 bg-white/95 backdrop-blur border-b border-gray-100 px-4 sm:px-6 py-3.5 max-w-2xl mx-auto w-full flex items-center gap-3">
         <button
           onClick={() => router.back()}
           aria-label="Go back"
@@ -162,7 +205,7 @@ export default function PaymentPage() {
         </button>
       </header>
 
-      <main className="px-4 sm:px-6 pt-5 space-y-5 max-w-xl mx-auto w-full">
+      <main className="px-4 sm:px-6 pt-5 space-y-5 max-w-2xl mx-auto w-full">
 
         {/* Hero amount */}
         <section className="bg-[#136B3B] rounded-3xl p-6 text-white relative overflow-hidden shadow-md">
@@ -243,26 +286,65 @@ export default function PaymentPage() {
             <p className="text-xs font-medium text-[#526056] px-1">
               Tap an app to open and pay. Amount and UPI ID are pre-filled.
             </p>
-            <div className="grid grid-cols-2 gap-3">
-              {UPI_APPS.map((app) => (
-                <button
-                  key={app.id}
-                  onClick={() => openApp(app)}
-                  type="button"
-                  className={`${app.color} ${app.hoverColor} text-white rounded-2xl p-4 flex flex-col items-start gap-2 transition active:scale-[0.97] shadow-sm`}
-                >
-                  <span className="text-2xl leading-none">{app.emoji}</span>
-                  <div>
-                    <p className="font-bold text-sm leading-tight">{app.shortName}</p>
-                    <div className="flex items-center gap-1 mt-0.5 opacity-80">
-                      <ExternalLink className="w-3 h-3" />
-                      <span className="text-[11px] font-medium">Open &amp; pay</span>
+
+            {/* Payment app grid — 2 cols on mobile, 4 cols on md+ */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              {UPI_APPS.map((app) => {
+                const isSelected = selectedApp === app.id;
+                return (
+                  <button
+                    key={app.id}
+                    onClick={() => openApp(app)}
+                    type="button"
+                    disabled={isSelected}
+                    style={{
+                      backgroundColor: app.bgColor,
+                      borderColor: app.borderColor,
+                      color: app.textColor,
+                    }}
+                    className={`
+                      relative flex flex-col items-center gap-3 p-4 rounded-2xl border-2
+                      transition-all duration-200 shadow-sm
+                      hover:scale-[1.03] hover:shadow-md
+                      active:scale-[0.97]
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#136B3B]
+                      ${isSelected ? 'opacity-70 scale-[0.97]' : ''}
+                    `}
+                  >
+                    {/* App logo — full-width wordmark container */}
+                    <div className="w-full h-14 sm:h-16 rounded-xl overflow-hidden flex items-center justify-center bg-white shadow-sm flex-shrink-0 px-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={app.logo}
+                        alt={`${app.name} logo`}
+                        className="w-full h-full object-contain"
+                      />
                     </div>
-                  </div>
-                </button>
-              ))}
+
+                    {/* Open & pay CTA */}
+                    <div
+                      className="flex items-center justify-center gap-1 opacity-80"
+                      style={{ color: app.textColor }}
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span className="text-[11px] font-semibold">Open &amp; pay</span>
+                    </div>
+
+                    {/* Selected spinner overlay */}
+                    {isSelected && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/10">
+                        <svg className="animate-spin w-6 h-6 text-white" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
+            {/* UPI ID copy */}
             <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-2">
               <p className="text-xs font-bold text-[#526056]">Or copy UPI ID manually</p>
               <div className="flex items-center gap-2 bg-[#F7F9FA] rounded-xl px-3 py-2.5 border border-gray-200">
@@ -279,6 +361,24 @@ export default function PaymentPage() {
                 </button>
               </div>
             </div>
+
+            {/* UPI badge strip */}
+            <div className="flex items-center gap-2 flex-wrap justify-center pt-1">
+              {UPI_APPS.map((app) => (
+                <div key={app.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100">
+                  <div className="w-4 h-4 rounded-sm overflow-hidden flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={app.logo}
+                      alt={app.shortName}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold text-[#526056]">{app.shortName}</span>
+                </div>
+              ))}
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-gray-100 text-[#526056]">& more</span>
+            </div>
           </section>
         )}
 
@@ -290,7 +390,7 @@ export default function PaymentPage() {
             </p>
 
             <div className="bg-white border border-gray-200 rounded-3xl p-6 flex flex-col items-center gap-4 shadow-sm">
-              <div className="p-4 bg-white rounded-2xl border-2 border-[#E6F4EA] shadow-inner">
+              <div className="p-4 bg-white rounded-2xl border-2 border-[#E6F4EA] shadow-inner flex justify-center">
                 <QRCodeSVG
                   value={upiQrUrl}
                   size={200}
@@ -309,13 +409,20 @@ export default function PaymentPage() {
                 </p>
               </div>
 
+              {/* Mini app logos in QR tab */}
               <div className="flex items-center gap-2 flex-wrap justify-center">
-                {['🟢 GPay', '💜 PhonePe', '🔵 Paytm', '🇮🇳 BHIM'].map((app) => (
-                  <span key={app} className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-gray-100 text-[#526056]">
-                    {app}
-                  </span>
+                {UPI_APPS.map((app) => (
+                  <div key={app.id} className="w-8 h-8 rounded-lg overflow-hidden border border-gray-100 shadow-sm bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={app.logo}
+                      alt={app.shortName}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
                 ))}
               </div>
+
               <p className="text-[11px] text-[#6B7280] text-center leading-relaxed max-w-xs">
                 This QR contains the pre-filled payment amount. Scan with any UPI app to pay instantly.
               </p>

@@ -177,13 +177,23 @@ export default function RequestCard({
           </p>
 
           <div className="flex items-center gap-2">
-            <Link
-              href={`/chat/${request.id}`}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#F4FAF6] hover:bg-[#E6F4EA] text-[#136B3B] text-xs font-bold transition border border-[#DDE3EA]"
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>Chat</span>
-            </Link>
+            {userRole === 'household' ? (
+              <Link
+                href={`/household/track/${request.id}`}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#F4FAF6] hover:bg-[#E6F4EA] text-[#136B3B] text-xs font-bold transition border border-[#DDE3EA]"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Chat</span>
+              </Link>
+            ) : (
+              <Link
+                href={`/collector/chat/${request.id}`}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#F4FAF6] hover:bg-[#E6F4EA] text-[#136B3B] text-xs font-bold transition border border-[#DDE3EA]"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Chat</span>
+              </Link>
+            )}
 
             {/* Receipt Button for Completed Pickups */}
             {request.status === 'completed' && (

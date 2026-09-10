@@ -36,6 +36,19 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
           isActive: pathname === '/household/request-pickup',
         },
         {
+          label: 'Track',
+          href: '/household/track',
+          icon: (active: boolean) => (
+            <svg
+              className={`w-5 h-5 ${active ? 'fill-current text-[#191C1E]' : 'fill-current text-[#526056]'}`}
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+            </svg>
+          ),
+          isActive: pathname.startsWith('/household/track'),
+        },
+        {
           label: 'History',
           href: '/household/history',
           icon: (active: boolean) => (
@@ -86,6 +99,23 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
           isActive: pathname === '/collector/map',
         },
         {
+          label: 'Chat',
+          href: '/collector/chat',
+          icon: (active: boolean) => (
+            <svg
+              className={`w-5 h-5 ${active ? 'stroke-[2.3] text-[#191C1E]' : 'stroke-2 text-[#526056]'}`}
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              viewBox="0 0 24 24"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          ),
+          isActive: pathname.startsWith('/collector/chat'),
+        },
+        {
           label: 'Profile',
           href: '/household/profile',
           icon: (active: boolean) => (
@@ -106,7 +136,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         {tabs.map((tab) => {
           return (
             <Link
-              key={tab.href}
+              key={tab.label}
               href={tab.href}
               className="flex flex-col items-center group py-0.5 min-w-[60px] touch-feedback"
             >

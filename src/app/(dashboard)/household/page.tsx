@@ -261,8 +261,8 @@ export default function HouseholdDashboard() {
               <h3 className="text-lg font-bold text-[#191C1E] tracking-tight">
                 Active pickup
               </h3>
-              <Link href={`/chat/${activePickup.id}`} className="text-xs font-bold text-[#136B3B] hover:underline">
-                View Chat
+              <Link href={`/household/track/${activePickup.id}`} className="text-xs font-bold text-[#136B3B] hover:underline">
+                Track &amp; Chat
               </Link>
             </div>
             
@@ -281,13 +281,20 @@ export default function HouseholdDashboard() {
                 </div>
               </div>
               
-              <Link
-                href={`/chat/${activePickup.id}`}
-                className="flex items-center space-x-1 text-xs font-bold text-[#136B3B] hover:opacity-80 transition"
-              >
-                <span>Track</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/household/track/${activePickup.id}`}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-[#EAF5EE] border border-[#A6D5B8] text-[#136B3B] text-xs font-bold rounded-xl hover:bg-[#D4EBD9] transition"
+                >
+                  <span>Track</span>
+                </Link>
+                <Link
+                  href={`/household/track/${activePickup.id}`}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-[#136B3B] text-white text-xs font-bold rounded-xl hover:bg-[#0F5730] transition"
+                >
+                  <span>Chat</span>
+                </Link>
+              </div>
             </div>
           </section>
         )}
