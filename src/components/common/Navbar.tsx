@@ -68,7 +68,7 @@ export default function Navbar() {
               <Recycle className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div className="flex flex-col">
-              <span className="font-extrabold text-lg tracking-tight text-[#136B3B] leading-none">Sampah Jujur</span>
+              <span className="font-extrabold text-lg tracking-tight text-[#136B3B] leading-none">AiCLE</span>
               <span className="text-[10px] font-semibold text-[#6B7280] tracking-wider uppercase mt-0.5">Circular Recycling</span>
             </div>
           </Link>

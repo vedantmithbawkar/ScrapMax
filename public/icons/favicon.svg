@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="aicleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#136B3B" />
+      <stop offset="100%" stop-color="#0B4626" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#52D68A" />
+      <stop offset="100%" stop-color="#27AE60" />
+    </linearGradient>
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0B4626" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Background Base with Rounded Squircle -->
+  <rect width="512" height="512" rx="128" fill="url(#aicleGrad)" />
+
+  <!-- Subtle glow inner ring -->
+  <rect x="16" y="16" width="480" height="480" rx="116" fill="none" stroke="url(#accentGrad)" stroke-width="4" stroke-opacity="0.35" />
+
+  <!-- AiCLE Core Symbol: Stylized A & Circular Recycling Loop -->
+  <g filter="url(#subtleShadow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Outer Cycle Arrows forming the A silhouette -->
+    <!-- Left upward stroke of A -->
+    <path d="M190 370 L256 140" stroke="#FFFFFF" stroke-width="36" />
+    
+    <!-- Right downward stroke of A -->
+    <path d="M256 140 L322 370" stroke="#FFFFFF" stroke-width="36" />
+    
+    <!-- Crossbar of A which arches into a circular cycle loop -->
+    <path d="M185 285 Q256 250 327 285" stroke="url(#accentGrad)" stroke-width="32" />
+    
+    <!-- Dynamic recycling leaf / arrow node at the apex -->
+    <circle cx="256" cy="140" r="22" fill="#52D68A" stroke="#FFFFFF" stroke-width="6" />
+
+    <!-- Left dynamic cycle dot -->
+    <circle cx="185" cy="370" r="16" fill="#52D68A" />
+
+    <!-- Right dynamic cycle dot -->
+    <circle cx="327" cy="370" r="16" fill="#52D68A" />
+
+    <!-- Organic circular swoop -->
+    <path d="M220 370 C220 395 292 395 292 370" stroke="url(#accentGrad)" stroke-width="16" />
+  </g>
+
+  <!-- Brand Typography accent: Letter A dot -->
+  <circle cx="256" cy="225" r="12" fill="#FFFFFF" opacity="0.9" />
+</svg>

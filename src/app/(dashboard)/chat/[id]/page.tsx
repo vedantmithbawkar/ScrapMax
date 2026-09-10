@@ -12,7 +12,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   // Mock user session for demo messaging
   const currentUser = {
     id: 'user-demo-id',
-    full_name: 'Sampah Jujur User',
+    full_name: 'AiCLE User',
     role: 'household' as const,
   };
 

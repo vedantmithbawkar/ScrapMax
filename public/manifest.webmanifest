@@ -1,0 +1,30 @@
+{
+  "name": "AiCLE - Eco-Waste & Circular Recycling System",
+  "short_name": "AiCLE",
+  "description": "Turn household recyclables into value with AiCLE circular scrap pickups and live collector tracking.",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F9FA",
+  "theme_color": "#136B3B",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

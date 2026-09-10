@@ -23,7 +23,7 @@ export default function LandingPage() {
         {/* Title */}
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#191C1E] max-w-4xl leading-tight sm:leading-tight">
           Turn Your Household Waste Into Value with{' '}
-          <span className="text-[#136B3B]">Sampah Jujur</span>
+          <span className="text-[#136B3B]">AiCLE</span>
         </h1>
 
         {/* Subtitle */}
@@ -111,7 +111,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="py-6 border-t border-gray-200 bg-white text-center text-xs text-[#6B7280]">
-        &copy; {new Date().getFullYear()} Sampah Jujur — Eco-Waste & Circular Logistics System.
+        &copy; {new Date().getFullYear()} AiCLE — Eco-Waste & Circular Logistics System.
       </footer>
     </div>
   );
