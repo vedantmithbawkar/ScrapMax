@@ -106,6 +106,22 @@ export default function ReceiptModal({ request, onClose }: ReceiptModalProps) {
               <span className="font-black text-lg text-[#136B3B]">₹{totalAmount}</span>
             </div>
 
+            {/* Collector Details Strip */}
+            <div className="p-2.5 bg-[#F8FAF9] rounded-xl flex items-center justify-between text-[11px] text-[#526056]">
+              <div>
+                <span className="font-bold text-[#191C1E] block">
+                  Collector: {request.collector?.full_name || 'Ramesh Kumar'}
+                </span>
+                <span className="text-[10px] text-[#526056] font-mono">
+                  Ph: {request.collector?.phone || '+91 98201 45892'}
+                </span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8] flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3" />
+                <span>Verified Collector</span>
+              </span>
+            </div>
+
             <div className="p-2.5 bg-[#F8FAF9] rounded-xl flex items-center justify-between text-[11px] text-[#526056]">
               <span className="flex items-center gap-1.5">
                 {payment?.method === 'cash' ? (
@@ -117,7 +133,7 @@ export default function ReceiptModal({ request, onClose }: ReceiptModalProps) {
               </span>
               <span className="flex items-center gap-1 text-[#136B3B] font-bold">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>VERIFIED</span>
+                <span>PAYMENT SETTLED</span>
               </span>
             </div>
 

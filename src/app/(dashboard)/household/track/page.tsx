@@ -13,10 +13,18 @@ const DEMO_REQUESTS: PickupRequest[] = [
     id: 'req-h102-demo-uuid',
     household_id: 'user-h101',
     collector_id: 'collector-c201',
+    collector: {
+      id: 'collector-c201',
+      full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+      phone: '+91 98201 45892',
+      role: 'collector',
+      rating: 4.9,
+      completed_pickups: 126,
+    },
     status: 'accepted',
-    address: 'Indiranagar 100ft Road, Bangalore, Karnataka',
-    latitude: 12.9784,
-    longitude: 77.6408,
+    address: 'Main Market Road, Near City Center',
+    latitude: 19.0760,
+    longitude: 72.8777,
     scheduled_date: 'Today · 5:30 PM',
     total_estimated_weight_kg: 13.2,
     created_at: new Date().toISOString(),
@@ -33,6 +41,17 @@ export default function HouseholdTrackListPage() {
 
   useEffect(() => {
     async function load() {
+      try {
+        const local = JSON.parse(localStorage.getItem('local_pickup_requests') || '[]');
+        if (local && local.length > 0) {
+          setRequests((prev) => {
+            const combined = [...local, ...prev];
+            const unique = Array.from(new Map(combined.map(item => [item.id, item])).values());
+            return unique as PickupRequest[];
+          });
+        }
+      } catch {}
+
       const supabase = createClient();
       const { data } = await supabase
         .from('pickup_requests')
@@ -68,6 +87,8 @@ export default function HouseholdTrackListPage() {
               const primaryItem = req.waste_items?.[0];
               const meta = primaryItem ? WASTE_CATEGORY_LABELS[primaryItem.category] : null;
               const statusInfo = STATUS_LABELS[req.status];
+              const collectorName = req.collector?.full_name || 'Ramesh Kumar (Kabadiwala)';
+              const collectorPhone = req.collector?.phone || '+91 98201 45892';
               return (
                 <div key={req.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                   <div className="p-4 space-y-3">
@@ -92,6 +113,27 @@ export default function HouseholdTrackListPage() {
                     <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
                       <MapPin className="w-3.5 h-3.5 text-[#136B3B] flex-shrink-0" />
                       <span className="truncate">{req.address}</span>
+                    </div>
+
+                    {/* Assigned Collector Details Strip */}
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">🚛</span>
+                        <div>
+                          <span className="font-bold text-[#191C1E] block">
+                            {collectorName}
+                          </span>
+                          <span className="text-[11px] text-[#136B3B] font-mono font-bold block">
+                            {collectorPhone}
+                          </span>
+                        </div>
+                      </div>
+                      <a
+                        href={`tel:${collectorPhone.replace(/\s+/g, '')}`}
+                        className="px-3 py-1 bg-[#136B3B] hover:bg-[#0F5730] text-white text-[11px] font-bold rounded-lg transition shadow-2xs"
+                      >
+                        Call
+                      </a>
                     </div>
                   </div>
 

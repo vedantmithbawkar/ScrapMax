@@ -7,7 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
-import { Recycle, Package } from 'lucide-react';
+import { Recycle, Package, ArrowRight, IndianRupee, Store } from 'lucide-react';
 
 import { useTranslation } from '@/lib/i18n';
 
@@ -16,9 +16,9 @@ const DEMO_HOUSEHOLD_REQUESTS: PickupRequest[] = [
     id: 'req-h101-demo-uuid',
     household_id: 'user-h101',
     status: 'pending',
-    address: 'Indiranagar 100ft Road, Bangalore, Karnataka',
-    latitude: 12.9784,
-    longitude: 77.6408,
+    address: 'Main Market Road, Near City Center',
+    latitude: 19.0760,
+    longitude: 72.8777,
     scheduled_date: 'Today · 5:30 PM',
     notes: 'Please call before arriving. Cardboard boxes packed neat.',
     total_estimated_weight_kg: 8.5,
@@ -220,25 +220,48 @@ export default function HouseholdDashboard() {
           <h3 className="text-lg font-bold text-[#191C1E] tracking-tight">
             {t('quickActions')}
           </h3>
-          <div className="grid grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             {/* Sell Recyclables Card */}
             <Link
               href="/household/request-pickup"
-              className="bg-white rounded-3xl p-5 text-left flex flex-col justify-between h-[160px] border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] hover:shadow-md transition active:scale-[0.98] touch-feedback"
+              className="bg-white rounded-3xl p-5 text-left flex flex-col justify-between h-[150px] border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] hover:shadow-md transition active:scale-[0.98] touch-feedback"
             >
               <div className="w-10 h-10 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#136B3B]">
                 <Recycle className="w-6 h-6 stroke-[2.2]" />
               </div>
               <div>
+<<<<<<< HEAD
                 <p className="font-bold text-[#191C1E] text-[16px] leading-tight">{t('sellRecyclables')}</p>
                 <p className="text-xs text-[#6B7280] font-medium mt-1">{t('getValue')}</p>
               </div>
             </Link>
 
             {/* Nearby Collectors / History Card */}
+=======
+                <p className="font-bold text-[#191C1E] text-[16px] leading-tight">Sell recyclables</p>
+                <p className="text-xs text-[#6B7280] font-medium mt-1">Book scrap pickup</p>
+              </div>
+            </Link>
+
+            {/* Recycling Stores & Scrap Centers Map Card */}
+            <Link
+              href="/stores"
+              className="bg-white rounded-3xl p-5 text-left flex flex-col justify-between h-[150px] border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] hover:shadow-md transition active:scale-[0.98] touch-feedback"
+            >
+              <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-[#136B3B]">
+                <Store className="w-6 h-6 stroke-[2.2]" />
+              </div>
+              <div>
+                <p className="font-bold text-[#191C1E] text-[16px] leading-tight">Store Map</p>
+                <p className="text-xs text-[#6B7280] font-medium mt-1">Nearby scrap centers</p>
+              </div>
+            </Link>
+
+            {/* My Activity Card */}
+>>>>>>> f3ec19f113fcd44a5e4181b1227c4a53d4db9681
             <Link
               href="/household/history"
-              className="bg-white rounded-3xl p-5 text-left flex flex-col justify-between h-[160px] border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] hover:shadow-md transition active:scale-[0.98] touch-feedback"
+              className="bg-white rounded-3xl p-5 text-left flex flex-col justify-between h-[150px] border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] hover:shadow-md transition active:scale-[0.98] touch-feedback"
             >
               <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-[#E23636]">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
@@ -248,8 +271,13 @@ export default function HouseholdDashboard() {
                 </svg>
               </div>
               <div>
+<<<<<<< HEAD
                 <p className="font-bold text-[#191C1E] text-[16px] leading-tight">{t('pickupHistory')}</p>
                 <p className="text-xs text-[#6B7280] font-medium mt-1">{t('viewPastPickups')}</p>
+=======
+                <p className="font-bold text-[#191C1E] text-[16px] leading-tight">My activity</p>
+                <p className="text-xs text-[#6B7280] font-medium mt-1">Recycling logs & receipts</p>
+>>>>>>> f3ec19f113fcd44a5e4181b1227c4a53d4db9681
               </div>
             </Link>
           </div>

@@ -115,9 +115,9 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
             </div>
             <div>
               <h2 className="text-base font-extrabold text-[#191C1E] leading-tight">
-                {step === 'weigh' && 'Doorstep Weight Verification'}
-                {step === 'payment' && 'Instant Payment Settlement'}
-                {step === 'receipt' && 'Verified Recycling Receipt'}
+                {step === 'weigh' && 'Finalize Scrap Deal: Weigh & Rates'}
+                {step === 'payment' && 'Deal Settlement & Generate Receipt'}
+                {step === 'receipt' && 'Deal Finalized — Verified Receipt'}
               </h2>
               <p className="text-[11px] text-[#6B7280]">Request #{request.id.slice(0, 8)}</p>
             </div>
@@ -218,7 +218,7 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
               disabled={totalPayout <= 0}
               className="w-full py-3.5 bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold rounded-2xl text-sm shadow-sm transition flex items-center justify-center gap-2 touch-feedback disabled:opacity-50"
             >
-              <span>Proceed to Payment (₹{totalPayout})</span>
+              <span>Confirm Weights &amp; Proceed to Deal Settlement (₹{totalPayout})</span>
               <ArrowRight className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>
@@ -331,7 +331,7 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
                 className="flex-1 py-3.5 bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold rounded-2xl text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 touch-feedback disabled:opacity-50"
               >
                 <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-                <span>{isProcessing ? 'Settling Payment...' : `Confirm & Issue Receipt (₹${totalPayout})`}</span>
+                <span>{isProcessing ? 'Finalizing Deal & Issuing Receipt...' : `🤝 Finalize Deal & Issue Receipt (₹${totalPayout})`}</span>
               </button>
             </div>
           </div>
@@ -384,6 +384,21 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
               <div className="border-t border-dashed border-gray-200 pt-2 flex justify-between items-center text-sm">
                 <span className="font-bold text-[#191C1E]">Total Settled:</span>
                 <span className="font-black text-base text-[#136B3B]">₹{completedPayment.totalAmount}</span>
+              </div>
+
+              {/* Collector details */}
+              <div className="p-2.5 bg-[#F8FAF9] rounded-xl flex items-center justify-between text-[11px] text-[#526056]">
+                <div>
+                  <span className="font-bold text-[#191C1E] block">
+                    Collector: {request.collector?.full_name || 'Ramesh Kumar (Verified Kabadiwala)'}
+                  </span>
+                  <span className="text-[10px] text-[#526056] font-mono">
+                    Ph: {request.collector?.phone || '+91 98201 45892'}
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8]">
+                  Verified Partner
+                </span>
               </div>
 
               <div className="p-2.5 bg-[#F8FAF9] rounded-xl flex items-center justify-between text-[11px] text-[#526056]">

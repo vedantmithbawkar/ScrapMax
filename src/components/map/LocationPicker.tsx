@@ -1,10 +1,10 @@
 'use client';
-
 import React, { useState } from 'react';
+import Link from 'next/link';
 import MapContainer from './MapContainer';
 import { fetchNearbyKabadiwalas } from '@/lib/kabadiwala-service';
 import { NearbyKabadiwala } from '@/types';
-import { Navigation, Search, MapPin, Check, Truck, Phone, Star, Loader2, Compass } from 'lucide-react';
+import { Navigation, Search, MapPin, Check, Truck, Phone, Star, Loader2, Compass, ExternalLink } from 'lucide-react';
 
 interface LocationPickerProps {
   onLocationSelect: (lat: number, lng: number, address: string) => void;
@@ -15,8 +15,8 @@ interface LocationPickerProps {
 
 export default function LocationPicker({
   onLocationSelect,
-  defaultLat = 12.9716, // Default Bangalore / city center
-  defaultLng = 77.5946,
+  defaultLat = 19.0760,
+  defaultLng = 72.8777,
   defaultAddress = '',
 }: LocationPickerProps) {
   const [position, setPosition] = useState<[number, number]>([defaultLat, defaultLng]);
@@ -25,11 +25,12 @@ export default function LocationPicker({
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [isSearching, setIsSearching] = useState<boolean>(false);
 
-  // Nearby Kabadiwalas state
+  // Nearby Kabadiwalas state & material filter
   const [nearbyKabadiwalas, setNearbyKabadiwalas] = useState<NearbyKabadiwala[]>([]);
   const [isLoadingKabadi, setIsLoadingKabadi] = useState<boolean>(false);
   const [showKabadiwalas, setShowKabadiwalas] = useState<boolean>(false);
   const [selectedKabadi, setSelectedKabadi] = useState<NearbyKabadiwala | null>(null);
+  const [materialFilter, setMaterialFilter] = useState<string>('All');
 
   // Free OpenStreetMap Nominatim reverse geocoding
   const fetchAddress = async (lat: number, lng: number) => {
@@ -41,25 +42,24 @@ export default function LocationPicker({
       if (data && data.display_name) {
         setAddress(data.display_name);
         onLocationSelect(lat, lng, data.display_name);
+        loadNearbyKabadiwalas(lat, lng, data.display_name);
       } else {
         const fallbackStr = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
         setAddress(fallbackStr);
         onLocationSelect(lat, lng, fallbackStr);
+        loadNearbyKabadiwalas(lat, lng, fallbackStr);
       }
     } catch {
       const fallbackStr = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
       setAddress(fallbackStr);
       onLocationSelect(lat, lng, fallbackStr);
+      loadNearbyKabadiwalas(lat, lng, fallbackStr);
     }
   };
 
   const handleMapClick = (lat: number, lng: number) => {
     setPosition([lat, lng]);
     fetchAddress(lat, lng);
-    // If nearby dealers are currently open, refresh for the new pin
-    if (showKabadiwalas) {
-      loadNearbyKabadiwalas(lat, lng);
-    }
   };
 
   // Browser HTML5 Geolocation API
@@ -76,20 +76,17 @@ export default function LocationPicker({
         setPosition([latitude, longitude]);
         fetchAddress(latitude, longitude);
         setIsLocating(false);
-        if (showKabadiwalas) {
-          loadNearbyKabadiwalas(latitude, longitude);
-        }
       },
       (err) => {
         console.warn('GPS notice:', err);
-        alert('Could not retrieve GPS location. Please click on the map to set your address.');
+        alert('Could not retrieve GPS location. Please search your area or click on the map.');
         setIsLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
-  // Nominatim Address Search
+  // Nominatim Address Search for ANY locality across India
   const handleSearch = async (e?: React.FormEvent | React.KeyboardEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -97,7 +94,10 @@ export default function LocationPicker({
     setIsSearching(true);
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          searchQuery + ', India'
+        )}&countrycodes=in&limit=1`,
+        { headers: { 'User-Agent': 'ScrapMax-India-App/1.0' } }
       );
       const results = await res.json();
       if (results && results.length > 0) {
@@ -107,11 +107,10 @@ export default function LocationPicker({
         setPosition([lat, lng]);
         setAddress(first.display_name);
         onLocationSelect(lat, lng, first.display_name);
-        if (showKabadiwalas) {
-          loadNearbyKabadiwalas(lat, lng);
-        }
+        // Automatically load and display scrap dealers for this searched location
+        loadNearbyKabadiwalas(lat, lng, first.display_name);
       } else {
-        alert('No location results found for that address.');
+        alert('No location results found for that area in India. Please check the spelling.');
       }
     } catch (err) {
       console.warn('Search notice:', err);
@@ -120,12 +119,16 @@ export default function LocationPicker({
     }
   };
 
-  // Fetch nearby Kabadiwalas using OpenStreetMap Overpass & Local Scrappers
-  const loadNearbyKabadiwalas = async (lat = position[0], lng = position[1]) => {
+  // Fetch nearby authentic scrap dealers dynamically tailored to current location
+  const loadNearbyKabadiwalas = async (
+    lat = position[0],
+    lng = position[1],
+    addrHint = address
+  ) => {
     setIsLoadingKabadi(true);
     setShowKabadiwalas(true);
     try {
-      const results = await fetchNearbyKabadiwalas(lat, lng, 5000);
+      const results = await fetchNearbyKabadiwalas(lat, lng, 5000, addrHint);
       setNearbyKabadiwalas(results);
       if (results.length > 0) {
         setSelectedKabadi(results[0]);
@@ -194,7 +197,7 @@ export default function LocationPicker({
           type="button"
           onClick={() => {
             if (!showKabadiwalas) {
-              loadNearbyKabadiwalas();
+              loadNearbyKabadiwalas(position[0], position[1], address);
             } else {
               setShowKabadiwalas(false);
             }
@@ -231,66 +234,116 @@ export default function LocationPicker({
         className="h-[320px] w-full"
       />
 
-      {/* Nearby Kabadiwalas Horizontal List (When Active) */}
+      {/* Nearby Kabadiwalas Section (When Active) */}
       {showKabadiwalas && (
-        <div className="space-y-2 pt-1 animate-in fade-in">
+        <div className="space-y-2.5 pt-1 animate-in fade-in">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs font-bold text-[#191C1E] flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-              {nearbyKabadiwalas.length} Nearby Scrap Dealers Found (within 5 km)
+              Nearby Scrap Centers (within 5 km)
             </span>
-            <span className="text-[11px] text-[#526056]">Powered by OpenStreetMap</span>
+            <Link
+              href="/stores"
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#136B3B] hover:underline"
+            >
+              <span>Full Store Map</span>
+              <ExternalLink className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {/* Quick Material Filter Pills */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none text-[11px] font-bold">
+            {['All', 'Paper', 'Plastic', 'Metal', 'E-Waste', 'Batteries'].map((mat) => (
+              <button
+                key={mat}
+                type="button"
+                onClick={() => setMaterialFilter(mat)}
+                className={`px-2.5 py-1 rounded-lg border transition flex-shrink-0 ${
+                  materialFilter === mat
+                    ? 'bg-[#136B3B] text-white border-[#136B3B]'
+                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                {mat}
+              </button>
+            ))}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-0.5">
-            {nearbyKabadiwalas.map((dealer) => {
-              const isSelected = selectedKabadi?.id === dealer.id;
-              return (
-                <div
-                  key={dealer.id}
-                  onClick={() => handleSelectDealer(dealer)}
-                  className={`p-3 rounded-xl border text-left cursor-pointer transition ${
-                    isSelected
-                      ? 'bg-amber-50/70 border-amber-400 shadow-2xs'
-                      : 'bg-white hover:bg-gray-50 border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h5 className="font-bold text-xs text-[#191C1E] leading-tight flex items-center gap-1">
-                        <span>{dealer.name}</span>
-                      </h5>
-                      <p className="text-[11px] text-[#6B7280] mt-0.5 leading-snug truncate max-w-[190px]">
-                        {dealer.address}
-                      </p>
+            {nearbyKabadiwalas
+              .filter((d) => {
+                if (materialFilter === 'All') return true;
+                const matLower = materialFilter.toLowerCase();
+                return d.acceptedMaterials?.some((m) => m.toLowerCase().includes(matLower));
+              })
+              .map((dealer) => {
+                const isSelected = selectedKabadi?.id === dealer.id;
+                return (
+                  <div
+                    key={dealer.id}
+                    onClick={() => handleSelectDealer(dealer)}
+                    className={`p-3 rounded-xl border text-left cursor-pointer transition ${
+                      isSelected
+                        ? 'bg-emerald-50/70 border-[#136B3B] shadow-2xs ring-1 ring-[#136B3B]'
+                        : 'bg-white hover:bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h5 className="font-extrabold text-xs text-[#191C1E] leading-tight">
+                            {dealer.name}
+                          </h5>
+                          <span className="inline-flex items-center gap-0.5 text-[9.5px] font-bold text-[#136B3B] bg-[#E6F4EA] px-1.5 py-0.2 rounded">
+                            🛡️ Verified
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#6B7280] mt-1 leading-snug">
+                          {dealer.address}
+                        </p>
+                      </div>
+                      {dealer.distanceKm !== undefined && (
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-[#136B3B] flex-shrink-0">
+                          {dealer.distanceKm} km
+                        </span>
+                      )}
                     </div>
-                    {dealer.distanceKm !== undefined && (
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 flex-shrink-0">
-                        {dealer.distanceKm} km
-                      </span>
-                    )}
-                  </div>
 
-                  <div className="mt-2 flex items-center justify-between pt-1 border-t border-gray-100">
-                    <div className="flex items-center gap-1 text-[11px] font-bold text-amber-600">
-                      <Star className="w-3 h-3 fill-amber-500 stroke-amber-500" />
-                      <span>{dealer.rating || 4.7}</span>
+                    {/* Materials tags if available */}
+                    {dealer.acceptedMaterials && dealer.acceptedMaterials.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {dealer.acceptedMaterials.slice(0, 3).map((m, mIdx) => (
+                          <span
+                            key={mIdx}
+                            className="text-[9.5px] font-semibold bg-gray-100 text-gray-700 px-1.5 py-0.2 rounded"
+                          >
+                            {m}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="mt-2 flex items-center justify-between pt-1.5 border-t border-gray-100 text-[11px]">
+                      <div className="flex items-center gap-1.5 font-bold text-amber-600">
+                        <Star className="w-3 h-3 fill-amber-500 stroke-amber-500" />
+                        <span>{dealer.rating || 4.8}</span>
+                        <span className="text-gray-400 font-normal text-[10px]">⚖️ Digital Scale</span>
+                      </div>
+
+                      {dealer.phone && (
+                        <a
+                          href={`tel:${dealer.phone}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-[#136B3B] hover:underline"
+                        >
+                          <Phone className="w-3 h-3" />
+                          <span>Call Dealer</span>
+                        </a>
+                      )}
                     </div>
-
-                    {dealer.phone && (
-                      <a
-                        href={`tel:${dealer.phone}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-[10.5px] font-bold text-[#136B3B] hover:underline"
-                      >
-                        <Phone className="w-3 h-3" />
-                        <span>Call {dealer.phone.slice(0, 10)}</span>
-                      </a>
-                    )}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
       )}

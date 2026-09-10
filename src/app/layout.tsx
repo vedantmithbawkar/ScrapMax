@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import SmartAssistant from "@/components/common/SmartAssistant";
+import NotificationToast from "@/components/common/NotificationToast";
+import PwaRegistration from "@/components/common/PwaRegistration";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -13,16 +15,17 @@ export const viewport: Viewport = {
   themeColor: "#136B3B",
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
 };
 
 export const metadata: Metadata = {
   title: {
-    default: "AiCLE - Eco-Waste & Circular Recycling System",
-    template: "%s | AiCLE",
+    default: "ScrapMax - Eco-Waste & Circular Recycling System",
+    template: "%s | ScrapMax",
   },
-  description: "Connect households with local scrap collectors for honest waste pickups and circular recycling with AiCLE.",
-  applicationName: "AiCLE",
-  manifest: "/manifest.webmanifest",
+  description: "Connect households with local scrap collectors for honest waste pickups, real-time smart alerts, and circular recycling.",
+  applicationName: "ScrapMax",
+  manifest: "/manifest.json",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -35,12 +38,12 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "AiCLE",
+    title: "ScrapMax",
   },
   openGraph: {
-    title: "AiCLE - Eco-Waste & Circular Recycling System",
-    description: "Turn household recyclables into value with AiCLE circular scrap pickups.",
-    siteName: "AiCLE",
+    title: "ScrapMax - Eco-Waste & Circular Recycling System",
+    description: "Turn household recyclables into value with ScrapMax circular scrap pickups.",
+    siteName: "ScrapMax",
     type: "website",
   },
 };
@@ -55,9 +58,15 @@ export default function RootLayout({
       lang="en"
       className={`${plusJakartaSans.variable} font-sans h-full antialiased selection:bg-[#E6F4EA] selection:text-[#136B3B]`}
     >
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+      </head>
       <body className="min-h-full flex flex-col bg-[#F7F9FA] text-[#191C1E] font-sans">
         {children}
+        <NotificationToast />
         <SmartAssistant />
+        <PwaRegistration />
       </body>
     </html>
   );

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/common/Navbar';
+import ReceiptModal from '@/components/request/ReceiptModal';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest, ChatMessage, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
 import {
@@ -17,6 +18,9 @@ import {
   Package,
   Send,
   Phone,
+  ShieldCheck,
+  Star,
+  Receipt,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -28,10 +32,18 @@ const DEMO_REQUEST: PickupRequest = {
   id: 'demo-track-001',
   household_id: 'user-h101',
   collector_id: 'collector-c201',
+  collector: {
+    id: 'collector-c201',
+    full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+    phone: '+91 98201 45892',
+    role: 'collector',
+    rating: 4.9,
+    completed_pickups: 126,
+  },
   status: 'accepted',
-  address: 'Indiranagar 100ft Road, Bangalore, Karnataka',
-  latitude: 12.9784,
-  longitude: 77.6408,
+  address: 'Main Market Road, Near City Center',
+  latitude: 19.0760,
+  longitude: 72.8777,
   scheduled_date: 'Today · 5:30 PM',
   notes: 'Please call before arriving. Cardboard boxes packed neat.',
   total_estimated_weight_kg: 13.2,
@@ -89,18 +101,59 @@ export default function TrackPickupPage() {
   const [inputText, setInputText] = useState('');
   const [chatId, setChatId] = useState<string | null>(null);
   const [currentUserId] = useState('user-h101');
+  const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load request from Supabase
+  // Load request from Supabase or localStorage fallback
   useEffect(() => {
     async function load() {
+      // Check localStorage first for demo / local session
+      try {
+        const localList = JSON.parse(localStorage.getItem('local_pickup_requests') || '[]');
+        const localMatch = localList.find((r: any) => r.id === requestId);
+        if (localMatch) {
+          if (!localMatch.collector) {
+            localMatch.collector = {
+              id: localMatch.collector_id || 'collector-c201',
+              full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+              phone: '+91 98201 45892',
+              role: 'collector',
+              rating: 4.9,
+              completed_pickups: 126,
+            };
+          }
+          setRequest(localMatch);
+        }
+      } catch {}
+
       const supabase = createClient();
       const { data: req } = await supabase
         .from('pickup_requests')
         .select('*, waste_items(*)')
         .eq('id', requestId)
         .single();
-      if (req) setRequest(req as PickupRequest);
+      if (req) {
+        if (!req.collector && req.collector_id) {
+          const { data: colProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', req.collector_id)
+            .maybeSingle();
+          if (colProfile) {
+            req.collector = colProfile;
+          } else {
+            req.collector = {
+              id: req.collector_id,
+              full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+              phone: '+91 98201 45892',
+              role: 'collector',
+              rating: 4.9,
+              completed_pickups: 126,
+            };
+          }
+        }
+        setRequest(req as PickupRequest);
+      }
 
       // Init chat
       let { data: chat } = await supabase
@@ -244,6 +297,63 @@ export default function TrackPickupPage() {
               </div>
             </div>
 
+            {/* Assigned Collector Details Card (When Assigned) */}
+            {request.status !== 'pending' && (
+              <div className="bg-white rounded-3xl p-4 sm:p-5 border-2 border-[#136B3B]/25 shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8] flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" />
+                      <span>Assigned Collector</span>
+                    </span>
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                      <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                      <span>{request.collector?.rating || 4.9}</span>
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-[#526056] font-semibold">
+                    {request.collector?.completed_pickups || 126} pickups completed
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 pt-0.5">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative w-12 h-12 rounded-2xl bg-[#E6F4EA] border border-[#A6D5B8] flex items-center justify-center text-xl font-black text-[#136B3B] shrink-0 shadow-2xs">
+                      {(request.collector?.full_name || 'Ramesh Kumar').charAt(0)}
+                      <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-extrabold text-sm text-[#191C1E] truncate">
+                        {request.collector?.full_name || 'Ramesh Kumar (Verified Kabadiwala)'}
+                      </h3>
+                      <p className="text-xs font-mono font-bold text-[#136B3B] mt-0.5 flex items-center gap-1">
+                        <Phone className="w-3 h-3 text-[#136B3B]" />
+                        <span>{request.collector?.phone || '+91 98201 45892'}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <a
+                      href={`tel:${(request.collector?.phone || '+919820145892').replace(/\s+/g, '')}`}
+                      className="px-3.5 py-2 rounded-xl bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs touch-feedback"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>Call</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('chat')}
+                      className="px-3.5 py-2 rounded-xl bg-[#F4FAF6] hover:bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8] text-xs font-bold transition flex items-center gap-1.5"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>Chat</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Status Timeline */}
             <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-1">
               <h2 className="text-sm font-bold text-[#191C1E] mb-4">Pickup progress</h2>
@@ -302,6 +412,41 @@ export default function TrackPickupPage() {
               </div>
             )}
 
+            {/* Deal Completed & Official Digital Receipt Card */}
+            {request.status === 'completed' && (
+              <div className="bg-gradient-to-br from-[#E6F4EA] via-white to-emerald-50 rounded-3xl p-5 border-2 border-[#136B3B] shadow-sm space-y-3 animate-in fade-in">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-[#136B3B] text-white flex items-center justify-center shadow-xs shrink-0">
+                      <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-black text-sm text-[#136B3B]">
+                          Deal Done &amp; Payout Settled!
+                        </h3>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#136B3B] text-white">
+                          Official Receipt
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#526056] mt-0.5">
+                        Total Payout Received: <strong className="text-[#191C1E] font-black text-sm">₹{request.payment?.totalAmount || Math.round((request.total_estimated_weight_kg || 5) * 18)}</strong> via <span className="uppercase font-bold text-[#136B3B]">{request.payment?.method || 'UPI'}</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowReceiptModal(true)}
+                  className="w-full py-3.5 bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold text-xs sm:text-sm rounded-2xl transition flex items-center justify-center gap-2 shadow-sm touch-feedback"
+                >
+                  <Receipt className="w-4 h-4" />
+                  <span>View &amp; Download Digital Recycling Receipt</span>
+                </button>
+              </div>
+            )}
+
             {/* Quick actions */}
             <div className="grid grid-cols-2 gap-3 pb-4">
               <button
@@ -313,7 +458,7 @@ export default function TrackPickupPage() {
                 Open Chat
               </button>
               <a
-                href={`tel:+919876543210`}
+                href={`tel:${(request.collector?.phone || '+919820145892').replace(/\s+/g, '')}`}
                 className="flex items-center justify-center gap-2 py-3.5 bg-[#EAF5EE] border border-[#A6D5B8] rounded-2xl text-sm font-bold text-[#136B3B] hover:bg-[#D4EBD9] transition shadow-sm"
               >
                 <Phone className="w-4 h-4" />
@@ -328,15 +473,24 @@ export default function TrackPickupPage() {
           <div className="flex flex-col flex-1" style={{ minHeight: '460px' }}>
             {/* Collector info strip */}
             <div className="flex items-center gap-3 bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm mb-3">
-              <div className="w-10 h-10 rounded-full bg-[#EAF5EE] flex items-center justify-center text-xl flex-shrink-0 font-bold text-[#136B3B]">R</div>
+              <div className="w-10 h-10 rounded-full bg-[#EAF5EE] flex items-center justify-center text-xl flex-shrink-0 font-bold text-[#136B3B]">
+                {(request.collector?.full_name || 'Ramesh Kumar').charAt(0)}
+              </div>
               <div>
-                <p className="text-sm font-bold text-[#191C1E]">Raju Kabadiwala</p>
+                <p className="text-sm font-bold text-[#191C1E]">
+                  {request.collector?.full_name || 'Ramesh Kumar (Verified Kabadiwala)'}
+                </p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <p className="text-xs text-[#526056]">Active collector · On the way</p>
+                  <p className="text-xs text-[#526056]">
+                    {request.collector?.phone || '+91 98201 45892'} · On the way
+                  </p>
                 </div>
               </div>
-              <a href="tel:+919876543210" className="ml-auto w-9 h-9 rounded-full bg-[#EAF5EE] flex items-center justify-center text-[#136B3B] hover:bg-[#D4EBD9] transition flex-shrink-0">
+              <a
+                href={`tel:${(request.collector?.phone || '+919820145892').replace(/\s+/g, '')}`}
+                className="ml-auto w-9 h-9 rounded-full bg-[#EAF5EE] flex items-center justify-center text-[#136B3B] hover:bg-[#D4EBD9] transition flex-shrink-0"
+              >
                 <Phone className="w-4 h-4" />
               </a>
             </div>
@@ -398,6 +552,14 @@ export default function TrackPickupPage() {
               </form>
             </div>
           </div>
+        )}
+
+        {/* Digital Recycling Receipt Modal */}
+        {showReceiptModal && (
+          <ReceiptModal
+            request={request}
+            onClose={() => setShowReceiptModal(false)}
+          />
         )}
 
       </main>
