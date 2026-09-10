@@ -15,10 +15,9 @@ export default function RequestPickupPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Form State
-  const [items, setItems] = useState<WasteItem[]>([
-    { category: 'PAPER', approx_weight_kg: 8.5, notes: 'Bundled newspapers' }
-  ]);
+  // Form State: strictly require photo upload and AI verification before items can be added
+  const [items, setItems] = useState<WasteItem[]>([]);
+  const [isAiAdded, setIsAiAdded] = useState<boolean>(false);
   const [address, setAddress] = useState<string>('Indiranagar 100ft Road, Bangalore');
   const [latitude, setLatitude] = useState<number>(12.9716);
   const [longitude, setLongitude] = useState<number>(77.5946);
@@ -86,23 +85,22 @@ export default function RequestPickupPage() {
     const noteText = `AI Verified: ${aiResult.categoryName || category} • ${grade}${moisture}${rust} (${aiResult.confidence}% conf)`;
 
     setItems((prev) => {
-      // If only placeholder item exists, replace it
-      if (prev.length === 1 && prev[0].category === 'PAPER' && prev[0].notes === 'Bundled newspapers') {
-        return [{
-          category,
-          approx_weight_kg: 5.0,
-          notes: noteText
-        }];
+      const existingIdx = prev.findIndex((it) => it.category === category);
+      if (existingIdx >= 0) {
+        const copy = [...prev];
+        copy[existingIdx] = { ...copy[existingIdx], notes: noteText };
+        return copy;
       }
       return [
         ...prev,
         {
           category,
           approx_weight_kg: 5.0,
-          notes: noteText
-        }
+          notes: noteText,
+        },
       ];
     });
+    setIsAiAdded(true);
   };
 
   const handleLocationSelect = (lat: number, lng: number, addr: string) => {
@@ -144,7 +142,15 @@ export default function RequestPickupPage() {
   };
 
   const removePhoto = (indexToRemove: number) => {
-    setPhotos((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    setPhotos((prev) => {
+      const updated = prev.filter((_, idx) => idx !== indexToRemove);
+      if (updated.length === 0) {
+        setAiResult(null);
+        setIsAiAdded(false);
+        setItems([]);
+      }
+      return updated;
+    });
   };
 
   const triggerPhotoUpload = () => {
@@ -157,8 +163,20 @@ export default function RequestPickupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (photos.length === 0) {
+      alert('📷 Photo Required: Please upload at least one scrap photo for AI verification before requesting pickup.');
+      return;
+    }
+    if (isAiAnalyzing) {
+      alert('🤖 AI Verification in progress: Please wait for scrap analysis to finish.');
+      return;
+    }
+    if (aiResult && aiResult.isValidScrap === false) {
+      alert('❌ Invalid Scrap: Please upload a photo of valid recyclable scrap (Cardboard, Paper, Plastic, Metal, E-Waste).');
+      return;
+    }
     if (items.length === 0) {
-      alert('Please add at least one recyclable waste item.');
+      alert('⚠️ Scrap Item Required: Please click "Auto-Add to Items" in Step 1 to add your verified scrap to the pickup request.');
       return;
     }
     if (!address.trim()) {
@@ -412,16 +430,23 @@ export default function RequestPickupPage() {
       <main className="px-4 sm:px-6 pt-5 space-y-7 max-w-xl mx-auto w-full">
         <form onSubmit={handleSubmit} className="space-y-7">
           
-          {/* Section 1: Recyclable Items & Weights */}
-          <section data-purpose="recycle-category-selection">
-            <WasteItemForm items={items} onChange={setItems} />
-          </section>
-
-          {/* Section 2: Add Photos Well (Connected to pickup_requests & waste_items tables) */}
-          <section data-purpose="photo-upload-container">
-            <div className="flex items-center justify-between mb-2.5">
-              <h2 className="text-base font-bold text-[#191C1E] tracking-tight">Add photos</h2>
-              <span className="text-xs text-[#526056] font-medium">
+          {/* Section 1: Upload Scrap Photo & AI Verification (Mandatory First Step) */}
+          <section data-purpose="photo-upload-container" className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-extrabold text-[#191C1E] tracking-tight">
+                    Step 1: Upload Scrap Photo & AI Verification
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200">
+                    Required
+                  </span>
+                </div>
+                <p className="text-xs text-[#526056] mt-0.5">
+                  AI will verify recyclable material, inspect moisture/rust, and unlock auto-adding.
+                </p>
+              </div>
+              <span className="text-xs text-[#526056] font-bold shrink-0">
                 {photos.length}/4 photos
               </span>
             </div>
@@ -442,7 +467,7 @@ export default function RequestPickupPage() {
                 type="button"
                 onClick={triggerPhotoUpload}
                 disabled={isProcessingPhotos}
-                className="w-full h-32 rounded-2xl border-2 border-[#7BA991] bg-[#F4FAF6] flex flex-col items-center justify-center gap-2 hover:bg-[#EAF5EE] active:bg-[#DDF0E3] transition touch-feedback"
+                className="w-full h-36 rounded-2xl border-2 border-dashed border-[#136B3B] bg-[#F4FAF6] flex flex-col items-center justify-center gap-2 hover:bg-[#EAF5EE] active:bg-[#DDF0E3] transition touch-feedback cursor-pointer shadow-xs"
               >
                 {isProcessingPhotos ? (
                   <div className="flex flex-col items-center gap-2 text-[#136B3B]">
@@ -452,16 +477,16 @@ export default function RequestPickupPage() {
                 ) : (
                   <>
                     <div className="relative flex items-center justify-center text-[#136B3B]">
-                      <Camera className="w-8 h-8 stroke-[2]" />
+                      <Camera className="w-9 h-9 stroke-[2]" />
                       <span className="absolute -top-1 -right-1 bg-white rounded-full w-4 h-4 flex items-center justify-center text-[#136B3B] font-bold text-xs shadow-xs">
                         +
                       </span>
                     </div>
-                    <span className="text-xs font-bold text-[#136B3B]">
-                      Add Photo
+                    <span className="text-sm font-extrabold text-[#136B3B]">
+                      Take Photo / Upload Scrap Photo
                     </span>
-                    <span className="text-[11px] text-[#526056]">
-                      Snap camera picture or select from gallery
+                    <span className="text-[11px] text-[#526056] max-w-xs text-center px-4">
+                      Snap your cardboard, plastic bottles, metals, or e-waste to run real-time AI valuation.
                     </span>
                   </>
                 )}
@@ -479,124 +504,64 @@ export default function RequestPickupPage() {
                         src={photoUrl}
                         alt={`Scrap item photo ${idx + 1}`}
                         fill
-                        unoptimized
                         className="object-cover"
+                        sizes="(max-width: 640px) 25vw, 150px"
                       />
-                      {/* Delete photo button */}
                       <button
                         type="button"
                         onClick={() => removePhoto(idx)}
                         aria-label={`Remove photo ${idx + 1}`}
-                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center transition shadow-md"
+                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-rose-600 transition"
                       >
-                        <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
-                      <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/50 text-[10px] text-white font-bold">
-                        #{idx + 1}
-                      </div>
                     </div>
                   ))}
 
-                  {/* Add more button slot if fewer than 4 */}
                   {photos.length < 4 && (
                     <button
                       type="button"
                       onClick={triggerPhotoUpload}
                       disabled={isProcessingPhotos}
-                      className="h-24 rounded-2xl border-2 border-dashed border-[#7BA991] bg-[#F4FAF6] hover:bg-[#EAF5EE] flex flex-col items-center justify-center text-[#136B3B] transition touch-feedback"
+                      className="h-24 rounded-2xl border-2 border-dashed border-[#A6D5B8] bg-[#F4FAF6] hover:bg-[#EAF5EE] flex flex-col items-center justify-center text-[#136B3B] transition"
                     >
                       {isProcessingPhotos ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
                       ) : (
                         <>
-                          <Plus className="w-6 h-6 stroke-[2.5]" />
-                          <span className="text-[11px] font-bold mt-1">Add more</span>
+                          <Plus className="w-5 h-5 stroke-[2.5]" />
+                          <span className="text-[10px] font-bold mt-1">Add Photo</span>
                         </>
                       )}
                     </button>
                   )}
                 </div>
 
-                {/* Status banner matching screenshot style */}
-                <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#F4FAF6] border border-[#A6D5B8]">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#136B3B]">
-                    <Camera className="w-4 h-4" />
-                    <span>
-                      {photos.length} Photo{photos.length > 1 ? 's' : ''} Attached (Tap to change)
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPhotos([]);
-                      setAiResult(null);
-                    }}
-                    className="text-[11px] text-red-600 hover:text-red-700 font-semibold transition cursor-pointer"
-                  >
-                    Clear all
-                  </button>
-                </div>
-
-                {/* Gemini AI Multimodal Vision Analysis Result */}
+                {/* AI Analyzing Status Indicator */}
                 {isAiAnalyzing && (
-                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200 flex items-center gap-3 animate-pulse shadow-xs">
-                    <div className="w-9 h-9 rounded-xl bg-[#136B3B] flex items-center justify-center text-white shrink-0 shadow-xs">
-                      <Sparkles className="w-5 h-5 animate-spin" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-emerald-950">AiCLE Gemini AI Vision</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800 font-semibold">
-                          Analyzing Image Pixels...
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-emerald-800 mt-0.5">
-                        Scanning scrap material, textures & purity from uploaded photo...
+                  <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex items-center gap-3">
+                    <Loader2 className="w-5 h-5 text-[#136B3B] animate-spin shrink-0" />
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-bold text-[#191C1E]">
+                        Gemini AI inspecting scrap photo...
+                      </p>
+                      <p className="text-[11px] text-[#526056]">
+                        Detecting material category, moisture level, rust, and recyclability grade.
                       </p>
                     </div>
                   </div>
                 )}
 
-                {/* API Key Missing Setup Card */}
-                {aiResult && !isAiAnalyzing && aiResult.isKeyMissing && (
-                  <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-50 to-orange-50/40 border-2 border-amber-300 shadow-xs space-y-3 transition-all">
-                    <div className="flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/20">
-                        <Sparkles className="w-5 h-5 stroke-[2.5]" />
+                {/* AI Rejection Warning Banner */}
+                {aiResult && !isAiAnalyzing && aiResult.isValidScrap === false && (
+                  <div className="p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 shadow-xs space-y-2.5 animate-in fade-in">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-700 shrink-0 mt-0.5">
+                        <AlertTriangle className="w-5 h-5" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h4 className="text-sm font-bold text-amber-950 tracking-tight">
-                            ⚙️ Gemini Vision API Key Required on Vercel
-                          </h4>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-200 text-amber-900 border border-amber-300/80">
-                            Setup Needed
-                          </span>
-                        </div>
-                        <p className="text-xs text-amber-900/90 font-medium leading-relaxed">
-                          {aiResult.rejectionReason || "The Gemini Multimodal Vision API key is not configured in your Vercel deployment."}
-                        </p>
-                        <div className="mt-2.5 p-2.5 rounded-xl bg-white/80 border border-amber-200/80 flex items-start gap-2">
-                          <span className="text-xs shrink-0">💡</span>
-                          <p className="text-[11px] text-amber-950 leading-relaxed">
-                            <strong>Quick Fix:</strong> Open <strong>Vercel Dashboard</strong> ➔ <strong>Project Settings</strong> ➔ <strong>Environment Variables</strong> ➔ Add <code className="px-1 py-0.5 rounded bg-amber-100 text-amber-900 font-mono text-[10px]">GEMINI_API_KEY</code> ➔ Click <strong>Redeploy</strong>.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Invalid / Unrelated Photo Warning Card */}
-                {aiResult && !isAiAnalyzing && !aiResult.isKeyMissing && aiResult.isValidScrap === false && (
-                  <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-br from-rose-500/10 via-rose-50 to-red-50/40 border-2 border-rose-300 shadow-xs space-y-3 transition-all">
-                    <div className="flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-rose-600/20">
-                        <AlertTriangle className="w-5 h-5 stroke-[2.5]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h4 className="text-sm font-bold text-rose-950 tracking-tight">
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs sm:text-sm font-bold text-rose-900 leading-snug">
                             ❌ Invalid Scrap Photo: Non-Recyclable Object
                           </h4>
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-800 border border-rose-300/80">
@@ -606,7 +571,7 @@ export default function RequestPickupPage() {
                         <p className="text-xs text-rose-900/90 font-medium leading-relaxed">
                           {aiResult.rejectionReason || "No recyclable scrap material was identified in this photo. Please ensure your photo clearly depicts recyclable scrap or discarded waste."}
                         </p>
-                        <div className="mt-2.5 p-2.5 rounded-xl bg-white/80 border border-rose-200/80 flex items-start gap-2 text-[11px] text-rose-950">
+                        <div className="mt-2 p-2.5 rounded-xl bg-white/80 border border-rose-200/80 flex items-start gap-2 text-[11px] text-rose-950">
                           <span className="text-xs shrink-0">♻️</span>
                           <span className="leading-relaxed">
                             <strong>Accepted Items:</strong> Cardboard boxes, paper & newspapers, plastic containers/bottles, iron/steel scrap, e-waste/cables, or glass bottles.
@@ -659,14 +624,23 @@ export default function RequestPickupPage() {
                           </div>
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={applyAiRecommendation}
-                        className="px-3 py-1.5 rounded-xl bg-[#136B3B] hover:bg-[#0E522C] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs shrink-0 touch-feedback cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                        Auto-Add to Items
-                      </button>
+
+                      {/* Auto-Add Button */}
+                      {isAiAdded ? (
+                        <span className="px-3 py-1.5 rounded-xl bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs shrink-0">
+                          <CheckCircle className="w-3.5 h-3.5 stroke-[2.5]" />
+                          <span>Added to Items</span>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={applyAiRecommendation}
+                          className="px-4 py-2 rounded-xl bg-[#136B3B] hover:bg-[#0E522C] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm shrink-0 touch-feedback cursor-pointer animate-pulse"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                          <span>Auto-Add to Items</span>
+                        </button>
+                      )}
                     </div>
 
                     {/* Condition & Quality Inspection Badges */}
@@ -728,6 +702,34 @@ export default function RequestPickupPage() {
                   </div>
                 )}
               </div>
+            )}
+          </section>
+
+          {/* Section 2: Recyclable Items & Weights (Unlocked after photo verification) */}
+          <section data-purpose="recycle-category-selection" className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-extrabold text-[#191C1E] tracking-tight">
+                Step 2: Recyclable Items & Weight
+              </h2>
+              {items.length > 0 && (
+                <span className="text-xs font-bold text-[#136B3B] bg-[#E6F4EA] px-2.5 py-0.5 rounded-full">
+                  {items.length} category added
+                </span>
+              )}
+            </div>
+
+            {items.length === 0 ? (
+              <div className="p-6 bg-white border border-dashed border-gray-300 rounded-2xl text-center space-y-2">
+                <div className="w-10 h-10 rounded-full bg-emerald-50 text-[#136B3B] flex items-center justify-center mx-auto">
+                  <Camera className="w-5 h-5" />
+                </div>
+                <h4 className="text-xs font-bold text-[#191C1E]">Photo & AI Verification Required</h4>
+                <p className="text-[11px] text-gray-500 max-w-sm mx-auto leading-relaxed">
+                  Please snap or upload your scrap photo in Step 1 above. Once our AI verifies the scrap, click <strong className="text-[#136B3B]">&quot;Auto-Add to Items&quot;</strong> to unlock and schedule your pickup.
+                </p>
+              </div>
+            ) : (
+              <WasteItemForm items={items} onChange={setItems} />
             )}
           </section>
 
@@ -801,7 +803,7 @@ export default function RequestPickupPage() {
             />
           </section>
 
-          {/* Section 5: Recyclable Tip Notice Strip */}
+          {/* Recyclable Tip Notice Strip */}
           <div className="p-4 rounded-2xl bg-[#EDF7F2] flex items-start gap-3 border border-emerald-100 select-none" data-purpose="info-callout">
             <span className="text-xl flex-shrink-0 leading-none">💡</span>
             <p className="text-xs font-medium text-[#1B4332] leading-relaxed">
@@ -809,22 +811,82 @@ export default function RequestPickupPage() {
             </p>
           </div>
 
-          {/* Sticky Confirm CTA Button */}
-          <div className="pt-2">
+          {/* Sticky Confirm CTA Button with Dynamic Real-time Status Guidance */}
+          <div className="pt-2 space-y-2">
+            {photos.length === 0 && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2 text-xs text-amber-900 font-medium">
+                <span>📷</span>
+                <span>Upload a scrap photo in Step 1 to run AI verification and unlock booking.</span>
+              </div>
+            )}
+
+            {isAiAnalyzing && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-2 text-xs text-blue-900 font-medium">
+                <Loader2 className="w-4 h-4 animate-spin text-blue-600 shrink-0" />
+                <span>AI is analyzing your scrap photo. Please wait a few seconds...</span>
+              </div>
+            )}
+
+            {aiResult && aiResult.isValidScrap === false && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-xs text-rose-900 font-medium">
+                <span>❌</span>
+                <span>Photo rejected by AI. Please upload a valid recyclable scrap photo to proceed.</span>
+              </div>
+            )}
+
+            {photos.length > 0 && aiResult && aiResult.isValidScrap !== false && items.length === 0 && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-900 font-medium">
+                <span>✨ Photo verified! Click &quot;Auto-Add to Items&quot; above to add your scrap.</span>
+                <button
+                  type="button"
+                  onClick={applyAiRecommendation}
+                  className="px-2.5 py-1 bg-[#136B3B] text-white font-bold rounded-lg text-[11px] shrink-0"
+                >
+                  Auto-Add Now
+                </button>
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={submitting || items.length === 0}
-              className="w-full py-4 bg-[#136B3B] hover:bg-[#0F5730] active:bg-[#0C4425] text-white font-bold rounded-2xl text-sm tracking-wide shadow-md transition disabled:opacity-50 touch-feedback flex items-center justify-center gap-2"
+              disabled={
+                submitting ||
+                photos.length === 0 ||
+                isAiAnalyzing ||
+                (aiResult && aiResult.isValidScrap === false) ||
+                items.length === 0
+              }
+              className="w-full py-4 bg-[#136B3B] hover:bg-[#0F5730] active:bg-[#0C4425] text-white font-bold rounded-2xl text-sm tracking-wide shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed touch-feedback flex items-center justify-center gap-2"
             >
               {submitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin stroke-[2.5]" />
                   <span>Scheduling & Uploading Photos...</span>
                 </>
+              ) : photos.length === 0 ? (
+                <>
+                  <Camera className="w-4 h-4" />
+                  <span>Upload scrap photo to continue</span>
+                </>
+              ) : isAiAnalyzing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>AI Verifying Scrap...</span>
+                </>
+              ) : aiResult && aiResult.isValidScrap === false ? (
+                <>
+                  <AlertTriangle className="w-4 h-4" />
+                  <span>Invalid Scrap Photo</span>
+                </>
+              ) : items.length === 0 ? (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Auto-add verified scrap to proceed</span>
+                </>
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4 stroke-[2.5]" />
-                  <span>Confirm pickup request</span>
+                  <span>Confirm pickup request ({items.reduce((acc, c) => acc + c.approx_weight_kg, 0).toFixed(1)} kg)</span>
                 </>
               )}
             </button>
