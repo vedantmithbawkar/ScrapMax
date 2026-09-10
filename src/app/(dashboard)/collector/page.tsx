@@ -8,6 +8,12 @@ import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
 import { MapPin, History, Filter } from 'lucide-react';
+import {
+  triggerCollectorAcceptedNotification,
+  triggerCollectorNearNotification,
+  triggerPickupCompletedNotification,
+  triggerPaymentReceivedNotification,
+} from '@/lib/notification-service';
 
 const DEMO_COLLECTOR_REQUESTS: PickupRequest[] = [
   {
@@ -93,6 +99,15 @@ export default function CollectorDashboard() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
+    // Trigger live smart notifications
+    if (newStatus === 'accepted') {
+      triggerCollectorAcceptedNotification('Verified ScrapMax Collector');
+    } else if (newStatus === 'in_progress') {
+      triggerCollectorNearNotification(500);
+    } else if (newStatus === 'completed') {
+      triggerPickupCompletedNotification();
+    }
+
     // Update in Supabase
     try {
       await supabase
@@ -124,6 +139,12 @@ export default function CollectorDashboard() {
   const handleCompletePayment = async (requestId: string, payment: PickupRequest['payment']) => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
+
+    // Trigger payment received notification
+    if (payment) {
+      triggerPaymentReceivedNotification(payment.totalAmount, payment.method?.toUpperCase() || 'UPI');
+    }
+    triggerPickupCompletedNotification();
 
     try {
       await supabase

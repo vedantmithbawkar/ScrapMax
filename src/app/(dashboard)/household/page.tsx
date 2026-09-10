@@ -7,7 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
-import { Recycle, Package, ArrowRight, IndianRupee } from 'lucide-react';
+import { Recycle, Package, ArrowRight, IndianRupee, Store } from 'lucide-react';
 
 const DEMO_HOUSEHOLD_REQUESTS: PickupRequest[] = [
   {
@@ -200,25 +200,39 @@ export default function HouseholdDashboard() {
           <h3 className="text-lg font-bold text-[#191C1E] tracking-tight">
             Quick actions
           </h3>
-          <div className="grid grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             {/* Sell Recyclables Card */}
             <Link
               href="/household/request-pickup"
-              className="bg-white rounded-3xl p-5 text-left flex flex-col justify-between h-[160px] border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] hover:shadow-md transition active:scale-[0.98] touch-feedback"
+              className="bg-white rounded-3xl p-5 text-left flex flex-col justify-between h-[150px] border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] hover:shadow-md transition active:scale-[0.98] touch-feedback"
             >
               <div className="w-10 h-10 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#136B3B]">
                 <Recycle className="w-6 h-6 stroke-[2.2]" />
               </div>
               <div>
                 <p className="font-bold text-[#191C1E] text-[16px] leading-tight">Sell recyclables</p>
-                <p className="text-xs text-[#6B7280] font-medium mt-1">Get value</p>
+                <p className="text-xs text-[#6B7280] font-medium mt-1">Book scrap pickup</p>
               </div>
             </Link>
 
-            {/* Nearby Collectors Card */}
+            {/* Recycling Stores & Scrap Centers Map Card */}
+            <Link
+              href="/stores"
+              className="bg-white rounded-3xl p-5 text-left flex flex-col justify-between h-[150px] border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] hover:shadow-md transition active:scale-[0.98] touch-feedback"
+            >
+              <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-[#136B3B]">
+                <Store className="w-6 h-6 stroke-[2.2]" />
+              </div>
+              <div>
+                <p className="font-bold text-[#191C1E] text-[16px] leading-tight">Store Map</p>
+                <p className="text-xs text-[#6B7280] font-medium mt-1">Nearby scrap centers</p>
+              </div>
+            </Link>
+
+            {/* My Activity Card */}
             <Link
               href="/household/history"
-              className="bg-white rounded-3xl p-5 text-left flex flex-col justify-between h-[160px] border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] hover:shadow-md transition active:scale-[0.98] touch-feedback"
+              className="bg-white rounded-3xl p-5 text-left flex flex-col justify-between h-[150px] border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] hover:shadow-md transition active:scale-[0.98] touch-feedback"
             >
               <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-[#E23636]">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
@@ -229,7 +243,7 @@ export default function HouseholdDashboard() {
               </div>
               <div>
                 <p className="font-bold text-[#191C1E] text-[16px] leading-tight">My activity</p>
-                <p className="text-xs text-[#6B7280] font-medium mt-1">Recycling logs</p>
+                <p className="text-xs text-[#6B7280] font-medium mt-1">Recycling logs & receipts</p>
               </div>
             </Link>
           </div>

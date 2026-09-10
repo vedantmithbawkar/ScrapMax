@@ -1,10 +1,10 @@
 'use client';
-
 import React, { useState } from 'react';
+import Link from 'next/link';
 import MapContainer from './MapContainer';
 import { fetchNearbyKabadiwalas } from '@/lib/kabadiwala-service';
 import { NearbyKabadiwala } from '@/types';
-import { Navigation, Search, MapPin, Check, Truck, Phone, Star, Loader2, Compass } from 'lucide-react';
+import { Navigation, Search, MapPin, Check, Truck, Phone, Star, Loader2, Compass, ExternalLink } from 'lucide-react';
 
 interface LocationPickerProps {
   onLocationSelect: (lat: number, lng: number, address: string) => void;
@@ -25,11 +25,12 @@ export default function LocationPicker({
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [isSearching, setIsSearching] = useState<boolean>(false);
 
-  // Nearby Kabadiwalas state
+  // Nearby Kabadiwalas state & material filter
   const [nearbyKabadiwalas, setNearbyKabadiwalas] = useState<NearbyKabadiwala[]>([]);
   const [isLoadingKabadi, setIsLoadingKabadi] = useState<boolean>(false);
   const [showKabadiwalas, setShowKabadiwalas] = useState<boolean>(false);
   const [selectedKabadi, setSelectedKabadi] = useState<NearbyKabadiwala | null>(null);
+  const [materialFilter, setMaterialFilter] = useState<string>('All');
 
   // Free OpenStreetMap Nominatim reverse geocoding
   const fetchAddress = async (lat: number, lng: number) => {
@@ -231,66 +232,96 @@ export default function LocationPicker({
         className="h-[320px] w-full"
       />
 
-      {/* Nearby Kabadiwalas Horizontal List (When Active) */}
+      {/* Nearby Kabadiwalas Section (When Active) */}
       {showKabadiwalas && (
-        <div className="space-y-2 pt-1 animate-in fade-in">
+        <div className="space-y-2.5 pt-1 animate-in fade-in">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs font-bold text-[#191C1E] flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-              {nearbyKabadiwalas.length} Nearby Scrap Dealers Found (within 5 km)
+              Nearby Scrap Centers (within 5 km)
             </span>
-            <span className="text-[11px] text-[#526056]">Powered by OpenStreetMap</span>
+            <Link
+              href="/stores"
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#136B3B] hover:underline"
+            >
+              <span>Full Store Map</span>
+              <ExternalLink className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {/* Quick Material Filter Pills */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none text-[11px] font-bold">
+            {['All', 'Paper', 'Plastic', 'Metal', 'E-Waste', 'Batteries'].map((mat) => (
+              <button
+                key={mat}
+                type="button"
+                onClick={() => setMaterialFilter(mat)}
+                className={`px-2.5 py-1 rounded-lg border transition flex-shrink-0 ${
+                  materialFilter === mat
+                    ? 'bg-[#136B3B] text-white border-[#136B3B]'
+                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                {mat}
+              </button>
+            ))}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-0.5">
-            {nearbyKabadiwalas.map((dealer) => {
-              const isSelected = selectedKabadi?.id === dealer.id;
-              return (
-                <div
-                  key={dealer.id}
-                  onClick={() => handleSelectDealer(dealer)}
-                  className={`p-3 rounded-xl border text-left cursor-pointer transition ${
-                    isSelected
-                      ? 'bg-amber-50/70 border-amber-400 shadow-2xs'
-                      : 'bg-white hover:bg-gray-50 border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h5 className="font-bold text-xs text-[#191C1E] leading-tight flex items-center gap-1">
-                        <span>{dealer.name}</span>
-                      </h5>
-                      <p className="text-[11px] text-[#6B7280] mt-0.5 leading-snug truncate max-w-[190px]">
-                        {dealer.address}
-                      </p>
+            {nearbyKabadiwalas
+              .filter((d) => {
+                if (materialFilter === 'All') return true;
+                const matLower = materialFilter.toLowerCase();
+                return d.acceptedMaterials?.some((m) => m.toLowerCase().includes(matLower));
+              })
+              .map((dealer) => {
+                const isSelected = selectedKabadi?.id === dealer.id;
+                return (
+                  <div
+                    key={dealer.id}
+                    onClick={() => handleSelectDealer(dealer)}
+                    className={`p-3 rounded-xl border text-left cursor-pointer transition ${
+                      isSelected
+                        ? 'bg-amber-50/70 border-amber-400 shadow-2xs'
+                        : 'bg-white hover:bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h5 className="font-bold text-xs text-[#191C1E] leading-tight flex items-center gap-1">
+                          <span>{dealer.name}</span>
+                        </h5>
+                        <p className="text-[11px] text-[#6B7280] mt-0.5 leading-snug truncate max-w-[190px]">
+                          {dealer.address}
+                        </p>
+                      </div>
+                      {dealer.distanceKm !== undefined && (
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 flex-shrink-0">
+                          {dealer.distanceKm} km
+                        </span>
+                      )}
                     </div>
-                    {dealer.distanceKm !== undefined && (
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 flex-shrink-0">
-                        {dealer.distanceKm} km
-                      </span>
-                    )}
-                  </div>
 
-                  <div className="mt-2 flex items-center justify-between pt-1 border-t border-gray-100">
-                    <div className="flex items-center gap-1 text-[11px] font-bold text-amber-600">
-                      <Star className="w-3 h-3 fill-amber-500 stroke-amber-500" />
-                      <span>{dealer.rating || 4.7}</span>
+                    <div className="mt-2 flex items-center justify-between pt-1 border-t border-gray-100">
+                      <div className="flex items-center gap-1 text-[11px] font-bold text-amber-600">
+                        <Star className="w-3 h-3 fill-amber-500 stroke-amber-500" />
+                        <span>{dealer.rating || 4.7}</span>
+                      </div>
+
+                      {dealer.phone && (
+                        <a
+                          href={`tel:${dealer.phone}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-[10.5px] font-bold text-[#136B3B] hover:underline"
+                        >
+                          <Phone className="w-3 h-3" />
+                          <span>Call {dealer.phone.slice(0, 10)}</span>
+                        </a>
+                      )}
                     </div>
-
-                    {dealer.phone && (
-                      <a
-                        href={`tel:${dealer.phone}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-[10.5px] font-bold text-[#136B3B] hover:underline"
-                      >
-                        <Phone className="w-3 h-3" />
-                        <span>Call {dealer.phone.slice(0, 10)}</span>
-                      </a>
-                    )}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
       )}
