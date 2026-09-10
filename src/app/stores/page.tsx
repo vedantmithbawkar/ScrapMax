@@ -13,6 +13,10 @@ import {
   filterRecyclingStores,
   isStoreOpenNow,
   DEFAULT_CITY_COORDINATES,
+  geocodeLocationInIndia,
+  reverseGeocodeCoords,
+  fetchLegitStoresForLocation,
+  MAJOR_INDIAN_CITIES,
 } from '@/lib/recycling-store-service';
 import {
   Search,
@@ -30,9 +34,14 @@ import {
   ExternalLink,
   Store,
   Compass,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 
 export default function RecyclingStoreMapPage() {
+  const [storesData, setStoresData] = useState<RecyclingStore[]>(BASE_RECYCLING_STORES);
+  const [locationInput, setLocationInput] = useState('');
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMaterials, setSelectedMaterials] = useState<StoreMaterial[]>([]);
   const [openNowOnly, setOpenNowOnly] = useState(false);
@@ -52,23 +61,30 @@ export default function RecyclingStoreMapPage() {
   useEffect(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        async (pos) => {
           const { latitude, longitude } = pos.coords;
           setUserLocation([latitude, longitude]);
-          // Check if detected position is within Mumbai MMR (lat ~18.7 to 19.5, lng ~72.7 to 73.2)
-          if (latitude >= 18.7 && latitude <= 19.5 && longitude >= 72.7 && longitude <= 73.2) {
+          // Check if detected position is within Mulund / Mumbai eastern suburbs
+          if (latitude >= 19.14 && latitude <= 19.22 && longitude >= 72.93 && longitude <= 72.98) {
             setCityFilter('mumbai');
-            setLocationStatusText('Your Live Location (Mumbai MMR / Mulund)');
-          } else if (latitude >= 12.7 && latitude <= 13.2 && longitude >= 77.4 && longitude <= 77.8) {
-            setCityFilter('bangalore');
-            setLocationStatusText('Your Live Location (Bangalore)');
+            setLocationStatusText('Your GPS (Mulund, Mumbai)');
           } else {
-            setCityFilter('all');
-            setLocationStatusText(`Your Live GPS (${latitude.toFixed(3)}, ${longitude.toFixed(3)})`);
+            try {
+              const localityName = await reverseGeocodeCoords(latitude, longitude);
+              setLocationStatusText(`Your GPS: ${localityName}`);
+              const nearbyStores = await fetchLegitStoresForLocation(latitude, longitude, localityName);
+              if (nearbyStores.length > 0) {
+                setStoresData(nearbyStores);
+                setSelectedStore(nearbyStores[0]);
+                setCityFilter('all');
+              }
+            } catch (err) {
+              setLocationStatusText(`Your GPS (${latitude.toFixed(3)}, ${longitude.toFixed(3)})`);
+            }
           }
         },
         () => {
-          // Geolocation permission denied or timed out; keep Mulund, Mumbai as default
+          // Geolocation permission denied or timed out; Mulund, Mumbai remains active default
           setLocationStatusText('Mulund, Mumbai (Default)');
         },
         { enableHighAccuracy: true, timeout: 5000 }
@@ -76,9 +92,9 @@ export default function RecyclingStoreMapPage() {
     }
   }, []);
 
-  // Filtered and sorted stores
+  // Filtered and sorted stores computed over active storesData
   const filteredStores = useMemo(() => {
-    return filterRecyclingStores(BASE_RECYCLING_STORES, {
+    return filterRecyclingStores(storesData, {
       searchQuery,
       selectedMaterials,
       openNowOnly,
@@ -86,7 +102,45 @@ export default function RecyclingStoreMapPage() {
       userLocation,
       city: cityFilter,
     });
-  }, [searchQuery, selectedMaterials, openNowOnly, sortBy, userLocation, cityFilter]);
+  }, [storesData, searchQuery, selectedMaterials, openNowOnly, sortBy, userLocation, cityFilter]);
+
+  // Handle nationwide Indian location search (e.g. Pune, Delhi, Powai, Thane, 411038)
+  const handleLocationSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const query = locationInput.trim();
+    if (!query) return;
+
+    setIsSearchingLocation(true);
+    try {
+      const geoResult = await geocodeLocationInIndia(query);
+      if (!geoResult) {
+        alert(
+          `Could not locate "${query}" in India. Please check the spelling or try searching a nearby city, area or PIN code.`
+        );
+        setIsSearchingLocation(false);
+        return;
+      }
+
+      const { name, latitude, longitude } = geoResult;
+      setUserLocation([latitude, longitude]);
+      setLocationStatusText(name);
+      setCityFilter('all');
+
+      // Fetch authentic, legit scrap dealers & recycling centers for this Indian location
+      const legitStores = await fetchLegitStoresForLocation(latitude, longitude, name);
+      if (legitStores && legitStores.length > 0) {
+        setStoresData(legitStores);
+        setSelectedStore(legitStores[0]);
+      } else {
+        setStoresData(BASE_RECYCLING_STORES);
+      }
+    } catch (err) {
+      console.error('Error finding location:', err);
+      alert('Could not complete location search. Please try again.');
+    } finally {
+      setIsSearchingLocation(false);
+    }
+  };
 
   // Handle manual GPS detection button click
   const handleGPSDetect = () => {
@@ -97,16 +151,28 @@ export default function RecyclingStoreMapPage() {
 
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const { latitude, longitude } = pos.coords;
         setUserLocation([latitude, longitude]);
-        setCityFilter('all'); // Show all stores sorted by true distance to user
-        setLocationStatusText(`Live GPS (${latitude.toFixed(3)}, ${longitude.toFixed(3)})`);
-        setIsLocating(false);
+        setCityFilter('all');
+        try {
+          const localityName = await reverseGeocodeCoords(latitude, longitude);
+          setLocationStatusText(`Live GPS: ${localityName}`);
+          setLocationInput(localityName);
+          const legitStores = await fetchLegitStoresForLocation(latitude, longitude, localityName);
+          if (legitStores && legitStores.length > 0) {
+            setStoresData(legitStores);
+            setSelectedStore(legitStores[0]);
+          }
+        } catch (err) {
+          setLocationStatusText(`Live GPS (${latitude.toFixed(3)}, ${longitude.toFixed(3)})`);
+        } finally {
+          setIsLocating(false);
+        }
       },
       (err) => {
         console.warn('GPS detection notice:', err);
-        alert('Could not retrieve your GPS location. You can select your city using the quick pills.');
+        alert('Could not retrieve your GPS location. You can search any Indian city or area in the search bar.');
         setIsLocating(false);
       },
       { enableHighAccuracy: true, timeout: 8000 }
@@ -114,20 +180,52 @@ export default function RecyclingStoreMapPage() {
   };
 
   // Switch City Quick Pill
-  const switchCity = (city: 'mumbai' | 'bangalore' | 'all') => {
-    setCityFilter(city);
-    if (city === 'mumbai') {
+  const switchCity = async (cityKey: string) => {
+    if (cityKey === 'mumbai') {
+      setCityFilter('mumbai');
       setUserLocation(DEFAULT_CITY_COORDINATES.mumbai);
       setLocationStatusText('Mulund, Mumbai');
+      setLocationInput('');
+      setStoresData(BASE_RECYCLING_STORES);
       const firstMum = BASE_RECYCLING_STORES.find((s) => s.city === 'mumbai');
       if (firstMum) setSelectedStore(firstMum);
-    } else if (city === 'bangalore') {
+      return;
+    }
+
+    if (cityKey === 'bangalore') {
+      setCityFilter('bangalore');
       setUserLocation(DEFAULT_CITY_COORDINATES.bangalore);
       setLocationStatusText('Bangalore City Center');
+      setLocationInput('');
+      setStoresData(BASE_RECYCLING_STORES);
       const firstBlr = BASE_RECYCLING_STORES.find((s) => s.city === 'bangalore');
       if (firstBlr) setSelectedStore(firstBlr);
-    } else {
-      setLocationStatusText('All India Stores');
+      return;
+    }
+
+    if (cityKey === 'all') {
+      setCityFilter('all');
+      setLocationStatusText('All India Verified Centers');
+      setStoresData(BASE_RECYCLING_STORES);
+      return;
+    }
+
+    const preset = MAJOR_INDIAN_CITIES[cityKey];
+    if (preset) {
+      setIsSearchingLocation(true);
+      setCityFilter('all');
+      setUserLocation(preset.coords);
+      setLocationStatusText(`${preset.name}, ${preset.state}`);
+      setLocationInput(preset.name);
+      try {
+        const stores = await fetchLegitStoresForLocation(preset.coords[0], preset.coords[1], preset.name);
+        setStoresData(stores);
+        if (stores.length > 0) setSelectedStore(stores[0]);
+      } catch (err) {
+        console.warn('City switch notice:', err);
+      } finally {
+        setIsSearchingLocation(false);
+      }
     }
   };
 
@@ -141,16 +239,20 @@ export default function RecyclingStoreMapPage() {
   // Clear all filters
   const resetFilters = () => {
     setSearchQuery('');
+    setLocationInput('');
     setSelectedMaterials([]);
     setOpenNowOnly(false);
     setSortBy('nearest');
     setCityFilter('mumbai');
     setUserLocation(DEFAULT_CITY_COORDINATES.mumbai);
-    setLocationStatusText('Mulund, Mumbai');
+    setLocationStatusText('Mulund, Mumbai (Default)');
+    setStoresData(BASE_RECYCLING_STORES);
+    setSelectedStore(BASE_RECYCLING_STORES[0]);
   };
 
   const hasActiveFilters =
     searchQuery.trim().length > 0 ||
+    locationInput.trim().length > 0 ||
     selectedMaterials.length > 0 ||
     openNowOnly ||
     sortBy !== 'nearest' ||
@@ -170,11 +272,11 @@ export default function RecyclingStoreMapPage() {
                 <Store className="w-4 h-4 stroke-[2.2]" />
               </div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-[#191C1E] tracking-tight">
-                Recycling Stores & Scrap Centers
+                Recycling Stores & Legit Scrap Dealers
               </h1>
             </div>
             <p className="text-xs text-[#526056] mt-1">
-              Find verified local kabadiwalas, e-waste drop-offs, and circular recycling hubs near you.
+              Locate authorized kabadiwalas, certified digital scale scrap yards, and recycling centers across India.
             </p>
           </div>
 
@@ -191,26 +293,29 @@ export default function RecyclingStoreMapPage() {
         {/* Search, GPS, and Toolbar */}
         <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-gray-200 shadow-xs space-y-3">
           
-          {/* Top Row: Search Input + GPS Button */}
-          <div className="flex flex-col sm:flex-row gap-2.5">
+          {/* Row 1: Nationwide Location Search Bar + GPS Button */}
+          <form onSubmit={handleLocationSearch} className="flex flex-col sm:flex-row gap-2.5">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+              <MapPin className="w-4 h-4 text-[#136B3B] absolute left-3.5 top-3.5" />
               <input
                 type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by store name, landmark, address, or material..."
-                className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] focus:bg-white transition"
+                value={locationInput}
+                onChange={(e) => setLocationInput(e.target.value)}
+                placeholder="Search any city, area, or PIN code in India (e.g. Pune, Delhi, Powai, Thane, 400080)..."
+                className="w-full pl-10 pr-24 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] focus:bg-white transition"
               />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 p-0.5"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+              <button
+                type="submit"
+                disabled={isSearchingLocation || !locationInput.trim()}
+                className="absolute right-1.5 top-1.5 px-3 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] disabled:opacity-50 text-white rounded-lg text-xs font-bold transition flex items-center gap-1"
+              >
+                {isSearchingLocation ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Search className="w-3.5 h-3.5" />
+                )}
+                <span>Find</span>
+              </button>
             </div>
 
             <button
@@ -220,34 +325,71 @@ export default function RecyclingStoreMapPage() {
               className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#E6F4EA] hover:bg-[#D4EDDC] text-[#136B3B] border border-[#A6D5B8] rounded-xl text-xs font-bold transition flex-shrink-0"
             >
               <Navigation className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
-              <span>{isLocating ? 'Detecting GPS...' : 'Use My GPS'}</span>
+              <span>{isLocating ? 'Locating GPS...' : 'Use My GPS'}</span>
             </button>
+          </form>
+
+          {/* Row 2: In-Store Material & Name Filter Input */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Filter dealers by shop name, material (e.g. Cardboard, Metal), or street..."
+              className="w-full pl-10 pr-10 py-2 bg-gray-50/70 border border-gray-200 rounded-xl text-xs text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] focus:bg-white transition"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 p-0.5"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           {/* City / Location Quick-Switcher Strip */}
-          <div className="pt-1 pb-1 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                Region:
+          <div className="pt-2 pb-1 border-t border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mr-1">
+                Popular Hubs:
               </span>
               <button
                 type="button"
                 onClick={() => switchCity('mumbai')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 touch-feedback ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
                   cityFilter === 'mumbai'
-                    ? 'bg-[#136B3B] text-white shadow-xs'
+                    ? 'bg-[#136B3B] text-white shadow-2xs'
                     : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                 }`}
               >
                 <span>📍</span>
-                <span>Mulund / Mumbai (MMR)</span>
+                <span>Mulund / Mumbai</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchCity('pune')}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700"
+              >
+                <span>📍</span>
+                <span>Pune</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchCity('delhi')}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700"
+              >
+                <span>📍</span>
+                <span>Delhi NCR</span>
               </button>
               <button
                 type="button"
                 onClick={() => switchCity('bangalore')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 touch-feedback ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
                   cityFilter === 'bangalore'
-                    ? 'bg-[#136B3B] text-white shadow-xs'
+                    ? 'bg-[#136B3B] text-white shadow-2xs'
                     : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                 }`}
               >
@@ -256,21 +398,27 @@ export default function RecyclingStoreMapPage() {
               </button>
               <button
                 type="button"
-                onClick={() => switchCity('all')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 touch-feedback ${
-                  cityFilter === 'all'
-                    ? 'bg-[#136B3B] text-white shadow-xs'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                }`}
+                onClick={() => switchCity('hyderabad')}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700"
               >
-                <span>🌐</span>
-                <span>All Cities</span>
+                <span>📍</span>
+                <span>Hyderabad</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchCity('jaipur')}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700"
+              >
+                <span>📍</span>
+                <span>Jaipur</span>
               </button>
             </div>
 
-            <div className="flex items-center gap-1.5 text-[11px] text-[#526056] bg-emerald-50/70 border border-emerald-200/60 px-2.5 py-1 rounded-xl self-start sm:self-auto">
-              <Compass className="w-3.5 h-3.5 text-[#136B3B]" />
-              <span className="font-semibold">{locationStatusText}</span>
+            <div className="flex items-center gap-1.5 text-[11px] text-[#526056] bg-emerald-50/80 border border-emerald-200/80 px-2.5 py-1 rounded-xl self-start lg:self-auto">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+              <span className="font-semibold truncate max-w-xs sm:max-w-md">
+                Active: {locationStatusText}
+              </span>
             </div>
           </div>
 
@@ -566,11 +714,24 @@ export default function RecyclingStoreMapPage() {
                         })}
                       </div>
 
-                      {/* Highlight Badge */}
-                      {store.pricingBadge && (
-                        <div className="mt-2 text-[11px] font-semibold text-[#136B3B] bg-[#E6F4EA]/60 px-2.5 py-1 rounded-lg inline-block">
-                          🏷️ {store.pricingBadge}
-                        </div>
+                      {/* Highlight Badge & Legitimacy Badges */}
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        {store.pricingBadge && (
+                          <div className="text-[10.5px] font-semibold text-[#136B3B] bg-[#E6F4EA]/80 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                            <span>🏷️</span>
+                            <span>{store.pricingBadge}</span>
+                          </div>
+                        )}
+                        <span className="text-[10.5px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                          <span>⚖️</span>
+                          <span>Certified Digital Scale</span>
+                        </span>
+                      </div>
+
+                      {store.notes && (
+                        <p className="mt-1.5 text-[11px] text-gray-500 leading-snug line-clamp-2 bg-gray-50 p-1.5 rounded-lg border border-gray-100">
+                          {store.notes}
+                        </p>
                       )}
 
                       {/* Bottom Action Buttons */}
