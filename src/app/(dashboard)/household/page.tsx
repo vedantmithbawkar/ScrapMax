@@ -7,8 +7,8 @@ import BottomNav from '@/components/common/BottomNav';
 import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
-import { Recycle, Package, ArrowRight, IndianRupee, Store } from 'lucide-react';
-
+import { Recycle, Package, Store } from 'lucide-react';
+import PersonalDashboard from '@/components/dashboard/PersonalDashboard';
 import { useTranslation } from '@/lib/i18n';
 
 const DEMO_HOUSEHOLD_REQUESTS: PickupRequest[] = [
@@ -214,6 +214,9 @@ export default function HouseholdDashboard() {
           {/* Subtle curved background ornament */}
           <div className="absolute -right-6 -bottom-8 w-44 h-44 rounded-full bg-white/10 pointer-events-none" />
         </section>
+
+        {/* Personal Recycling Dashboard */}
+        <PersonalDashboard role="household" />
 
         {/* Quick Actions Section */}
         <section className="space-y-3" data-purpose="quick-actions">

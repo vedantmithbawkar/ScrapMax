@@ -8,6 +8,7 @@ import BottomNav from '@/components/common/BottomNav';
 import { createClient } from '@/lib/supabase/client';
 import { UserProfile } from '@/types';
 import { ArrowLeft, User, MapPin, Settings, ChevronRight, LogOut } from 'lucide-react';
+import PersonalDashboard from '@/components/dashboard/PersonalDashboard';
 import { useTranslation } from '@/lib/i18n';
 
 export default function UserProfilePage() {
@@ -112,6 +113,11 @@ export default function UserProfilePage() {
               {t('householdAccount')}
             </span>
           </section>
+
+          {/* Personal Recycling Dashboard */}
+          <div className="mt-2 mb-2">
+            <PersonalDashboard role={profile?.role || 'household'} />
+          </div>
 
           {/* Action Menu List */}
           <section className="flex flex-col space-y-3 mt-6" data-purpose="profile-navigation-options">

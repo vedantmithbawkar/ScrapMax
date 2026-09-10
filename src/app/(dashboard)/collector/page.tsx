@@ -8,6 +8,7 @@ import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
 import { MapPin, History, Filter } from 'lucide-react';
+import PersonalDashboard from '@/components/dashboard/PersonalDashboard';
 import {
   triggerCollectorAcceptedNotification,
   triggerCollectorNearNotification,
@@ -251,6 +252,9 @@ export default function CollectorDashboard() {
           </Link>
           <div className="absolute -right-8 -bottom-10 w-44 h-44 rounded-full bg-white/10 pointer-events-none" />
         </div>
+
+        {/* Personal Recycling Dashboard for Collector */}
+        <PersonalDashboard role="collector" />
 
         {/* Tab Filters */}
         <div className="flex items-center gap-3 border-b border-gray-200 pb-3">
