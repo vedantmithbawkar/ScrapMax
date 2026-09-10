@@ -52,9 +52,6 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
           isActive: pathname.startsWith('/household/track'),
         },
         {
-<<<<<<< HEAD
-          label: t('navHistory'),
-=======
           label: 'Stores',
           href: '/stores',
           icon: (active: boolean) => (
@@ -65,8 +62,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
           isActive: pathname === '/stores',
         },
         {
-          label: 'History',
->>>>>>> f3ec19f113fcd44a5e4181b1227c4a53d4db9681
+          label: t('navHistory'),
           href: '/household/history',
           icon: (active: boolean) => (
             <svg

@@ -230,16 +230,8 @@ export default function HouseholdDashboard() {
                 <Recycle className="w-6 h-6 stroke-[2.2]" />
               </div>
               <div>
-<<<<<<< HEAD
                 <p className="font-bold text-[#191C1E] text-[16px] leading-tight">{t('sellRecyclables')}</p>
                 <p className="text-xs text-[#6B7280] font-medium mt-1">{t('getValue')}</p>
-              </div>
-            </Link>
-
-            {/* Nearby Collectors / History Card */}
-=======
-                <p className="font-bold text-[#191C1E] text-[16px] leading-tight">Sell recyclables</p>
-                <p className="text-xs text-[#6B7280] font-medium mt-1">Book scrap pickup</p>
               </div>
             </Link>
 
@@ -257,8 +249,7 @@ export default function HouseholdDashboard() {
               </div>
             </Link>
 
-            {/* My Activity Card */}
->>>>>>> f3ec19f113fcd44a5e4181b1227c4a53d4db9681
+            {/* My Activity / History Card */}
             <Link
               href="/household/history"
               className="bg-white rounded-3xl p-5 text-left flex flex-col justify-between h-[150px] border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] hover:shadow-md transition active:scale-[0.98] touch-feedback"
@@ -271,13 +262,8 @@ export default function HouseholdDashboard() {
                 </svg>
               </div>
               <div>
-<<<<<<< HEAD
                 <p className="font-bold text-[#191C1E] text-[16px] leading-tight">{t('pickupHistory')}</p>
                 <p className="text-xs text-[#6B7280] font-medium mt-1">{t('viewPastPickups')}</p>
-=======
-                <p className="font-bold text-[#191C1E] text-[16px] leading-tight">My activity</p>
-                <p className="text-xs text-[#6B7280] font-medium mt-1">Recycling logs & receipts</p>
->>>>>>> f3ec19f113fcd44a5e4181b1227c4a53d4db9681
               </div>
             </Link>
           </div>

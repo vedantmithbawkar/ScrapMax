@@ -65,7 +65,6 @@ export default function HouseholdSettingsPage() {
         receiptAlerts,
         rateAlerts,
         language,
-        paymentMode,
         ...patch,
       };
       localStorage.setItem('aicle_settings', JSON.stringify(current));
@@ -106,7 +105,6 @@ export default function HouseholdSettingsPage() {
         receiptAlerts,
         rateAlerts,
         language,
-        paymentMode,
       },
       personalInfo: typeof window !== 'undefined' ? localStorage.getItem('aicle_personal_info') : null,
       savedAddresses: typeof window !== 'undefined' ? localStorage.getItem('aicle_saved_addresses') : null,

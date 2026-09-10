@@ -10,16 +10,13 @@ export interface UserProfile {
   phone?: string;
   role: UserRole;
   avatar_url?: string;
-<<<<<<< HEAD
   age?: number | string;
   email?: string;
   gender?: string;
   household_type?: string;
   preferred_pickup_slot?: string;
-=======
   rating?: number;
   completed_pickups?: number;
->>>>>>> f3ec19f113fcd44a5e4181b1227c4a53d4db9681
   created_at?: string;
   updated_at?: string;
 }
