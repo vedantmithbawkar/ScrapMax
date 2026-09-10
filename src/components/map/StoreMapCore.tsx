@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import {
   fixLeafletIcon,
   collectorLocationIcon,
@@ -18,6 +18,7 @@ interface StoreMapCoreProps {
   userLocation: [number, number];
   zoom?: number;
   className?: string;
+  onMapClick?: (lat: number, lng: number) => void;
 }
 
 function MapViewController({
@@ -40,6 +41,21 @@ function MapViewController({
   return null;
 }
 
+function MapClickHandler({
+  onMapClick,
+}: {
+  onMapClick?: (lat: number, lng: number) => void;
+}) {
+  useMapEvents({
+    click(e) {
+      if (onMapClick) {
+        onMapClick(e.latlng.lat, e.latlng.lng);
+      }
+    },
+  });
+  return null;
+}
+
 export default function StoreMapCore({
   stores,
   selectedStore,
@@ -47,6 +63,7 @@ export default function StoreMapCore({
   userLocation,
   zoom = 13,
   className = 'h-full w-full',
+  onMapClick,
 }: StoreMapCoreProps) {
   useEffect(() => {
     fixLeafletIcon();
@@ -65,6 +82,7 @@ export default function StoreMapCore({
         />
 
         <MapViewController center={mapCenter} zoom={selectedStore ? 15 : zoom} />
+        <MapClickHandler onMapClick={onMapClick} />
 
         {/* User GPS location pin */}
         <Marker position={userLocation} icon={collectorLocationIcon}>

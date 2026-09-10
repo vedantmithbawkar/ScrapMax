@@ -11,6 +11,7 @@ interface StoreMapContainerProps {
   userLocation: [number, number];
   zoom?: number;
   className?: string;
+  onMapClick?: (lat: number, lng: number) => void;
 }
 
 const DynamicStoreMap = dynamic(() => import('./StoreMapCore'), {

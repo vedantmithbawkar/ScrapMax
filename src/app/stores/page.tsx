@@ -46,48 +46,52 @@ export default function RecyclingStoreMapPage() {
   const [selectedMaterials, setSelectedMaterials] = useState<StoreMaterial[]>([]);
   const [openNowOnly, setOpenNowOnly] = useState(false);
   const [sortBy, setSortBy] = useState<'nearest' | 'highest_rated'>('nearest');
-  const [cityFilter, setCityFilter] = useState<'mumbai' | 'bangalore' | 'all'>('mumbai');
+  const [cityFilter, setCityFilter] = useState<'mumbai' | 'bangalore' | 'all'>('all');
   const [userLocation, setUserLocation] = useState<[number, number]>(
-    DEFAULT_CITY_COORDINATES.mumbai // Defaults to Mulund West, Mumbai
+    DEFAULT_CITY_COORDINATES.mumbai
   );
   const [selectedStore, setSelectedStore] = useState<RecyclingStore | null>(
     BASE_RECYCLING_STORES[0]
   );
   const [isLocating, setIsLocating] = useState(false);
-  const [locationStatusText, setLocationStatusText] = useState<string>('Mulund, Mumbai (Default)');
+  const [locationStatusText, setLocationStatusText] = useState<string>(
+    'All India (Search any city or use GPS)'
+  );
   const [mobileView, setMobileView] = useState<'both' | 'map' | 'list'>('both');
 
   // Attempt automatic browser GPS detection on initial load
   useEffect(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
+      setIsLocating(true);
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           const { latitude, longitude } = pos.coords;
           setUserLocation([latitude, longitude]);
-          // Check if detected position is within Mulund / Mumbai eastern suburbs
-          if (latitude >= 19.14 && latitude <= 19.22 && longitude >= 72.93 && longitude <= 72.98) {
-            setCityFilter('mumbai');
-            setLocationStatusText('Your GPS (Mulund, Mumbai)');
-          } else {
-            try {
-              const localityName = await reverseGeocodeCoords(latitude, longitude);
-              setLocationStatusText(`Your GPS: ${localityName}`);
-              const nearbyStores = await fetchLegitStoresForLocation(latitude, longitude, localityName);
-              if (nearbyStores.length > 0) {
-                setStoresData(nearbyStores);
-                setSelectedStore(nearbyStores[0]);
-                setCityFilter('all');
-              }
-            } catch (err) {
-              setLocationStatusText(`Your GPS (${latitude.toFixed(3)}, ${longitude.toFixed(3)})`);
+          try {
+            const localityName = await reverseGeocodeCoords(latitude, longitude);
+            setLocationStatusText(`Your GPS: ${localityName}`);
+            const nearbyStores = await fetchLegitStoresForLocation(
+              latitude,
+              longitude,
+              localityName
+            );
+            if (nearbyStores.length > 0) {
+              setStoresData(nearbyStores);
+              setSelectedStore(nearbyStores[0]);
+              setCityFilter('all');
             }
+          } catch (err) {
+            setLocationStatusText(`Your GPS (${latitude.toFixed(3)}, ${longitude.toFixed(3)})`);
+          } finally {
+            setIsLocating(false);
           }
         },
         () => {
-          // Geolocation permission denied or timed out; Mulund, Mumbai remains active default
-          setLocationStatusText('Mulund, Mumbai (Default)');
+          // Geolocation denied or timed out; display Pan-India network
+          setLocationStatusText('All India (Search any city or use GPS)');
+          setIsLocating(false);
         },
-        { enableHighAccuracy: true, timeout: 5000 }
+        { enableHighAccuracy: true, timeout: 6000 }
       );
     }
   }, []);
@@ -103,6 +107,27 @@ export default function RecyclingStoreMapPage() {
       city: cityFilter,
     });
   }, [storesData, searchQuery, selectedMaterials, openNowOnly, sortBy, userLocation, cityFilter]);
+
+  // Handle clicking anywhere on the interactive map to discover stores for that point
+  const handleMapClick = async (lat: number, lng: number) => {
+    setUserLocation([lat, lng]);
+    setIsSearchingLocation(true);
+    try {
+      const localityName = await reverseGeocodeCoords(lat, lng);
+      setLocationStatusText(localityName);
+      setLocationInput(localityName);
+      setCityFilter('all');
+      const stores = await fetchLegitStoresForLocation(lat, lng, localityName);
+      if (stores.length > 0) {
+        setStoresData(stores);
+        setSelectedStore(stores[0]);
+      }
+    } catch (err) {
+      console.warn('Map click notice:', err);
+    } finally {
+      setIsSearchingLocation(false);
+    }
+  };
 
   // Handle nationwide Indian location search (e.g. Pune, Delhi, Powai, Thane, 411038)
   const handleLocationSearch = async (e?: React.FormEvent) => {
@@ -181,32 +206,55 @@ export default function RecyclingStoreMapPage() {
 
   // Switch City Quick Pill
   const switchCity = async (cityKey: string) => {
-    if (cityKey === 'mumbai') {
-      setCityFilter('mumbai');
-      setUserLocation(DEFAULT_CITY_COORDINATES.mumbai);
-      setLocationStatusText('Mulund, Mumbai');
-      setLocationInput('');
-      setStoresData(BASE_RECYCLING_STORES);
-      const firstMum = BASE_RECYCLING_STORES.find((s) => s.city === 'mumbai');
-      if (firstMum) setSelectedStore(firstMum);
-      return;
-    }
-
-    if (cityKey === 'bangalore') {
-      setCityFilter('bangalore');
-      setUserLocation(DEFAULT_CITY_COORDINATES.bangalore);
-      setLocationStatusText('Bangalore City Center');
-      setLocationInput('');
-      setStoresData(BASE_RECYCLING_STORES);
-      const firstBlr = BASE_RECYCLING_STORES.find((s) => s.city === 'bangalore');
-      if (firstBlr) setSelectedStore(firstBlr);
-      return;
-    }
-
     if (cityKey === 'all') {
       setCityFilter('all');
       setLocationStatusText('All India Verified Centers');
       setStoresData(BASE_RECYCLING_STORES);
+      if (BASE_RECYCLING_STORES.length > 0) setSelectedStore(BASE_RECYCLING_STORES[0]);
+      return;
+    }
+
+    if (cityKey === 'mumbai') {
+      setIsSearchingLocation(true);
+      setCityFilter('all');
+      setUserLocation(DEFAULT_CITY_COORDINATES.mumbai);
+      setLocationStatusText('Mumbai MMR');
+      setLocationInput('Mumbai');
+      try {
+        const stores = await fetchLegitStoresForLocation(
+          DEFAULT_CITY_COORDINATES.mumbai[0],
+          DEFAULT_CITY_COORDINATES.mumbai[1],
+          'Mumbai MMR'
+        );
+        setStoresData(stores);
+        if (stores.length > 0) setSelectedStore(stores[0]);
+      } catch (err) {
+        console.warn('City switch notice:', err);
+      } finally {
+        setIsSearchingLocation(false);
+      }
+      return;
+    }
+
+    if (cityKey === 'bangalore') {
+      setIsSearchingLocation(true);
+      setCityFilter('all');
+      setUserLocation(DEFAULT_CITY_COORDINATES.bangalore);
+      setLocationStatusText('Bangalore (Bengaluru)');
+      setLocationInput('Bangalore');
+      try {
+        const stores = await fetchLegitStoresForLocation(
+          DEFAULT_CITY_COORDINATES.bangalore[0],
+          DEFAULT_CITY_COORDINATES.bangalore[1],
+          'Bangalore'
+        );
+        setStoresData(stores);
+        if (stores.length > 0) setSelectedStore(stores[0]);
+      } catch (err) {
+        console.warn('City switch notice:', err);
+      } finally {
+        setIsSearchingLocation(false);
+      }
       return;
     }
 
@@ -218,7 +266,11 @@ export default function RecyclingStoreMapPage() {
       setLocationStatusText(`${preset.name}, ${preset.state}`);
       setLocationInput(preset.name);
       try {
-        const stores = await fetchLegitStoresForLocation(preset.coords[0], preset.coords[1], preset.name);
+        const stores = await fetchLegitStoresForLocation(
+          preset.coords[0],
+          preset.coords[1],
+          preset.name
+        );
         setStoresData(stores);
         if (stores.length > 0) setSelectedStore(stores[0]);
       } catch (err) {
@@ -243,9 +295,9 @@ export default function RecyclingStoreMapPage() {
     setSelectedMaterials([]);
     setOpenNowOnly(false);
     setSortBy('nearest');
-    setCityFilter('mumbai');
+    setCityFilter('all');
     setUserLocation(DEFAULT_CITY_COORDINATES.mumbai);
-    setLocationStatusText('Mulund, Mumbai (Default)');
+    setLocationStatusText('All India Verified Centers');
     setStoresData(BASE_RECYCLING_STORES);
     setSelectedStore(BASE_RECYCLING_STORES[0]);
   };
@@ -256,7 +308,7 @@ export default function RecyclingStoreMapPage() {
     selectedMaterials.length > 0 ||
     openNowOnly ||
     sortBy !== 'nearest' ||
-    cityFilter !== 'mumbai';
+    cityFilter !== 'all';
 
   return (
     <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans pb-24">
@@ -354,19 +406,15 @@ export default function RecyclingStoreMapPage() {
           <div className="pt-2 pb-1 border-t border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mr-1">
-                Popular Hubs:
+                Popular Cities:
               </span>
               <button
                 type="button"
                 onClick={() => switchCity('mumbai')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
-                  cityFilter === 'mumbai'
-                    ? 'bg-[#136B3B] text-white shadow-2xs'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                }`}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700"
               >
                 <span>📍</span>
-                <span>Mulund / Mumbai</span>
+                <span>Mumbai</span>
               </button>
               <button
                 type="button"
@@ -387,11 +435,7 @@ export default function RecyclingStoreMapPage() {
               <button
                 type="button"
                 onClick={() => switchCity('bangalore')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
-                  cityFilter === 'bangalore'
-                    ? 'bg-[#136B3B] text-white shadow-2xs'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                }`}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700"
               >
                 <span>📍</span>
                 <span>Bangalore</span>
@@ -411,6 +455,14 @@ export default function RecyclingStoreMapPage() {
               >
                 <span>📍</span>
                 <span>Jaipur</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchCity('all')}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-emerald-100 hover:bg-emerald-200 text-[#136B3B]"
+              >
+                <span>🌐</span>
+                <span>All India</span>
               </button>
             </div>
 
@@ -593,6 +645,7 @@ export default function RecyclingStoreMapPage() {
               userLocation={userLocation}
               zoom={13}
               className="h-full min-h-[380px] lg:min-h-[520px] w-full rounded-xl"
+              onMapClick={handleMapClick}
             />
           </div>
 

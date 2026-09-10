@@ -42,18 +42,18 @@ export default function LocationPicker({
       if (data && data.display_name) {
         setAddress(data.display_name);
         onLocationSelect(lat, lng, data.display_name);
-        if (showKabadiwalas) {
-          loadNearbyKabadiwalas(lat, lng, data.display_name);
-        }
+        loadNearbyKabadiwalas(lat, lng, data.display_name);
       } else {
         const fallbackStr = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
         setAddress(fallbackStr);
         onLocationSelect(lat, lng, fallbackStr);
+        loadNearbyKabadiwalas(lat, lng, fallbackStr);
       }
     } catch {
       const fallbackStr = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
       setAddress(fallbackStr);
       onLocationSelect(lat, lng, fallbackStr);
+      loadNearbyKabadiwalas(lat, lng, fallbackStr);
     }
   };
 

@@ -20,9 +20,9 @@ const DEMO_COLLECTOR_REQUESTS: PickupRequest[] = [
     id: 'req-c301-demo-uuid',
     household_id: 'user-h101',
     status: 'pending',
-    address: 'LBS Marg, Opp. Marathon Monte Carlo, Mulund West, Mumbai',
-    latitude: 19.1726,
-    longitude: 72.9565,
+    address: 'Main Market Road, Near City Center',
+    latitude: 19.0760,
+    longitude: 72.8777,
     scheduled_date: 'Today · 5:30 PM',
     notes: 'Items packed in bags in garage.',
     total_estimated_weight_kg: 28.5,
@@ -49,9 +49,9 @@ const DEMO_COLLECTOR_REQUESTS: PickupRequest[] = [
     id: 'req-c302-demo-uuid',
     household_id: 'user-h102',
     status: 'pending',
-    address: 'Nehru Road, Near Mulund Railway Station West, Mulund West, Mumbai',
-    latitude: 19.1745,
-    longitude: 72.9535,
+    address: 'Station Road West, Commercial Hub',
+    latitude: 19.0820,
+    longitude: 72.8820,
     scheduled_date: 'Today · 6:00 PM',
     notes: 'Copper scrap and e-waste motherboards',
     total_estimated_weight_kg: 42.0,
@@ -88,26 +88,8 @@ export default function CollectorDashboard() {
         if (raw) {
           const local = JSON.parse(raw);
           if (Array.isArray(local) && local.length > 0) {
-            // Migrate legacy Bangalore entries to Mulund
-            const migrated = local.map((req: PickupRequest) => {
-              if (
-                req.address?.includes('Indiranagar') ||
-                (Math.abs((req.latitude || 0) - 12.9784) < 0.1 &&
-                  Math.abs((req.longitude || 0) - 77.6408) < 0.1)
-              ) {
-                return {
-                  ...req,
-                  address: 'LBS Marg, Mulund West, Mumbai',
-                  latitude: 19.1726,
-                  longitude: 72.9565,
-                };
-              }
-              return req;
-            });
-            localStorage.setItem('local_pickup_requests', JSON.stringify(migrated));
-
             setRequests((prev) => {
-              const combined = [...migrated, ...prev];
+              const combined = [...local, ...prev];
               const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values());
               return unique as PickupRequest[];
             });

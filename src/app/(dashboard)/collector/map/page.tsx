@@ -21,9 +21,9 @@ const MOCK_MAP_REQUESTS: PickupRequest[] = [
     id: 'req-map-001',
     household_id: 'user-h101',
     status: 'pending',
-    address: 'LBS Marg, Opp. Marathon Monte Carlo, Mulund West, Mumbai',
-    latitude: 19.1726,
-    longitude: 72.9565,
+    address: 'Main Market Road, Near City Center',
+    latitude: 19.0760,
+    longitude: 72.8777,
     scheduled_date: 'Today · 5:30 PM',
     notes: 'Paper & plastic recyclables ready at society gate.',
     total_estimated_weight_kg: 18.5,
@@ -38,9 +38,9 @@ const MOCK_MAP_REQUESTS: PickupRequest[] = [
     id: 'req-map-002',
     household_id: 'user-h102',
     status: 'pending',
-    address: 'Nehru Road, Near Mulund Railway Station West, Mulund West, Mumbai',
-    latitude: 19.1745,
-    longitude: 72.9535,
+    address: 'Station Road West, Commercial Hub',
+    latitude: 19.0820,
+    longitude: 72.8820,
     scheduled_date: 'Today · 6:00 PM',
     notes: 'Electronic waste, wiring, and computer scrap.',
     total_estimated_weight_kg: 35.0,
@@ -55,9 +55,9 @@ const MOCK_MAP_REQUESTS: PickupRequest[] = [
     id: 'req-map-003',
     household_id: 'user-h103',
     status: 'pending',
-    address: 'Navghar Road, Near Mulund East Railway Station, Mulund East, Mumbai',
-    latitude: 19.1685,
-    longitude: 72.9642,
+    address: 'Ring Road Link, Industrial Estate',
+    latitude: 19.0685,
+    longitude: 72.8942,
     scheduled_date: 'Today · 6:30 PM',
     notes: 'Heavy scrap metal, iron pieces, and packaging boxes.',
     total_estimated_weight_kg: 22.0,
@@ -72,9 +72,9 @@ const MOCK_MAP_REQUESTS: PickupRequest[] = [
     id: 'req-map-004',
     household_id: 'user-h104',
     status: 'pending',
-    address: 'Devidayal Road, Near Kalidas Auditorium, Mulund West, Mumbai',
-    latitude: 19.1780,
-    longitude: 72.9490,
+    address: 'Green Park Colony, Sector 4',
+    latitude: 19.0780,
+    longitude: 72.8690,
     scheduled_date: 'Today · 7:00 PM',
     notes: 'Sorted plastic bottles and cardboard packaging.',
     total_estimated_weight_kg: 14.2,
@@ -104,34 +104,16 @@ export default function CollectorMapPage() {
         if (raw) {
           const local = JSON.parse(raw);
           if (Array.isArray(local) && local.length > 0) {
-            // Migrate any old Bangalore fallback coordinates to Mulund West, Mumbai
-            const migrated = local.map((req: PickupRequest) => {
-              if (
-                req.address?.includes('Indiranagar') ||
-                (Math.abs((req.latitude || 0) - 12.9784) < 0.1 &&
-                  Math.abs((req.longitude || 0) - 77.6408) < 0.1)
-              ) {
-                return {
-                  ...req,
-                  address: 'LBS Marg, Mulund West, Mumbai',
-                  latitude: 19.1726,
-                  longitude: 72.9565,
-                };
-              }
-              return req;
-            });
-            localStorage.setItem('local_pickup_requests', JSON.stringify(migrated));
-
             setRequests((prev) => {
-              const combined = [...migrated, ...prev];
+              const combined = [...local, ...prev];
               const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values());
               return unique as PickupRequest[];
             });
-            setSelectedReq(migrated[0]);
+            setSelectedReq(local[0]);
           }
         }
       } catch (err) {
-        console.warn('Local request load notice:', err);
+        console.warn('Error reading local requests:', err);
       }
 
       // 2. Query Supabase
