@@ -7,7 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
-import { Recycle, Package, ArrowRight, IndianRupee } from 'lucide-react';
+import { Recycle, Package } from 'lucide-react';
 
 const DEMO_HOUSEHOLD_REQUESTS: PickupRequest[] = [
   {
@@ -234,24 +234,6 @@ export default function HouseholdDashboard() {
             </Link>
           </div>
 
-          {/* Pay Collector Card - shown when there's an active accepted pickup */}
-          {activePickup && (activePickup.status === 'accepted' || activePickup.status === 'in_progress') && (
-            <Link
-              href={`/household/payment/${activePickup.id}`}
-              className="bg-[#136B3B] rounded-3xl p-5 text-left flex flex-col justify-between h-[100px] shadow-xs hover:shadow-md transition active:scale-[0.98] touch-feedback"
-            >
-              <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">
-                  <IndianRupee className="w-5 h-5 stroke-[2.2]" />
-                </div>
-                <ArrowRight className="w-5 h-5 text-white/60" />
-              </div>
-              <div>
-                <p className="font-bold text-white text-[16px] leading-tight">Pay collector</p>
-                <p className="text-xs text-[#A6D5B8] font-medium mt-0.5">UPI &middot; QR code &middot; GPay &middot; PhonePe</p>
-              </div>
-            </Link>
-          )}
         </section>
 
         {/* Active Pickup Section */}

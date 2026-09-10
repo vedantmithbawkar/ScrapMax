@@ -17,7 +17,6 @@ import {
   Package,
   Send,
   Phone,
-  IndianRupee,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -74,7 +73,7 @@ const TIMELINE_STEPS = [
   { status: 'pending', label: 'Request placed', icon: Package, desc: 'Looking for a collector nearby' },
   { status: 'accepted', label: 'Collector assigned', icon: CheckCircle2, desc: 'Collector is on the way' },
   { status: 'in_progress', label: 'Pickup in progress', icon: Truck, desc: 'Collector arrived at your location' },
-  { status: 'completed', label: 'Completed & paid', icon: IndianRupee, desc: 'Pickup done and payment settled' },
+  { status: 'completed', label: 'Completed & paid', icon: CheckCircle2, desc: 'Pickup done — payment received from collector' },
 ];
 
 const STATUS_ORDER = ['pending', 'accepted', 'in_progress', 'completed'];
@@ -187,13 +186,6 @@ export default function TrackPickupPage() {
           </h1>
           <p className="text-[11px] text-[#6B7280]">Req #{requestId.slice(0, 8)}</p>
         </div>
-        {/* Pay button if accepted/in-progress */}
-        {(request.status === 'accepted' || request.status === 'in_progress') && (
-          <Link href={`/household/payment/${requestId}`} className="flex items-center gap-1 px-3 py-1.5 bg-[#136B3B] text-white text-xs font-bold rounded-xl shadow-xs hover:bg-[#0F5730] transition flex-shrink-0">
-            <IndianRupee className="w-3.5 h-3.5" />
-            Pay
-          </Link>
-        )}
       </header>
 
       <main className="max-w-2xl mx-auto w-full px-4 sm:px-6 pt-4 flex flex-col flex-1 space-y-4">
