@@ -126,6 +126,29 @@ export default function RequestCard({
           <span className="truncate">{request.address}</span>
         </div>
 
+        {/* Assigned Collector Details Strip for Citizen */}
+        {userRole === 'household' && request.status !== 'pending' && (
+          <div className="flex items-center justify-between p-2 sm:p-2.5 bg-[#E6F4EA]/70 border border-[#A6D5B8] rounded-xl text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-base shrink-0">🚛</span>
+              <div className="min-w-0">
+                <span className="font-bold text-[#191C1E] truncate block">
+                  {request.collector?.full_name || 'Ramesh Kumar (Verified Kabadiwala)'}
+                </span>
+                <span className="text-[11px] text-[#136B3B] font-mono font-bold block truncate">
+                  {request.collector?.phone || '+91 98201 45892'}
+                </span>
+              </div>
+            </div>
+            <a
+              href={`tel:${(request.collector?.phone || '+919820145892').replace(/\s+/g, '')}`}
+              className="px-3 py-1 bg-[#136B3B] hover:bg-[#0F5730] text-white text-[11px] font-bold rounded-lg transition shadow-2xs shrink-0"
+            >
+              Call
+            </a>
+          </div>
+        )}
+
         {/* Waste Items Badges if multiple */}
         {request.waste_items && request.waste_items.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -278,13 +301,15 @@ export default function RequestCard({
                   </button>
                 )}
 
-                {request.status === 'in_progress' && (
+                {/* Finalize Deal (Deal Done) Action Button for Collector */}
+                {(request.status === 'accepted' || request.status === 'in_progress') && (
                   <button
+                    type="button"
                     onClick={() => setShowHandoverModal(true)}
-                    className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold rounded-xl shadow-xs transition animate-pulse"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-[#136B3B] to-emerald-700 hover:from-[#0F5730] hover:to-emerald-800 text-white text-xs font-extrabold rounded-xl shadow-sm transition animate-pulse touch-feedback"
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Weigh &amp; Pay</span>
+                    <span>🤝</span>
+                    <span>Finalize Deal</span>
                   </button>
                 )}
               </>

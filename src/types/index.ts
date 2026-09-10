@@ -10,6 +10,8 @@ export interface UserProfile {
   phone?: string;
   role: UserRole;
   avatar_url?: string;
+  rating?: number;
+  completed_pickups?: number;
   created_at?: string;
   updated_at?: string;
 }

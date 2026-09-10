@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/common/Navbar';
 import BottomNav from '@/components/common/BottomNav';
@@ -12,6 +12,7 @@ import {
   MATERIAL_CHIPS,
   filterRecyclingStores,
   isStoreOpenNow,
+  DEFAULT_CITY_COORDINATES,
 } from '@/lib/recycling-store-service';
 import {
   Search,
@@ -28,6 +29,7 @@ import {
   X,
   ExternalLink,
   Store,
+  Compass,
 } from 'lucide-react';
 
 export default function RecyclingStoreMapPage() {
@@ -35,12 +37,44 @@ export default function RecyclingStoreMapPage() {
   const [selectedMaterials, setSelectedMaterials] = useState<StoreMaterial[]>([]);
   const [openNowOnly, setOpenNowOnly] = useState(false);
   const [sortBy, setSortBy] = useState<'nearest' | 'highest_rated'>('nearest');
-  const [userLocation, setUserLocation] = useState<[number, number]>([12.9716, 77.5946]); // Bangalore city center
+  const [cityFilter, setCityFilter] = useState<'mumbai' | 'bangalore' | 'all'>('mumbai');
+  const [userLocation, setUserLocation] = useState<[number, number]>(
+    DEFAULT_CITY_COORDINATES.mumbai // Defaults to Mulund West, Mumbai
+  );
   const [selectedStore, setSelectedStore] = useState<RecyclingStore | null>(
     BASE_RECYCLING_STORES[0]
   );
   const [isLocating, setIsLocating] = useState(false);
+  const [locationStatusText, setLocationStatusText] = useState<string>('Mulund, Mumbai (Default)');
   const [mobileView, setMobileView] = useState<'both' | 'map' | 'list'>('both');
+
+  // Attempt automatic browser GPS detection on initial load
+  useEffect(() => {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          setUserLocation([latitude, longitude]);
+          // Check if detected position is within Mumbai MMR (lat ~18.7 to 19.5, lng ~72.7 to 73.2)
+          if (latitude >= 18.7 && latitude <= 19.5 && longitude >= 72.7 && longitude <= 73.2) {
+            setCityFilter('mumbai');
+            setLocationStatusText('Your Live Location (Mumbai MMR / Mulund)');
+          } else if (latitude >= 12.7 && latitude <= 13.2 && longitude >= 77.4 && longitude <= 77.8) {
+            setCityFilter('bangalore');
+            setLocationStatusText('Your Live Location (Bangalore)');
+          } else {
+            setCityFilter('all');
+            setLocationStatusText(`Your Live GPS (${latitude.toFixed(3)}, ${longitude.toFixed(3)})`);
+          }
+        },
+        () => {
+          // Geolocation permission denied or timed out; keep Mulund, Mumbai as default
+          setLocationStatusText('Mulund, Mumbai (Default)');
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    }
+  }, []);
 
   // Filtered and sorted stores
   const filteredStores = useMemo(() => {
@@ -50,10 +84,11 @@ export default function RecyclingStoreMapPage() {
       openNowOnly,
       sortBy,
       userLocation,
+      city: cityFilter,
     });
-  }, [searchQuery, selectedMaterials, openNowOnly, sortBy, userLocation]);
+  }, [searchQuery, selectedMaterials, openNowOnly, sortBy, userLocation, cityFilter]);
 
-  // Handle GPS detection
+  // Handle manual GPS detection button click
   const handleGPSDetect = () => {
     if (typeof window === 'undefined' || !navigator.geolocation) {
       alert('Geolocation is not supported by your browser.');
@@ -65,15 +100,35 @@ export default function RecyclingStoreMapPage() {
       (pos) => {
         const { latitude, longitude } = pos.coords;
         setUserLocation([latitude, longitude]);
+        setCityFilter('all'); // Show all stores sorted by true distance to user
+        setLocationStatusText(`Live GPS (${latitude.toFixed(3)}, ${longitude.toFixed(3)})`);
         setIsLocating(false);
       },
       (err) => {
         console.warn('GPS detection notice:', err);
-        alert('Could not retrieve your GPS location. Showing default city center.');
+        alert('Could not retrieve your GPS location. You can select your city using the quick pills.');
         setIsLocating(false);
       },
       { enableHighAccuracy: true, timeout: 8000 }
     );
+  };
+
+  // Switch City Quick Pill
+  const switchCity = (city: 'mumbai' | 'bangalore' | 'all') => {
+    setCityFilter(city);
+    if (city === 'mumbai') {
+      setUserLocation(DEFAULT_CITY_COORDINATES.mumbai);
+      setLocationStatusText('Mulund, Mumbai');
+      const firstMum = BASE_RECYCLING_STORES.find((s) => s.city === 'mumbai');
+      if (firstMum) setSelectedStore(firstMum);
+    } else if (city === 'bangalore') {
+      setUserLocation(DEFAULT_CITY_COORDINATES.bangalore);
+      setLocationStatusText('Bangalore City Center');
+      const firstBlr = BASE_RECYCLING_STORES.find((s) => s.city === 'bangalore');
+      if (firstBlr) setSelectedStore(firstBlr);
+    } else {
+      setLocationStatusText('All India Stores');
+    }
   };
 
   // Toggle material filter
@@ -89,13 +144,17 @@ export default function RecyclingStoreMapPage() {
     setSelectedMaterials([]);
     setOpenNowOnly(false);
     setSortBy('nearest');
+    setCityFilter('mumbai');
+    setUserLocation(DEFAULT_CITY_COORDINATES.mumbai);
+    setLocationStatusText('Mulund, Mumbai');
   };
 
   const hasActiveFilters =
     searchQuery.trim().length > 0 ||
     selectedMaterials.length > 0 ||
     openNowOnly ||
-    sortBy !== 'nearest';
+    sortBy !== 'nearest' ||
+    cityFilter !== 'mumbai';
 
   return (
     <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans pb-24">
@@ -163,6 +222,56 @@ export default function RecyclingStoreMapPage() {
               <Navigation className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
               <span>{isLocating ? 'Detecting GPS...' : 'Use My GPS'}</span>
             </button>
+          </div>
+
+          {/* City / Location Quick-Switcher Strip */}
+          <div className="pt-1 pb-1 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                Region:
+              </span>
+              <button
+                type="button"
+                onClick={() => switchCity('mumbai')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 touch-feedback ${
+                  cityFilter === 'mumbai'
+                    ? 'bg-[#136B3B] text-white shadow-xs'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                }`}
+              >
+                <span>📍</span>
+                <span>Mulund / Mumbai (MMR)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchCity('bangalore')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 touch-feedback ${
+                  cityFilter === 'bangalore'
+                    ? 'bg-[#136B3B] text-white shadow-xs'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                }`}
+              >
+                <span>📍</span>
+                <span>Bangalore</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchCity('all')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 touch-feedback ${
+                  cityFilter === 'all'
+                    ? 'bg-[#136B3B] text-white shadow-xs'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                }`}
+              >
+                <span>🌐</span>
+                <span>All Cities</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-[11px] text-[#526056] bg-emerald-50/70 border border-emerald-200/60 px-2.5 py-1 rounded-xl self-start sm:self-auto">
+              <Compass className="w-3.5 h-3.5 text-[#136B3B]" />
+              <span className="font-semibold">{locationStatusText}</span>
+            </div>
           </div>
 
           {/* Material Filters Chips */}
