@@ -112,7 +112,7 @@ export default function PaymentPage() {
   };
 
   const openApp = (app: (typeof UPI_APPS)[0]) => {
-    window.location.href = app.scheme(data.collectorUpi, totalAmount, paymentNote);
+    window.location.assign(app.scheme(data.collectorUpi, totalAmount, paymentNote));
   };
 
   const confirmPayment = () => {

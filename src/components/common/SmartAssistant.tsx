@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, X, Send, Sparkles, HelpCircle, ChevronDown, CheckCircle2, DollarSign, Calendar, MapPin, Minimize2, Trash2, ShieldCheck, TreePine } from 'lucide-react';
-import { STANDARD_SCRAP_RATES } from '@/types';
+import { Bot, Send, Minimize2, Trash2 } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -10,7 +9,7 @@ interface Message {
   text: string;
   time: string;
   categoryBadge?: string;
-  suggestedActions?: { label: string; action: () => void }[];
+  suggestedActions?: { label: string; query?: string }[];
 }
 
 interface IntentPattern {
@@ -210,23 +209,25 @@ const COMPREHENSIVE_INTENTS: IntentPattern[] = [
   },
 ];
 
+const INITIAL_MESSAGES: Message[] = [
+  {
+    id: 'welcome-1',
+    sender: 'bot',
+    text: "Namaste! 🙏 I'm ScrapMax AI, your circular waste & recycling assistant.\n\nAsk me anything: scrap prices, doorstep pickups, UPI payments, or how our system works!",
+    time: 'Online',
+    categoryBadge: 'AI Assistant',
+    suggestedActions: [
+      { label: 'How Does It Work?', query: 'How does ScrapMax work?' },
+      { label: 'Current Scrap Rates', query: 'What are the current scrap rates?' },
+      { label: 'Doorstep UPI Payment', query: 'How does doorstep payment work?' },
+    ],
+  },
+];
+
 export default function SmartAssistant() {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [input, setInput] = useState<string>('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome-1',
-      sender: 'bot',
-      text: "Namaste! 🙏 I'm ScrapMax AI, your circular waste & recycling assistant.\n\nAsk me anything: scrap prices, doorstep pickups, UPI payments, or how our system works!",
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      categoryBadge: 'AI Assistant',
-      suggestedActions: [
-        { label: 'How Does It Work?', action: () => handleSend('How does ScrapMax work?') },
-        { label: 'Current Scrap Rates', action: () => handleSend('What are the current scrap rates?') },
-        { label: 'Doorstep UPI Payment', action: () => handleSend('How does doorstep payment work?') },
-      ],
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -301,7 +302,7 @@ export default function SmartAssistant() {
     if (!text) return;
 
     const userMsg: Message = {
-      id: `usr-${Date.now()}`,
+      id: `usr-${crypto.randomUUID()}`,
       sender: 'user',
       text,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -321,7 +322,7 @@ export default function SmartAssistant() {
         categoryBadge: match.category,
         suggestedActions: match.suggestions.map((s) => ({
           label: s,
-          action: () => handleSend(s),
+          query: s,
         })),
       };
       setMessages((prev) => [...prev, botMsg]);
@@ -329,19 +330,7 @@ export default function SmartAssistant() {
   };
 
   const handleClearHistory = () => {
-    setMessages([
-      {
-        id: `welcome-${Date.now()}`,
-        sender: 'bot',
-        text: "Conversation reset! How can I assist you with your recycling today?",
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        suggestedActions: [
-          { label: 'How Does It Work?', action: () => handleSend('How does ScrapMax work?') },
-          { label: 'Current Scrap Rates', action: () => handleSend('What are the current scrap rates?') },
-          { label: 'Doorstep UPI Payment', action: () => handleSend('How does doorstep payment work?') },
-        ],
-      },
-    ]);
+    setMessages(INITIAL_MESSAGES);
   };
 
   return (
@@ -439,7 +428,7 @@ export default function SmartAssistant() {
                       <button
                         key={sIdx}
                         type="button"
-                        onClick={sugg.action}
+                        onClick={() => handleSend(sugg.query || sugg.label)}
                         className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-[#136B3B] border border-[#A6D5B8] rounded-full text-[11px] font-semibold transition active:scale-95 shadow-2xs"
                       >
                         {sugg.label}
