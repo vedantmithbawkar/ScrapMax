@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Navbar from '@/components/common/Navbar';
 import BottomNav from '@/components/common/BottomNav';
 import { createClient } from '@/lib/supabase/client';
 import { UserProfile } from '@/types';
-import { ArrowLeft, User, MapPin, Star, Settings, ChevronRight } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Star, Settings, ChevronRight, ClipboardList, AlertTriangle } from 'lucide-react';
 
 export default function UserProfilePage() {
   const router = useRouter();
@@ -127,7 +128,10 @@ export default function UserProfilePage() {
             </div>
 
             {/* Settings */}
-            <div className="flex items-center justify-between bg-white px-5 py-4 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] border border-gray-100 hover:border-gray-200 transition touch-feedback cursor-pointer">
+            <Link
+              href="/household/report"
+              className="flex items-center justify-between bg-white px-5 py-4 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] border border-gray-100 hover:border-gray-200 transition touch-feedback cursor-pointer"
+            >
               <div className="flex items-center gap-3.5">
                 <div className="w-9 h-9 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#136B3B]">
                   <Settings className="w-5 h-5 stroke-[2.2]" />
@@ -135,7 +139,41 @@ export default function UserProfilePage() {
                 <span className="text-[16px] font-bold text-[#191C1E]">Settings</span>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400 stroke-[2.5]" />
-            </div>
+            </Link>
+
+            {/* My Reports */}
+            <Link
+              href="/household/my-reports"
+              className="flex items-center justify-between bg-white px-5 py-4 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] border border-gray-100 hover:border-gray-200 transition touch-feedback cursor-pointer"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#136B3B]">
+                  <ClipboardList className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <span className="text-[16px] font-bold text-[#191C1E]">My Reports</span>
+                  <p className="text-[11px] text-[#6B7280] font-medium">Track your submitted reports</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400 stroke-[2.5]" />
+            </Link>
+
+            {/* Report a Problem */}
+            <Link
+              href="/household/report"
+              className="flex items-center justify-between bg-red-50 px-5 py-4 rounded-2xl border border-red-100 hover:border-red-200 transition touch-feedback cursor-pointer"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                  <AlertTriangle className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <span className="text-[16px] font-bold text-red-700">🆘 Report a Problem</span>
+                  <p className="text-[11px] text-red-500 font-medium">Report an issue with the ScrapMax platform</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-red-400 stroke-[2.5]" />
+            </Link>
 
           </section>
 
