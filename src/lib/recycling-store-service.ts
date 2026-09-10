@@ -315,7 +315,7 @@ export const BASE_RECYCLING_STORES: RecyclingStore[] = [
   // ─── BANGALORE RECYCLING STORES ─────────────────────────────────────
   {
     id: 'store-blr-1',
-    name: 'Ramesh Paper & Scrap Mart',
+    name: 'Indiranagar Eco-Recyclers & Scrap Yard',
     latitude: 12.9784,
     longitude: 77.6408,
     address: 'Indiranagar 100ft Road, near Metro Pillar #84, Bangalore',

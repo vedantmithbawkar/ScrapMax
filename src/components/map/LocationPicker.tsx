@@ -282,40 +282,60 @@ export default function LocationPicker({
                     onClick={() => handleSelectDealer(dealer)}
                     className={`p-3 rounded-xl border text-left cursor-pointer transition ${
                       isSelected
-                        ? 'bg-amber-50/70 border-amber-400 shadow-2xs'
+                        ? 'bg-emerald-50/70 border-[#136B3B] shadow-2xs ring-1 ring-[#136B3B]'
                         : 'bg-white hover:bg-gray-50 border-gray-200'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h5 className="font-bold text-xs text-[#191C1E] leading-tight flex items-center gap-1">
-                          <span>{dealer.name}</span>
-                        </h5>
-                        <p className="text-[11px] text-[#6B7280] mt-0.5 leading-snug truncate max-w-[190px]">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h5 className="font-extrabold text-xs text-[#191C1E] leading-tight">
+                            {dealer.name}
+                          </h5>
+                          <span className="inline-flex items-center gap-0.5 text-[9.5px] font-bold text-[#136B3B] bg-[#E6F4EA] px-1.5 py-0.2 rounded">
+                            🛡️ Verified
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#6B7280] mt-1 leading-snug">
                           {dealer.address}
                         </p>
                       </div>
                       {dealer.distanceKm !== undefined && (
-                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 flex-shrink-0">
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-[#136B3B] flex-shrink-0">
                           {dealer.distanceKm} km
                         </span>
                       )}
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between pt-1 border-t border-gray-100">
-                      <div className="flex items-center gap-1 text-[11px] font-bold text-amber-600">
+                    {/* Materials tags if available */}
+                    {dealer.acceptedMaterials && dealer.acceptedMaterials.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {dealer.acceptedMaterials.slice(0, 3).map((m, mIdx) => (
+                          <span
+                            key={mIdx}
+                            className="text-[9.5px] font-semibold bg-gray-100 text-gray-700 px-1.5 py-0.2 rounded"
+                          >
+                            {m}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="mt-2 flex items-center justify-between pt-1.5 border-t border-gray-100 text-[11px]">
+                      <div className="flex items-center gap-1.5 font-bold text-amber-600">
                         <Star className="w-3 h-3 fill-amber-500 stroke-amber-500" />
-                        <span>{dealer.rating || 4.7}</span>
+                        <span>{dealer.rating || 4.8}</span>
+                        <span className="text-gray-400 font-normal text-[10px]">⚖️ Digital Scale</span>
                       </div>
 
                       {dealer.phone && (
                         <a
                           href={`tel:${dealer.phone}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 text-[10.5px] font-bold text-[#136B3B] hover:underline"
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-[#136B3B] hover:underline"
                         >
                           <Phone className="w-3 h-3" />
-                          <span>Call {dealer.phone.slice(0, 10)}</span>
+                          <span>Call Dealer</span>
                         </a>
                       )}
                     </div>
