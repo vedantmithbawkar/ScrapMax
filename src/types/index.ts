@@ -162,3 +162,22 @@ export const STATUS_LABELS: Record<PickupStatus, { label: string; badgeColor: st
   completed: { label: 'Completed & Paid', badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
   cancelled: { label: 'Cancelled', badgeColor: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400' },
 };
+
+export interface RatingReview {
+  id?: string;
+  transaction_id: string;
+  reviewer_id: string;
+  reviewer_type: 'customer' | 'kabadiwala';
+  reviewee_id: string;
+  rating: number;
+  review_comment?: string | null;
+  timestamp: string;
+}
+
+export interface UserRatingsSummary {
+  user_id: string;
+  average_rating: number;
+  total_reviews: number;
+  reviews: RatingReview[];
+}
+
