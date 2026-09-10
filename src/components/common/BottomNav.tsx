@@ -4,19 +4,22 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { useTranslation } from '@/lib/i18n';
+
 interface BottomNavProps {
   role?: 'household' | 'collector';
 }
 
 export default function BottomNav({ role = 'household' }: BottomNavProps) {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const isHousehold = role === 'household';
 
   const tabs = isHousehold
     ? [
         {
-          label: 'Home',
+          label: t('navHome'),
           href: '/household',
           icon: (active: boolean) => (
             <svg className={`w-5 h-5 ${active ? 'fill-current text-[#191C1E]' : 'fill-current text-[#526056]'}`} viewBox="0 0 24 24">
@@ -26,7 +29,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
           isActive: pathname === '/household',
         },
         {
-          label: 'Pickup',
+          label: t('navPickup'),
           href: '/household/request-pickup',
           icon: (active: boolean) => (
             <svg className={`w-5 h-5 ${active ? 'fill-current text-[#191C1E]' : 'fill-current text-[#526056]'}`} viewBox="0 0 24 24">
@@ -36,7 +39,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
           isActive: pathname === '/household/request-pickup',
         },
         {
-          label: 'Track',
+          label: t('navTrack'),
           href: '/household/track',
           icon: (active: boolean) => (
             <svg
@@ -49,7 +52,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
           isActive: pathname.startsWith('/household/track'),
         },
         {
-          label: 'History',
+          label: t('navHistory'),
           href: '/household/history',
           icon: (active: boolean) => (
             <svg
@@ -67,7 +70,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
           isActive: pathname === '/household/history',
         },
         {
-          label: 'Profile',
+          label: t('navProfile'),
           href: '/household/profile',
           icon: (active: boolean) => (
             <svg className={`w-5 h-5 ${active ? 'fill-current text-[#191C1E]' : 'fill-current text-[#526056]'}`} viewBox="0 0 24 24">

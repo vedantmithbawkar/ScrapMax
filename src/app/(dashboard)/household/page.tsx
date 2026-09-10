@@ -9,6 +9,8 @@ import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
 import { Recycle, Package } from 'lucide-react';
 
+import { useTranslation } from '@/lib/i18n';
+
 const DEMO_HOUSEHOLD_REQUESTS: PickupRequest[] = [
   {
     id: 'req-h101-demo-uuid',
@@ -85,12 +87,28 @@ const DEMO_HOUSEHOLD_REQUESTS: PickupRequest[] = [
 ];
 
 export default function HouseholdDashboard() {
+  const { t } = useTranslation();
   const [requests, setRequests] = useState<PickupRequest[]>(DEMO_HOUSEHOLD_REQUESTS);
   const [userName, setUserName] = useState<string>('Sahil');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadRequests() {
+      // Check cached name if updated in personal info
+      if (typeof window !== 'undefined') {
+        try {
+          const cached = localStorage.getItem('aicle_personal_info');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed.fullName) {
+              setUserName(parsed.fullName.split(' ')[0]);
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -136,6 +154,8 @@ export default function HouseholdDashboard() {
   }, []);
 
   const activePickup = requests.find((r) => r.status === 'pending' || r.status === 'accepted' || r.status === 'in_progress');
+  const hour = new Date().getHours();
+  const greetingKey = hour < 12 ? 'goodMorning' : hour < 17 ? 'goodAfternoon' : 'goodEvening';
 
   return (
     <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans selection:bg-[#E6F4EA] pb-24">
@@ -147,7 +167,7 @@ export default function HouseholdDashboard() {
         <header className="flex items-center justify-between pt-1" data-purpose="user-header">
           <div className="space-y-0.5">
             <p className="text-[15px] font-medium text-[#526056] flex items-center gap-1.5">
-              Good morning <span className="inline-block text-base select-none">👋</span>
+              {t(greetingKey)} <span className="inline-block text-base select-none">👋</span>
             </p>
             <h1 className="text-2xl sm:text-[28px] font-extrabold tracking-tight text-[#191C1E] leading-tight">
               {userName}
@@ -165,10 +185,10 @@ export default function HouseholdDashboard() {
         {!isAuthenticated && (
           <div className="px-4 py-2.5 bg-[#EAF5EE] border border-[#A6D5B8] rounded-2xl flex items-center justify-between text-xs text-[#136B3B]">
             <span className="font-medium">
-              Demo preview mode. Sign in to view and save live requests to Supabase.
+              {t('demoNotice')}
             </span>
             <Link href="/login" className="font-bold underline ml-2 flex-shrink-0">
-              Sign In
+              {t('signIn')}
             </Link>
           </div>
         )}
@@ -177,17 +197,17 @@ export default function HouseholdDashboard() {
         <section className="bg-[#136B3B] rounded-3xl p-6 sm:p-7 text-white shadow-sm relative overflow-hidden transition-all">
           <div className="relative z-10 space-y-2">
             <h2 className="text-[22px] sm:text-2xl font-bold tracking-tight leading-snug">
-              Turn recyclables into value.
+              {t('turnRecyclables')}
             </h2>
             <p className="text-[15px] text-[#A6D5B8] leading-normal font-normal">
-              Schedule a pickup from a nearby collector.
+              {t('schedulePickup')}
             </p>
             <div className="pt-4">
               <Link
                 href="/household/request-pickup"
                 className="inline-block bg-white text-[#136B3B] text-[15px] font-bold px-6 py-3 rounded-full hover:bg-slate-50 active:scale-[0.98] transition-all shadow-xs"
               >
-                Request pickup
+                {t('requestPickup')}
               </Link>
             </div>
           </div>
@@ -198,7 +218,7 @@ export default function HouseholdDashboard() {
         {/* Quick Actions Section */}
         <section className="space-y-3" data-purpose="quick-actions">
           <h3 className="text-lg font-bold text-[#191C1E] tracking-tight">
-            Quick actions
+            {t('quickActions')}
           </h3>
           <div className="grid grid-cols-2 gap-3.5">
             {/* Sell Recyclables Card */}
@@ -210,12 +230,12 @@ export default function HouseholdDashboard() {
                 <Recycle className="w-6 h-6 stroke-[2.2]" />
               </div>
               <div>
-                <p className="font-bold text-[#191C1E] text-[16px] leading-tight">Sell recyclables</p>
-                <p className="text-xs text-[#6B7280] font-medium mt-1">Get value</p>
+                <p className="font-bold text-[#191C1E] text-[16px] leading-tight">{t('sellRecyclables')}</p>
+                <p className="text-xs text-[#6B7280] font-medium mt-1">{t('getValue')}</p>
               </div>
             </Link>
 
-            {/* Nearby Collectors Card */}
+            {/* Nearby Collectors / History Card */}
             <Link
               href="/household/history"
               className="bg-white rounded-3xl p-5 text-left flex flex-col justify-between h-[160px] border border-gray-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)] hover:shadow-md transition active:scale-[0.98] touch-feedback"
@@ -228,8 +248,8 @@ export default function HouseholdDashboard() {
                 </svg>
               </div>
               <div>
-                <p className="font-bold text-[#191C1E] text-[16px] leading-tight">My activity</p>
-                <p className="text-xs text-[#6B7280] font-medium mt-1">Recycling logs</p>
+                <p className="font-bold text-[#191C1E] text-[16px] leading-tight">{t('pickupHistory')}</p>
+                <p className="text-xs text-[#6B7280] font-medium mt-1">{t('viewPastPickups')}</p>
               </div>
             </Link>
           </div>
@@ -241,7 +261,7 @@ export default function HouseholdDashboard() {
           <section className="space-y-3" data-purpose="active-pickup-section">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-[#191C1E] tracking-tight">
-                Active pickup
+                {t('activePickupStatus')}
               </h3>
               <Link href={`/household/track/${activePickup.id}`} className="text-xs font-bold text-[#136B3B] hover:underline">
                 Track &amp; Chat
@@ -285,7 +305,7 @@ export default function HouseholdDashboard() {
         <section className="space-y-3 pb-2" data-purpose="recent-activity-section">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-[#191C1E] tracking-tight">
-              Recent activity
+              {t('recentActivity')}
             </h3>
             <Link href="/household/history" className="text-xs font-bold text-[#136B3B] hover:underline">
               See all

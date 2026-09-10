@@ -14,25 +14,31 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [autoLoggingRole, setAutoLoggingRole] = useState<'household' | 'collector' | null>(null);
+
+  const loginWithCredentials = async (loginEmail: string, loginPass: string, roleHint?: 'household' | 'collector') => {
+    setEmail(loginEmail);
+    setPassword(loginPass);
+    if (roleHint) setAutoLoggingRole(roleHint);
     setLoading(true);
     setErrorMsg('');
 
     const supabase = createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: loginEmail,
+      password: loginPass,
     });
 
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
         setErrorMsg(
-          'Invalid login credentials. If you have not created this user in your Supabase project yet, please create an account on the Register page first.'
+          'Invalid login credentials. Demo account is not yet in your Supabase database. Please run the SQL seed script in Supabase SQL Editor, or create the account on the Register page.'
         );
       } else {
         setErrorMsg(error.message);
       }
+      setLoading(false);
+      setAutoLoggingRole(null);
     } else if (data.user) {
       const { data: profile } = await supabase
         .from('profiles')
@@ -40,23 +46,24 @@ export default function LoginPage() {
         .eq('id', data.user.id)
         .single();
 
-      if (profile?.role === 'collector') {
+      const finalRole = profile?.role || roleHint || 'household';
+      if (finalRole === 'collector') {
         router.push('/collector');
       } else {
         router.push('/household');
       }
     }
-    setLoading(false);
   };
 
-  const fillDemoAccount = (role: 'household' | 'collector') => {
-    if (role === 'household') {
-      setEmail('household@aicle.demo');
-      setPassword('demo123456');
-    } else {
-      setEmail('collector@aicle.demo');
-      setPassword('demo123456');
-    }
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await loginWithCredentials(email, password);
+  };
+
+  const handleDemoClick = (role: 'household' | 'collector') => {
+    const demoEmail = role === 'household' ? 'household@aicle.demo' : 'collector@aicle.demo';
+    const demoPass = 'demo123456';
+    loginWithCredentials(demoEmail, demoPass, role);
   };
 
   return (
@@ -78,22 +85,26 @@ export default function LoginPage() {
           <div className="p-3.5 bg-[#F8FAF9] border border-gray-200 rounded-2xl space-y-2">
             <div className="flex items-center gap-1.5 text-xs text-[#526056] font-bold">
               <Sparkles className="w-3.5 h-3.5 text-[#136B3B]" />
-              <span>Quick Demo Autofill:</span>
+              <span>Quick Demo 1-Click Login:</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => fillDemoAccount('household')}
-                className="px-3 py-2 bg-white hover:bg-emerald-50 text-xs font-bold text-[#136B3B] rounded-xl border border-gray-200 transition touch-feedback shadow-xs"
+                disabled={loading}
+                onClick={() => handleDemoClick('household')}
+                className="px-3 py-2.5 bg-white hover:bg-emerald-50 text-xs font-bold text-[#136B3B] rounded-xl border border-gray-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-60"
               >
-                🏠 Household
+                <span>🏠</span>
+                <span>{autoLoggingRole === 'household' ? 'Logging in...' : 'Household'}</span>
               </button>
               <button
                 type="button"
-                onClick={() => fillDemoAccount('collector')}
-                className="px-3 py-2 bg-white hover:bg-slate-50 text-xs font-bold text-[#191C1E] rounded-xl border border-gray-200 transition touch-feedback shadow-xs"
+                disabled={loading}
+                onClick={() => handleDemoClick('collector')}
+                className="px-3 py-2.5 bg-white hover:bg-slate-50 text-xs font-bold text-[#191C1E] rounded-xl border border-gray-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-60"
               >
-                🚛 Collector
+                <span>🚛</span>
+                <span>{autoLoggingRole === 'collector' ? 'Logging in...' : 'Collector'}</span>
               </button>
             </div>
           </div>

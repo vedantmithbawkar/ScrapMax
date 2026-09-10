@@ -10,8 +10,30 @@ export interface UserProfile {
   phone?: string;
   role: UserRole;
   avatar_url?: string;
+  age?: number | string;
+  email?: string;
+  gender?: string;
+  household_type?: string;
+  preferred_pickup_slot?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface SavedAddress {
+  id: string;
+  user_id?: string;
+  label: 'Home' | 'Work' | 'Other';
+  full_name?: string;
+  phone?: string;
+  flat_building: string;
+  area_street: string;
+  landmark?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  is_default: boolean;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface WasteItem {
