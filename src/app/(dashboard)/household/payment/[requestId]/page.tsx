@@ -135,9 +135,6 @@ export default function PaymentPage() {
   };
 
   const openApp = (app: (typeof UPI_APPS)[0]) => {
-<<<<<<< HEAD
-    window.location.assign(app.scheme(data.collectorUpi, totalAmount, paymentNote));
-=======
     setSelectedApp(app.id);
     const deepLink = app.scheme(data.collectorUpi, totalAmount, paymentNote);
 
@@ -155,8 +152,8 @@ export default function PaymentPage() {
       document.body.removeChild(iframe);
       setSelectedApp(null);
     }, 1500);
->>>>>>> 3901a7b (feat: add track/chat pages, role-aware chat links, real UPI app logos, spinner on payment)
   };
+
 
   const confirmPayment = () => {
     setPaymentDone(true);

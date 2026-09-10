@@ -123,6 +123,38 @@ export const WASTE_CATEGORY_LABELS: Record<WasteCategory, { label: string; icon:
   ORGANIC: { label: 'Organic / Compost', icon: '🌱', color: 'bg-green-100 text-green-800 border-green-300', estRatePerKg: '₹2 - ₹5' },
 };
 
+export type ReportCategory =
+  | 'no_show'
+  | 'wrong_price'
+  | 'wrong_weight'
+  | 'payment_issue'
+  | 'behaviour'
+  | 'other';
+
+export type ReportStatus = 'open' | 'under_review' | 'resolved';
+
+export interface Report {
+  id: string;
+  request_id: string;
+  reporter_id?: string;
+  category: ReportCategory;
+  description?: string;
+  status: ReportStatus;
+  created_at: string;
+}
+
+export const REPORT_CATEGORIES: Record<
+  ReportCategory,
+  { label: string; icon: string; description: string }
+> = {
+  no_show:       { label: "Collector didn't arrive", icon: '🚫', description: 'The collector never showed up at the scheduled time.' },
+  wrong_price:   { label: 'Wrong price quoted',      icon: '💰', description: 'The price offered was lower than expected.' },
+  wrong_weight:  { label: 'Wrong weight measured',   icon: '⚖️', description: 'The weight reading seemed inaccurate.' },
+  payment_issue: { label: 'Payment problem',         icon: '💳', description: 'There was an issue with the payment.' },
+  behaviour:     { label: 'Behaviour issue',         icon: '😠', description: 'The collector behaved inappropriately.' },
+  other:         { label: 'Other',                   icon: '📝', description: 'Something else went wrong.' },
+};
+
 export const STATUS_LABELS: Record<PickupStatus, { label: string; badgeColor: string }> = {
   pending: { label: 'Pending Collector', badgeColor: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
   accepted: { label: 'Collector Assigned', badgeColor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },

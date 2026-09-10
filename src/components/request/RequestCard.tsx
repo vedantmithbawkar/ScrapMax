@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { PickupRequest, PaymentDetails, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
-import { MapPin, MessageSquare, ChevronRight, CheckCircle2, Truck, Camera, X, Receipt, QrCode } from 'lucide-react';
+import { MapPin, MessageSquare, ChevronRight, CheckCircle2, Truck, Camera, X, Receipt, QrCode, Flag } from 'lucide-react';
 import HandoverModal from './HandoverModal';
 import ReceiptModal from './ReceiptModal';
+import ReportModal from './ReportModal';
 
 interface RequestCardProps {
   request: PickupRequest;
@@ -44,6 +45,7 @@ export default function RequestCard({
   const [selectedPhotoModal, setSelectedPhotoModal] = useState<string | null>(null);
   const [showHandoverModal, setShowHandoverModal] = useState<boolean>(false);
   const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
+  const [showReportModal, setShowReportModal] = useState<boolean>(false);
   const statusInfo = STATUS_LABELS[request.status];
 
   // Derive primary category icon & name
@@ -218,6 +220,19 @@ export default function RequestCard({
               </Link>
             )}
 
+            {/* Report Problem Button — household only */}
+            {userRole === 'household' && (
+              <button
+                type="button"
+                id={`report-btn-${request.id}`}
+                onClick={() => setShowReportModal(true)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 text-xs font-bold transition border border-red-100"
+              >
+                <Flag className="w-3.5 h-3.5" />
+                <span>Report</span>
+              </button>
+            )}
+
             {/* Collector Lifecycle Actions */}
             {userRole === 'collector' && onStatusUpdate && (
               <>
@@ -277,6 +292,15 @@ export default function RequestCard({
         <ReceiptModal
           request={request}
           onClose={() => setShowReceiptModal(false)}
+        />
+      )}
+
+      {/* Report / Problem Modal */}
+      {showReportModal && (
+        <ReportModal
+          requestId={request.id}
+          requestAddress={request.address}
+          onClose={() => setShowReportModal(false)}
         />
       )}
 
