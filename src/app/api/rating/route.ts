@@ -46,9 +46,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!reviewer_type || !['customer', 'kabadiwala'].includes(reviewer_type)) {
+    if (!reviewer_type || !['customer', 'kabadiwala', 'collector'].includes(reviewer_type)) {
       return NextResponse.json(
-        { detail: 'reviewer_type must be either "customer" or "kabadiwala".', error: 'Invalid reviewer_type' },
+        { detail: 'reviewer_type must be either "customer", "collector", or "kabadiwala".', error: 'Invalid reviewer_type' },
         { status: 400 }
       );
     }
@@ -123,10 +123,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user_id') || searchParams.get('userId');
     const transactionId = searchParams.get('transaction_id') || searchParams.get('transactionId');
+    const reviewerId = searchParams.get('reviewer_id') || searchParams.get('reviewerId');
 
     const db = getRatingsDb();
 
-    // 1. Query by User ID (matches FastAPI get_user_ratings)
+    // 1. Query by User ID (matches get_user_ratings: reviews where user is reviewee)
     if (userId) {
       const userReviews = db.filter((r) => r.reviewee_id === userId);
 
@@ -153,9 +154,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(summary);
     }
 
-    // 2. Query by Transaction ID
+    // 2. Query by Transaction ID (optionally refined by reviewer_id)
     if (transactionId) {
-      const txReviews = db.filter((r) => r.transaction_id === transactionId);
+      let txReviews = db.filter((r) => r.transaction_id === transactionId);
+      if (reviewerId) {
+        txReviews = txReviews.filter((r) => r.reviewer_id === reviewerId);
+      }
       return NextResponse.json({
         transaction_id: transactionId,
         total_reviews: txReviews.length,

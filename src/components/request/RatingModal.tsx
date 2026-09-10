@@ -2,12 +2,14 @@
 
 import React, { useState } from 'react';
 import { X, Star, CheckCircle2, Loader2, Sparkles, ThumbsUp, AlertCircle } from 'lucide-react';
+import { ReviewerType } from '@/types';
 
-interface RatingModalProps {
+export interface RatingModalProps {
   requestId: string;
   reviewerId?: string;
-  reviewerType?: 'customer' | 'kabadiwala';
+  reviewerType?: ReviewerType;
   revieweeId?: string;
+  revieweeName?: string;
   collectorName?: string;
   onClose: () => void;
   onRatingSubmitted?: (rating: number) => void;
@@ -21,7 +23,8 @@ const RATING_DESCRIPTIONS: Record<number, { label: string; emoji: string; color:
   5: { label: 'Excellent!', emoji: '🌟', color: 'text-[#136B3B]' },
 };
 
-const QUICK_COMPLIMENTS = [
+// Compliments for Citizens rating Collectors
+const CUSTOMER_COMPLIMENTS = [
   '⏱️ Punctual Arrival',
   '⚖️ Accurate Digital Scale',
   '💰 Fair Scrap Pricing',
@@ -30,15 +33,34 @@ const QUICK_COMPLIMENTS = [
   '🌿 Clean & Tidy',
 ];
 
+// Compliments for Collectors rating Citizens
+const COLLECTOR_COMPLIMENTS = [
+  '♻️ Clean & Segregated',
+  '⚖️ Accurate Weight Estimate',
+  '⏱️ Prompt & Available',
+  '🤝 Polite & Respectful',
+  '📦 Neatly Packed',
+  '📍 Easy Location Access',
+];
+
 export default function RatingModal({
   requestId,
-  reviewerId = 'user-h101',
+  reviewerId,
   reviewerType = 'customer',
-  revieweeId = 'collector-c201',
-  collectorName = 'Kabadiwala Partner',
+  revieweeId,
+  revieweeName,
+  collectorName,
   onClose,
   onRatingSubmitted,
 }: RatingModalProps) {
+  const isCollectorReviewing = reviewerType === 'collector' || reviewerType === 'kabadiwala';
+
+  // Resolved IDs based on who is reviewing whom
+  const resolvedReviewerId = reviewerId || (isCollectorReviewing ? 'collector-c201' : 'user-h101');
+  const resolvedRevieweeId = revieweeId || (isCollectorReviewing ? 'user-h101' : 'collector-c201');
+  const targetDisplayName =
+    revieweeName || collectorName || (isCollectorReviewing ? 'Household Citizen' : 'Kabadiwala Partner');
+
   const [rating, setRating] = useState<number>(5);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [selectedChips, setSelectedChips] = useState<string[]>([]);
@@ -46,10 +68,14 @@ export default function RatingModal({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
+
+  // Lazy initialize alreadyRated from role-specific localStorage key
   const [alreadyRated, setAlreadyRated] = useState<{ rating: number; comment?: string } | null>(() => {
     if (typeof window === 'undefined') return null;
     try {
-      const stored = localStorage.getItem(`scrapmax_rating_${requestId}`);
+      const stored =
+        localStorage.getItem(`scrapmax_rating_${requestId}_${reviewerType}`) ||
+        (!isCollectorReviewing ? localStorage.getItem(`scrapmax_rating_${requestId}`) : null);
       return stored ? JSON.parse(stored) : null;
     } catch {
       return null;
@@ -58,6 +84,7 @@ export default function RatingModal({
 
   const activeRating = hoverRating !== null ? hoverRating : rating;
   const ratingInfo = RATING_DESCRIPTIONS[activeRating] || RATING_DESCRIPTIONS[5];
+  const complimentsList = isCollectorReviewing ? COLLECTOR_COMPLIMENTS : CUSTOMER_COMPLIMENTS;
 
   const toggleChip = (chip: string) => {
     setSelectedChips((prev) =>
@@ -78,9 +105,9 @@ export default function RatingModal({
 
     const payload = {
       transaction_id: requestId,
-      reviewer_id: reviewerId,
+      reviewer_id: resolvedReviewerId,
       reviewer_type: reviewerType,
-      reviewee_id: revieweeId,
+      reviewee_id: resolvedRevieweeId,
       rating,
       review_comment: fullComment || null,
     };
@@ -98,7 +125,7 @@ export default function RatingModal({
         if (data.detail && data.detail.includes('already submitted')) {
           setAlreadyRated({ rating, comment: fullComment || undefined });
           localStorage.setItem(
-            `scrapmax_rating_${requestId}`,
+            `scrapmax_rating_${requestId}_${reviewerType}`,
             JSON.stringify({ rating, comment: fullComment || undefined })
           );
         }
@@ -107,9 +134,9 @@ export default function RatingModal({
         return;
       }
 
-      // Save locally
+      // Save locally with role-specific key
       localStorage.setItem(
-        `scrapmax_rating_${requestId}`,
+        `scrapmax_rating_${requestId}_${reviewerType}`,
         JSON.stringify({ rating, comment: fullComment || undefined })
       );
 
@@ -154,10 +181,10 @@ export default function RatingModal({
             </div>
             <div>
               <h2 className="text-base font-extrabold text-[#191C1E] leading-tight">
-                Rate Experience
+                {isCollectorReviewing ? 'Rate Citizen Customer' : 'Rate Experience'}
               </h2>
               <p className="text-[11px] text-[#526056] truncate max-w-[220px]">
-                {collectorName} · #{requestId.slice(0, 8)}
+                {targetDisplayName} · #{requestId.slice(0, 8)}
               </p>
             </div>
           </div>
@@ -177,9 +204,9 @@ export default function RatingModal({
             <div className="w-16 h-16 rounded-full bg-[#E6F4EA] border border-[#A6D5B8] flex items-center justify-center mx-auto text-[#136B3B] animate-bounce">
               <CheckCircle2 className="w-9 h-9 stroke-[2.5]" />
             </div>
-            <h3 className="text-xl font-extrabold text-[#191C1E]">Thank You!</h3>
+            <h3 className="text-xl font-extrabold text-[#191C1E]">Rating Recorded!</h3>
             <p className="text-xs text-[#526056] leading-relaxed max-w-xs mx-auto">
-              Your {rating}★ rating has been recorded! Feedback ensures transparency and helps verify quality partners.
+              Your {rating}★ review for <span className="font-bold text-[#136B3B]">{targetDisplayName}</span> has been stored. Two-way feedback maintains mutual respect &amp; trust in our circular network!
             </p>
           </div>
         ) : alreadyRated ? (
@@ -191,7 +218,7 @@ export default function RatingModal({
             <div>
               <h3 className="text-lg font-extrabold text-[#191C1E]">Already Rated!</h3>
               <p className="text-xs text-[#526056] mt-1">
-                You rated this pickup <span className="font-bold text-[#136B3B]">{alreadyRated.rating} ★</span>.
+                You rated {targetDisplayName} <span className="font-bold text-[#136B3B]">{alreadyRated.rating} ★</span>.
               </p>
               {alreadyRated.comment && (
                 <div className="mt-3 p-3 bg-[#F8FAF9] border border-gray-100 rounded-xl text-left text-xs text-[#191C1E] italic">
@@ -213,7 +240,9 @@ export default function RatingModal({
             {/* Star Rating Section */}
             <div className="text-center py-2 bg-radial from-amber-50/50 to-transparent rounded-2xl">
               <p className="text-xs font-medium text-[#526056] mb-2">
-                How was the scrap collection &amp; weighing?
+                {isCollectorReviewing
+                  ? 'How was the scrap segregation & handover experience?'
+                  : 'How was the scrap collection & weighing?'}
               </p>
 
               {/* Stars Row */}
@@ -254,10 +283,10 @@ export default function RatingModal({
             <div className="space-y-2">
               <label className="text-[11.5px] font-bold text-[#191C1E] flex items-center gap-1">
                 <ThumbsUp className="w-3 h-3 text-[#136B3B]" />
-                What went well? (Optional)
+                {isCollectorReviewing ? 'What went well with the citizen? (Optional)' : 'What went well with the collector? (Optional)'}
               </label>
               <div className="flex flex-wrap gap-1.5">
-                {QUICK_COMPLIMENTS.map((chip) => {
+                {complimentsList.map((chip) => {
                   const isSelected = selectedChips.includes(chip);
                   return (
                     <button
@@ -287,7 +316,11 @@ export default function RatingModal({
                 rows={2}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Share details about punctuality, pricing, digital scale..."
+                placeholder={
+                  isCollectorReviewing
+                    ? 'Note on segregation, packaging, prompt handover...'
+                    : 'Share details about punctuality, pricing, digital scale...'
+                }
                 className="w-full px-3 py-2 text-xs bg-[#F8FAF9] border border-gray-200 rounded-xl placeholder:text-gray-400 text-[#191C1E] focus:outline-none focus:border-[#136B3B] focus:bg-white transition"
               />
             </div>

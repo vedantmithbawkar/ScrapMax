@@ -187,11 +187,13 @@ export const STATUS_LABELS: Record<PickupStatus, { label: string; badgeColor: st
   cancelled: { label: 'Cancelled', badgeColor: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400' },
 };
 
+export type ReviewerType = 'customer' | 'kabadiwala' | 'collector';
+
 export interface RatingReview {
   id?: string;
   transaction_id: string;
   reviewer_id: string;
-  reviewer_type: 'customer' | 'kabadiwala';
+  reviewer_type: ReviewerType;
   reviewee_id: string;
   rating: number;
   review_comment?: string | null;

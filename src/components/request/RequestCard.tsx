@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { PickupRequest, PaymentDetails, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
-import { MapPin, MessageSquare, ChevronRight, CheckCircle2, Truck, Camera, X, Receipt, Flag, Star } from 'lucide-react';
+import { MapPin, MessageSquare, ChevronRight, Truck, Camera, X, Receipt, Flag, Star } from 'lucide-react';
 import HandoverModal from './HandoverModal';
 import ReceiptModal from './ReceiptModal';
 import ReportModal from './ReportModal';
@@ -48,10 +48,13 @@ export default function RequestCard({
   const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
   const [showRatingModal, setShowRatingModal] = useState<boolean>(false);
+  const roleRatingKey = `scrapmax_rating_${request.id}_${userRole === 'collector' ? 'collector' : 'customer'}`;
   const [userRating, setUserRating] = useState<number | null>(() => {
     if (typeof window === 'undefined') return null;
     try {
-      const stored = localStorage.getItem(`scrapmax_rating_${request.id}`);
+      const stored =
+        localStorage.getItem(roleRatingKey) ||
+        (userRole === 'household' ? localStorage.getItem(`scrapmax_rating_${request.id}`) : null);
       if (stored) {
         const parsed = JSON.parse(stored);
         return parsed?.rating ?? null;
@@ -248,11 +251,11 @@ export default function RequestCard({
               </button>
             )}
 
-            {/* Rate Experience Button for Completed Pickups — household only */}
-            {request.status === 'completed' && userRole === 'household' && (
+            {/* Rate Experience Button for Completed Pickups — Bi-directional for both household and collector */}
+            {request.status === 'completed' && (
               <button
                 type="button"
-                id={`rate-btn-${request.id}`}
+                id={`rate-btn-${request.id}-${userRole}`}
                 onClick={() => setShowRatingModal(true)}
                 className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition border shadow-xs ${
                   userRating
@@ -261,7 +264,13 @@ export default function RequestCard({
                 }`}
               >
                 <Star className={`w-3.5 h-3.5 ${userRating ? 'fill-amber-400 text-amber-500' : 'text-amber-500'}`} />
-                <span>{userRating ? `${userRating}★ Rated` : 'Rate'}</span>
+                <span>
+                  {userRating
+                    ? `${userRating}★ Rated`
+                    : userRole === 'collector'
+                    ? 'Rate Citizen'
+                    : 'Rate Collector'}
+                </span>
               </button>
             )}
 
@@ -390,11 +399,18 @@ export default function RequestCard({
         </div>
       )}
 
-      {/* Rating & Review Modal */}
+      {/* Rating & Review Modal — Bi-directional */}
       {showRatingModal && (
         <RatingModal
           requestId={request.id}
-          collectorName={request.collector?.full_name || 'Kabadiwala Partner'}
+          reviewerType={userRole === 'collector' ? 'collector' : 'customer'}
+          reviewerId={userRole === 'collector' ? (request.collector_id || 'collector-c201') : (request.household_id || 'user-h101')}
+          revieweeId={userRole === 'collector' ? (request.household_id || 'user-h101') : (request.collector_id || 'collector-c201')}
+          revieweeName={
+            userRole === 'collector'
+              ? request.household?.full_name || 'Citizen Customer'
+              : request.collector?.full_name || 'Kabadiwala Partner'
+          }
           onClose={() => setShowRatingModal(false)}
           onRatingSubmitted={(r) => setUserRating(r)}
         />

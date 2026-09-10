@@ -9,7 +9,7 @@ app = FastAPI(title="Kabadiwala Connect - Rating Service")
 class RatingCreate(BaseModel):
     transaction_id: str
     reviewer_id: str
-    reviewer_type: str = Field(..., pattern="^(customer|kabadiwala)$")
+    reviewer_type: str = Field(..., pattern="^(customer|kabadiwala|collector)$")
     reviewee_id: str
     rating: float = Field(..., ge=1.0, le=5.0)
     review_comment: Optional[str] = None

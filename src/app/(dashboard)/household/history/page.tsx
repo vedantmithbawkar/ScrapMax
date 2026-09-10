@@ -212,7 +212,10 @@ export default function RecyclingHistoryPage() {
       {selectedLogToRate && (
         <RatingModal
           requestId={selectedLogToRate.id}
-          collectorName={`${selectedLogToRate.category} Pickup Partner`}
+          reviewerType="customer"
+          reviewerId="user-h101"
+          revieweeId="collector-c201"
+          revieweeName={`${selectedLogToRate.category} Pickup Partner`}
           onClose={() => setSelectedLogToRate(null)}
         />
       )}
