@@ -60,6 +60,47 @@ function hasFuzzyWord(input: string, targets: string[]): boolean {
 }
 
 const COMPREHENSIVE_INTENTS: IntentPattern[] = [
+  // 0. ABOUT US / ABOUT SCRAPMAX
+  {
+    id: 'about_us',
+    category: 'About ScrapMax',
+    keywords: [
+      'about',
+      'about us',
+      'about scrapmax',
+      'who are you',
+      'who are we',
+      'who made this',
+      'mission',
+      'vision',
+      'what is scrapmax',
+      'team',
+      'company',
+      'organization',
+      'initiative',
+      'background',
+      'story',
+      'goal',
+      'purpose',
+      'developer',
+      'creators',
+      'founders',
+    ],
+    patterns: [/about/i, /who.*(are|made|created)/i, /what.*(is|purpose).*scrapmax/i, /mission/i, /vision/i],
+    response: () =>
+      `🌿 **About Us — ScrapMax (AiCLE):**\n\n` +
+      `ScrapMax is a next-generation **Circular Economy & Eco-Waste Logistics Platform** built for the **Smart India Hackathon (SIH)**, aligned with the **Swachh Bharat Mission 2.0** and **Ministry of Environment, Forest & Climate Change (MoEFCC)**.\n\n` +
+      `🎯 **Our Mission:**\n` +
+      `To formalize and modernize India's informal waste ecosystem by bridging urban households directly with verified local collectors (Kabadiwalas) through real-time technology, fair pricing, and certified recycling.\n\n` +
+      `✨ **What We Stand For:**\n` +
+      `• ⚖️ **Fair & Standardized Rates:** Transparent benchmark prices (Paper, Plastic, Metal, E-Waste, Glass) calculated automatically with zero unfair bargaining.\n` +
+      `• 🚛 **Kabadiwala Empowerment:** Equipping informal waste workers with smart GPS route navigation, digital weighing scales, and steady livelihoods.\n` +
+      `• 💳 **Instant Direct Benefit Transfer (DBT):** Direct digital UPI payouts (GPay/PhonePe/Paytm) or verified cash handover with cryptographic receipts.\n` +
+      `• 🌳 **Verifiable Green Impact:** Live environmental ledger tracking landfill diversion, trees saved, and carbon offset credits (DPDP Act 2023 compliant).\n\n` +
+      `*Developed with pride to create a cleaner, greener, and circular India!* 🇮🇳`,
+    suggestions: ['How does ScrapMax work?', 'Current Scrap Rates', 'Privacy Policy & Data Rights', 'Book a Pickup Now'],
+  },
+
   // 1. HOW IT WORKS / GENERAL FLOW (Answers "how does it workd", "what is scrapmax", "explain process")
   {
     id: 'how_it_works',
@@ -213,13 +254,14 @@ const INITIAL_MESSAGES: Message[] = [
   {
     id: 'welcome-1',
     sender: 'bot',
-    text: "Namaste! 🙏 I'm ScrapMax AI, your circular waste & recycling assistant.\n\nAsk me anything: scrap prices, doorstep pickups, UPI payments, or how our system works!",
+    text: "Namaste! 🙏 I'm ScrapMax AI, your circular waste & recycling assistant.\n\nAsk me anything: scrap prices, doorstep pickups, UPI payments, or learn all about ScrapMax!",
     time: 'Online',
     categoryBadge: 'AI Assistant',
     suggestedActions: [
-      { label: 'How Does It Work?', query: 'How does ScrapMax work?' },
-      { label: 'Current Scrap Rates', query: 'What are the current scrap rates?' },
-      { label: 'Doorstep UPI Payment', query: 'How does doorstep payment work?' },
+      { label: '📖 About Us', query: 'Tell me about ScrapMax and your mission' },
+      { label: '♻️ How It Works', query: 'How does ScrapMax work?' },
+      { label: '💰 Scrap Rates', query: 'What are the current scrap rates?' },
+      { label: '💳 UPI Payments', query: 'How does doorstep payment work?' },
     ],
   },
 ];
@@ -444,6 +486,14 @@ export default function SmartAssistant() {
           {/* Quick FAQ Bottom Strip */}
           <div className="px-3 py-1.5 bg-[#EDF7F2] border-t border-emerald-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
             <span className="text-[10.5px] font-bold text-[#136B3B] flex-shrink-0">Quick Topics:</span>
+            <button
+              type="button"
+              onClick={() => handleSend('Tell me about ScrapMax and your mission')}
+              className="text-[10.5px] text-[#2B6B47] hover:underline flex-shrink-0 font-bold"
+            >
+              About Us
+            </button>
+            <span className="text-gray-300">&bull;</span>
             <button
               type="button"
               onClick={() => handleSend('How does ScrapMax work?')}
