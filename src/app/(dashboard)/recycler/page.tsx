@@ -37,8 +37,10 @@ import {
   Bell,
   Scale,
 } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 export default function RecyclerDashboardPage() {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState<RecyclerProfile | null>(null);
   const [requirements, setRequirements] = useState<RecyclerRequirement[]>([]);
   const [offers, setOffers] = useState<CollectorOffer[]>([]);
@@ -123,11 +125,11 @@ export default function RecyclerDashboardPage() {
           <div className="space-y-1.5 z-10">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-[#A6D5B8] bg-white/10 px-2.5 py-0.5 rounded-full">
-                B2B Procurement Portal
+                {t('recyclerPortalTitle')}
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-400 text-emerald-950">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-950"></span>
-                <span>🟢 Verified Recycler</span>
+                <span>🟢 {t('verifiedFacilityBadge')}</span>
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
@@ -144,14 +146,14 @@ export default function RecyclerDashboardPage() {
               className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-[#136B3B] font-bold rounded-full text-xs shadow-xs hover:bg-emerald-50 transition touch-feedback"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>+ Create Material Requirement</span>
+              <span>{t('postNewDemandBtn')}</span>
             </Link>
             <Link
               href="/recycler/traceability"
               className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white/15 text-white font-bold rounded-full text-xs hover:bg-white/20 transition touch-feedback"
             >
               <QrCode className="w-4 h-4" />
-              <span>Traceability Records</span>
+              <span>{t('viewTraceabilityBtn')}</span>
             </Link>
           </div>
           <div className="absolute -right-8 -bottom-10 w-48 h-48 rounded-full bg-white/10 pointer-events-none" />
@@ -193,7 +195,7 @@ export default function RecyclerDashboardPage() {
           
           <div className="p-4 sm:p-5 bg-white border border-gray-100 rounded-3xl shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-[#6B7280]">Active Demands</span>
+              <span className="text-[11px] font-bold text-[#6B7280]">{t('activeDemandsMetric')}</span>
               <div className="w-7 h-7 rounded-xl bg-emerald-50 flex items-center justify-center text-[#136B3B]">
                 <Factory className="w-3.5 h-3.5" />
               </div>
@@ -206,7 +208,7 @@ export default function RecyclerDashboardPage() {
 
           <div className="p-4 sm:p-5 bg-white border border-gray-100 rounded-3xl shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-[#6B7280]">Incoming Offers</span>
+              <span className="text-[11px] font-bold text-[#6B7280]">{t('pendingOffersMetric')}</span>
               <div className="w-7 h-7 rounded-xl bg-blue-50 flex items-center justify-center text-blue-700">
                 <Inbox className="w-3.5 h-3.5" />
               </div>
@@ -219,7 +221,7 @@ export default function RecyclerDashboardPage() {
 
           <div className="p-4 sm:p-5 bg-white border border-gray-100 rounded-3xl shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-[#6B7280]">Material Sourced</span>
+              <span className="text-[11px] font-bold text-[#6B7280]">{t('totalMaterialPurchased')}</span>
               <div className="w-7 h-7 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700">
                 <Scale className="w-3.5 h-3.5" />
               </div>
@@ -232,7 +234,7 @@ export default function RecyclerDashboardPage() {
 
           <div className="p-4 sm:p-5 bg-white border border-gray-100 rounded-3xl shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-[#6B7280]">Active Pickups</span>
+              <span className="text-[11px] font-bold text-[#6B7280]">{t('completedPickupsLabel')}</span>
               <div className="w-7 h-7 rounded-xl bg-purple-50 flex items-center justify-center text-purple-700">
                 <Truck className="w-3.5 h-3.5" />
               </div>
@@ -245,7 +247,7 @@ export default function RecyclerDashboardPage() {
 
           <div className="col-span-2 lg:col-span-1 p-4 sm:p-5 bg-white border border-gray-100 rounded-3xl shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-[#6B7280]">Total Spend</span>
+              <span className="text-[11px] font-bold text-[#6B7280]">{t('totalEarnedLabel')}</span>
               <div className="w-7 h-7 rounded-xl bg-emerald-50 flex items-center justify-center text-[#136B3B]">
                 <Wallet className="w-3.5 h-3.5" />
               </div>
@@ -262,8 +264,8 @@ export default function RecyclerDashboardPage() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-[#191C1E]">My Material Requirements</h2>
-              <p className="text-xs text-[#6B7280]">Multi-supplier demand tracking and progressive fulfillment</p>
+              <h2 className="text-lg font-bold text-[#191C1E]">{t('activeDemandsTitle')}</h2>
+              <p className="text-xs text-[#6B7280]">{t('activeDemandsDesc')}</p>
             </div>
             <Link
               href="/recycler/requirements"
@@ -352,8 +354,8 @@ export default function RecyclerDashboardPage() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-[#191C1E]">Incoming Collector Scrap Offers</h2>
-              <p className="text-xs text-[#6B7280]">Collector submissions matched against your active requirements</p>
+              <h2 className="text-lg font-bold text-[#191C1E]">{t('incomingOffersTitle')}</h2>
+              <p className="text-xs text-[#6B7280]">{t('incomingOffersDesc')}</p>
             </div>
             <Link
               href="/recycler/offers"
@@ -413,13 +415,13 @@ export default function RecyclerDashboardPage() {
                         onClick={() => handleQuickReject(offer.id)}
                         className="px-3 py-1.5 bg-gray-100 hover:bg-rose-50 text-gray-700 hover:text-rose-700 text-xs font-bold rounded-xl transition"
                       >
-                        Reject
+                        {t('rejectOfferBtn')}
                       </button>
                       <button
                         onClick={() => handleQuickAccept(offer.id)}
-                        className="px-3.5 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold rounded-xl shadow-xs transition"
+                        className="px-3 py-1.5 bg-[#136B3B] hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition shadow-xs"
                       >
-                        Accept &amp; Schedule
+                        {t('acceptOfferBtn')}
                       </button>
                     </div>
                   </div>

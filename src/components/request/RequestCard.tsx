@@ -8,6 +8,7 @@ import ReceiptModal from './ReceiptModal';
 import ReportModal from './ReportModal';
 import RatingModal from './RatingModal';
 import { resolveCollectorName, resolveHouseholdName } from '@/lib/name-resolver';
+import { useTranslation } from '@/lib/i18n';
 
 interface RequestCardProps {
   request: PickupRequest;
@@ -46,6 +47,7 @@ export default function RequestCard({
   onStatusUpdate,
   onCompletePayment,
 }: RequestCardProps) {
+  const { t } = useTranslation();
   const [selectedPhotoModal, setSelectedPhotoModal] = useState<string | null>(null);
   const [showHandoverModal, setShowHandoverModal] = useState<boolean>(false);
   const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
@@ -376,7 +378,7 @@ export default function RequestCard({
                       onClick={() => onStatusUpdate(request.id, 'accepted')}
                       className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold rounded-xl shadow-xs transition"
                     >
-                      <span>Accept</span>
+                      <span>{t('acceptOfferBtn')}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   )
@@ -388,7 +390,7 @@ export default function RequestCard({
                     className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold rounded-xl shadow-xs transition"
                   >
                     <Navigation className="w-3.5 h-3.5" />
-                    <span>View Route</span>
+                    <span>{t('openMapRouteBtn')}</span>
                   </Link>
                 )}
 
@@ -398,7 +400,7 @@ export default function RequestCard({
                     className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#5E5C6B] hover:bg-[#464452] text-white text-xs font-bold rounded-xl shadow-xs transition"
                   >
                     <Truck className="w-3.5 h-3.5" />
-                    <span>Start</span>
+                    <span>{t('navTrack')}</span>
                   </button>
                 )}
 
@@ -410,7 +412,7 @@ export default function RequestCard({
                     className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-[#136B3B] to-emerald-700 hover:from-[#0F5730] hover:to-emerald-800 text-white text-xs font-extrabold rounded-xl shadow-sm transition animate-pulse touch-feedback"
                   >
                     <span>🤝</span>
-                    <span>Finalize Deal</span>
+                    <span>{t('completeAndPay')}</span>
                   </button>
                 )}
               </>

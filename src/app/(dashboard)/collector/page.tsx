@@ -40,8 +40,10 @@ import {
   triggerPaymentReceivedNotification,
 } from '@/lib/notification-service';
 import { isCollectorAadhaarVerified } from '@/lib/aadhaar-service';
+import { useTranslation } from '@/lib/i18n';
 
 export default function CollectorDashboard() {
+  const { t } = useTranslation();
   const [requests, setRequests] = useState<PickupRequest[]>([]);
   const [filterTab, setFilterTab] = useState<'available' | 'my_pickups'>('available');
   const [collectorLoc, setCollectorLoc] = useState<CollectorSavedLocation>(() => getCollectorSavedLocation());
@@ -394,15 +396,15 @@ export default function CollectorDashboard() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 sm:p-7 bg-[#136B3B] text-white rounded-3xl shadow-sm relative overflow-hidden">
           <div className="space-y-1.5 z-10">
             <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-              <span>Scrap Collector Portal</span>
+              <span>{t('collectorPortalTitle')}</span>
             </h1>
             <p className="text-sm text-[#A6D5B8]">
-              Browse household waste pickup requests, accept jobs, and navigate route maps.
+              {t('collectorPortalSubtitle')}
             </p>
             <div className="flex items-center gap-2 pt-1">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8] shadow-2xs">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>UIDAI Aadhaar Verified: {collectorAadhaar}</span>
+                <span>{t('uidaiAadhaarVerified')}: {collectorAadhaar}</span>
               </span>
             </div>
           </div>
@@ -413,7 +415,7 @@ export default function CollectorDashboard() {
               className="flex items-center gap-1.5 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full text-xs shadow-xs transition"
             >
               <ShieldAlert className="w-4 h-4 text-white animate-pulse" />
-              <span>Safety Guide (कामगार सुरक्षा)</span>
+              <span>{t('safetyGuideBtn')}</span>
             </Link>
 
             <Link
@@ -421,7 +423,7 @@ export default function CollectorDashboard() {
               className="flex items-center gap-2 px-5 py-3 bg-white text-[#136B3B] font-bold rounded-full text-xs shadow-xs hover:bg-gray-50 transition"
             >
               <MapPin className="w-4 h-4" />
-              <span>Open Map Route</span>
+              <span>{t('openMapRouteBtn')}</span>
             </Link>
           </div>
           <div className="absolute -right-8 -bottom-10 w-44 h-44 rounded-full bg-white/10 pointer-events-none" />
@@ -432,13 +434,13 @@ export default function CollectorDashboard() {
           <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-300 bg-white/10 px-2.5 py-0.5 rounded-full">
-                Two-Sided Recycling Market
+                {t('twoSidedMarketBadge')}
               </span>
               <h2 className="text-lg sm:text-xl font-bold">
-                Have Bulk Recyclables? Sell Directly to Recyclers
+                {t('haveBulkRecyclablesTitle')}
               </h2>
               <p className="text-xs text-[#A6D5B8] max-w-xl">
-                Match your collected circuit boards, copper wire, aluminium, and batteries to verified facilities at locked rates per KG.
+                {t('haveBulkRecyclablesDesc')}
               </p>
             </div>
 
@@ -447,19 +449,19 @@ export default function CollectorDashboard() {
                 href="/collector/find-buyers"
                 className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black rounded-full shadow-sm transition touch-feedback flex items-center gap-1.5"
               >
-                <span>Find Buyers (Match Scrap)</span>
+                <span>{t('findBuyersBtn')}</span>
               </Link>
               <Link
                 href="/collector/demand-board"
                 className="px-4 py-2.5 bg-white/15 hover:bg-white/20 text-white text-xs font-bold rounded-full transition touch-feedback"
               >
-                Demand Board
+                {t('demandBoardBtn')}
               </Link>
               <Link
                 href="/collector/offers"
                 className="px-3.5 py-2.5 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold rounded-full transition touch-feedback"
               >
-                My Offers
+                {t('myOffersBtn')}
               </Link>
             </div>
           </div>
@@ -476,14 +478,14 @@ export default function CollectorDashboard() {
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-base font-bold text-[#191C1E]">
-                    E-Waste Worker Health & Safety Protocols
+                    {t('workerSafetyTitle')}
                   </h2>
                   <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-700">
                     Hazard Alert
                   </span>
                 </div>
                 <p className="text-xs text-[#526056]">
-                  कामगार आरोग्य व सुरक्षा मार्गदर्शिका — Batteries, CRTs, Wires & Acid Leaching Rules
+                  {t('workerSafetySubtitle')}
                 </p>
               </div>
             </div>
@@ -493,7 +495,7 @@ export default function CollectorDashboard() {
               className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-full shadow-xs transition shrink-0"
             >
               <Volume2 className="w-3.5 h-3.5" />
-              <span>View Full Guide & Audio (सुरक्षा नियम)</span>
+              <span>{t('viewFullGuideBtn')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -633,7 +635,7 @@ export default function CollectorDashboard() {
               }`}
             >
               <Filter className="w-4 h-4" />
-              <span>Available Nearby Pickups ({requests.filter((r) => r.status === 'pending').length})</span>
+              <span>{t('availablePickupsTab')} ({requests.filter((r) => r.status === 'pending').length})</span>
             </button>
 
             <button
@@ -645,14 +647,14 @@ export default function CollectorDashboard() {
               }`}
             >
               <History className="w-4 h-4" />
-              <span>My Active & Past Pickups ({requests.filter((r) => r.status !== 'pending').length})</span>
+              <span>{t('myAssignedPickupsTab')} ({requests.filter((r) => r.status !== 'pending').length})</span>
             </button>
           </div>
 
           {/* Radius Filter Pills when in available view */}
           {filterTab === 'available' && (
             <div className="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-gray-200 text-xs font-bold self-start sm:self-auto">
-              <span className="text-[11px] text-gray-500 pl-2 pr-1 font-semibold">Radius:</span>
+              <span className="text-[11px] text-gray-500 pl-2 pr-1 font-semibold">{t('filterRadiusLabel')}:</span>
               {(['5', '10', '25', 'all'] as const).map((rad) => {
                 const isSel = radiusFilter === rad;
                 return (
@@ -666,7 +668,7 @@ export default function CollectorDashboard() {
                         : 'text-gray-500 hover:text-gray-900'
                     }`}
                   >
-                    {rad === 'all' ? 'All Region' : `< ${rad} km`}
+                    {rad === 'all' ? t('allWithin25km') : `< ${rad} km`}
                   </button>
                 );
               })}

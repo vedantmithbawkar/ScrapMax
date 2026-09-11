@@ -46,7 +46,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
   if (isAdmin) {
     tabs = [
       {
-        label: 'Dashboard',
+        label: t('navDashboard'),
         href: '/admin',
         icon: (active: boolean) => (
           <Layers className={`w-5 h-5 ${active ? 'text-purple-700' : 'text-[#6B7280]'}`} />
@@ -54,7 +54,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname === '/admin',
       },
       {
-        label: 'Users',
+        label: t('navUsers'),
         href: '/admin/users',
         icon: (active: boolean) => (
           <Users className={`w-5 h-5 ${active ? 'text-purple-700' : 'text-[#6B7280]'}`} />
@@ -62,7 +62,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname === '/admin/users',
       },
       {
-        label: 'Pickups',
+        label: t('navPickup'),
         href: '/admin/pickups',
         icon: (active: boolean) => (
           <Truck className={`w-5 h-5 ${active ? 'text-purple-700' : 'text-[#6B7280]'}`} />
@@ -70,7 +70,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname === '/admin/pickups',
       },
       {
-        label: 'Reports',
+        label: t('navReports'),
         href: '/admin/reports',
         icon: (active: boolean) => (
           <ClipboardList className={`w-5 h-5 ${active ? 'text-purple-700' : 'text-[#6B7280]'}`} />
@@ -78,7 +78,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname.startsWith('/admin/reports'),
       },
       {
-        label: 'Settings',
+        label: t('navBottomSettings'),
         href: '/admin/settings',
         icon: (active: boolean) => (
           <Settings className={`w-5 h-5 ${active ? 'text-purple-700' : 'text-[#6B7280]'}`} />
@@ -89,7 +89,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
   } else if (role === 'recycler') {
     tabs = [
       {
-        label: 'Dashboard',
+        label: t('navDashboard'),
         href: '/recycler',
         icon: (active: boolean) => (
           <Layers className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
@@ -97,7 +97,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname === '/recycler',
       },
       {
-        label: 'Demands',
+        label: t('navBottomDemands'),
         href: '/recycler/requirements',
         icon: (active: boolean) => (
           <PlusCircle className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
@@ -105,7 +105,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname.startsWith('/recycler/requirements'),
       },
       {
-        label: 'Offers',
+        label: t('navBottomOffers'),
         href: '/recycler/offers',
         icon: (active: boolean) => (
           <Inbox className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
@@ -113,7 +113,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname === '/recycler/offers',
       },
       {
-        label: 'Traceability',
+        label: t('navTraceability'),
         href: '/recycler/traceability',
         icon: (active: boolean) => (
           <QrCode className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
@@ -121,7 +121,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname === '/recycler/traceability',
       },
       {
-        label: 'Facility',
+        label: t('navBottomFacility'),
         href: '/recycler/profile',
         icon: (active: boolean) => (
           <Factory className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
@@ -132,7 +132,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
   } else if (role === 'collector') {
     tabs = [
       {
-        label: 'Pickups',
+        label: t('navPickup'),
         href: '/collector',
         icon: (active: boolean) => (
           <Truck className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
@@ -140,7 +140,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname === '/collector',
       },
       {
-        label: 'Find Buyers',
+        label: t('navFindBuyers'),
         href: '/collector/find-buyers',
         icon: (active: boolean) => (
           <Sparkles className={`w-5 h-5 ${active ? 'text-amber-600' : 'text-[#6B7280]'}`} />
@@ -148,7 +148,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname === '/collector/find-buyers',
       },
       {
-        label: 'My Offers',
+        label: t('navMyOffers'),
         href: '/collector/offers',
         icon: (active: boolean) => (
           <FileCheck2 className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
@@ -156,7 +156,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname === '/collector/offers',
       },
       {
-        label: 'Map Route',
+        label: t('navMapRoute'),
         href: '/collector/map',
         icon: (active: boolean) => (
           <MapPin className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
@@ -164,7 +164,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname === '/collector/map',
       },
       {
-        label: 'Chat',
+        label: t('navBottomChat'),
         href: '/collector/chat',
         icon: (active: boolean) => (
           <MessageSquare className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
@@ -172,7 +172,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname.startsWith('/collector/chat'),
       },
       {
-        label: 'Profile',
+        label: t('navProfile'),
         href: '/collector/profile',
         icon: (active: boolean) => (
           <User className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />

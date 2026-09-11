@@ -77,3 +77,27 @@ body {
   animation-play-state: paused;
 }
 
+/* Universal Translation Silent Styling */
+.goog-te-banner-frame {
+  display: none !important;
+}
+body {
+  top: 0px !important;
+}
+.skiptranslate {
+  display: none !important;
+}
+#google_translate_element {
+  display: none !important;
+}
+.goog-tooltip {
+  display: none !important;
+}
+.goog-tooltip:hover {
+  display: none !important;
+}
+.goog-text-highlight {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
