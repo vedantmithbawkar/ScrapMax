@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/common/Navbar';
+import GoogleIcon from '@/components/common/GoogleIcon';
 import { createClient } from '@/lib/supabase/client';
 import { UserRole } from '@/types';
 import {
@@ -31,14 +32,51 @@ import {
   markCollectorAadhaarVerified,
 } from '@/lib/aadhaar-service';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [autoLoggingRole, setAutoLoggingRole] = useState<UserRole | null>(null);
+
+  useEffect(() => {
+    const errorFromUrl = searchParams.get('error');
+    if (errorFromUrl) {
+      setErrorMsg(decodeURIComponent(errorFromUrl));
+    }
+  }, [searchParams]);
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    setErrorMsg(null);
+    try {
+      const supabase = createClient();
+      const callbackUrl = `${window.location.origin}/auth/callback`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: callbackUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        setErrorMsg(error.message);
+        setGoogleLoading(false);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to initiate Google sign-in';
+      setErrorMsg(message);
+      setGoogleLoading(false);
+    }
+  };
 
   const routeForRole = (role: UserRole) => {
     switch (role) {
@@ -374,6 +412,30 @@ export default function LoginPage() {
             </div>
           )}
 
+          {/* Google OAuth Button */}
+          <button
+            type="button"
+            disabled={loading || googleLoading}
+            onClick={handleGoogleSignIn}
+            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white hover:bg-gray-50 text-[#191C1E] border border-gray-200 hover:border-gray-300 font-bold rounded-full text-sm shadow-xs transition touch-feedback disabled:opacity-60 cursor-pointer"
+          >
+            {googleLoading ? (
+              <div className="w-5 h-5 border-2 border-[#136B3B] border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <GoogleIcon className="w-5 h-5 shrink-0" />
+            )}
+            <span>{googleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+          </button>
+
+          {/* OR Divider */}
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-gray-200"></div>
+            <span className="flex-shrink mx-3 text-gray-400 text-xs uppercase tracking-wider font-semibold">
+              Or sign in with email
+            </span>
+            <div className="flex-grow border-t border-gray-200"></div>
+          </div>
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-[#191C1E] mb-1.5">Email Address</label>
@@ -636,5 +698,13 @@ export default function LoginPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#F7F9FA] flex items-center justify-center text-xs text-gray-400">Loading Sign In...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/common/Navbar';
+import GoogleIcon from '@/components/common/GoogleIcon';
 import { createClient } from '@/lib/supabase/client';
 import { UserRole, RecyclerBusinessType } from '@/types';
 import { upsertRecyclerProfile } from '@/lib/recycler-service';
@@ -70,8 +71,48 @@ function RegisterForm() {
   const [cpcbEprId, setCpcbEprId] = useState('');
 
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  useEffect(() => {
+    const errorFromUrl = searchParams.get('error');
+    if (errorFromUrl) {
+      setErrorMsg(decodeURIComponent(errorFromUrl));
+    }
+  }, [searchParams]);
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    setErrorMsg('');
+    try {
+      const supabase = createClient();
+      const destination = role === 'recycler' ? '/recycler' : role === 'collector' ? '/collector' : '/household';
+      const callbackUrl = `${window.location.origin}/auth/callback?role=${encodeURIComponent(role)}&next=${encodeURIComponent(destination)}`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: callbackUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        setErrorMsg(error.message);
+        setGoogleLoading(false);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to initiate Google sign-in';
+      setErrorMsg(message);
+      setGoogleLoading(false);
+    }
+  };
+
+  const roleLabel = role === 'household' ? 'Citizen' : role === 'collector' ? 'Collector' : 'Recycler';
 
   // Aadhaar Verification State for Collectors
   const [aadhaarInput, setAadhaarInput] = useState('');
@@ -357,6 +398,34 @@ function RegisterForm() {
             <span className="text-[11px]">♻️ Recycler</span>
           </button>
         </div>
+      </div>
+
+      {/* Google OAuth Button */}
+      <button
+        type="button"
+        disabled={googleLoading || loading}
+        onClick={handleGoogleSignIn}
+        className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white hover:bg-gray-50 text-[#191C1E] border border-gray-200 hover:border-gray-300 font-bold rounded-full text-xs sm:text-sm shadow-xs transition touch-feedback disabled:opacity-60 cursor-pointer"
+      >
+        {googleLoading ? (
+          <div className="w-4 h-4 border-2 border-[#136B3B] border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <GoogleIcon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+        )}
+        <span>
+          {googleLoading
+            ? 'Connecting to Google...'
+            : `Continue with Google as ${roleLabel}`}
+        </span>
+      </button>
+
+      {/* OR Divider */}
+      <div className="relative flex py-1 items-center">
+        <div className="flex-grow border-t border-gray-200"></div>
+        <span className="flex-shrink mx-3 text-gray-400 text-xs uppercase tracking-wider font-semibold">
+          Or register with email
+        </span>
+        <div className="flex-grow border-t border-gray-200"></div>
       </div>
 
       {errorMsg && (
