@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { PickupRequest, PaymentDetails, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
-import { MapPin, MessageSquare, ChevronRight, Truck, Camera, X, Receipt, Flag, Star } from 'lucide-react';
+import { MapPin, MessageSquare, ChevronRight, Truck, Camera, X, Receipt, Flag, Star, Navigation } from 'lucide-react';
 import HandoverModal from './HandoverModal';
 import ReceiptModal from './ReceiptModal';
 import ReportModal from './ReportModal';
@@ -171,6 +171,39 @@ export default function RequestCard({
           </div>
         )}
 
+        {/* Household Contact and Address strip for Collector */}
+        {userRole === 'collector' && request.status !== 'pending' && (
+          <div className="flex items-center justify-between p-2.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-base shrink-0">🏠</span>
+              <div className="min-w-0">
+                <span className="font-bold text-[#191C1E] truncate block">
+                  {request.household?.full_name || 'Aarav Sharma (Customer)'}
+                </span>
+                <span className="text-[11px] text-blue-700 font-mono font-bold block truncate">
+                  {request.household?.phone || '+91 98201 54321'}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <a
+                href={`tel:${(request.household?.phone || '+919820154321').replace(/\s+/g, '')}`}
+                className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg transition shadow-2xs"
+              >
+                Call
+              </a>
+              <a
+                href={`https://wa.me/${(request.household?.phone || '+919820154321').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${request.household?.full_name || 'there'}, I am your ScrapMax collector for pickup #${request.id.slice(0, 8)}.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition shadow-2xs"
+              >
+                WhatsApp
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Waste Items Badges if multiple */}
         {request.waste_items && request.waste_items.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -317,6 +350,16 @@ export default function RequestCard({
                     <span>Accept</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
+                )}
+
+                {(request.status === 'accepted' || request.status === 'in_progress') && (
+                  <Link
+                    href={`/collector/map?requestId=${request.id}`}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold rounded-xl shadow-xs transition"
+                  >
+                    <Navigation className="w-3.5 h-3.5" />
+                    <span>View Route</span>
+                  </Link>
                 )}
 
                 {request.status === 'accepted' && (

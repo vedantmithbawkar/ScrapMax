@@ -3,7 +3,8 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { PickupRequest, PaymentDetails, PaymentMethod, VerifiedWasteItem, STANDARD_SCRAP_RATES, WASTE_CATEGORY_LABELS, WasteCategory } from '@/types';
-import { X, CheckCircle2, QrCode, Banknote, Scale, ArrowRight, Sparkles, Download, Printer } from 'lucide-react';
+import { X, CheckCircle2, QrCode, Banknote, Scale, ArrowRight, Sparkles, Download, Printer, ShieldCheck, KeyRound } from 'lucide-react';
+import { getPickupOtp } from '@/lib/tracking-service';
 
 interface HandoverModalProps {
   request: PickupRequest;
@@ -20,7 +21,8 @@ const UPI_APPS = [
 
 export default function HandoverModal({ request, onClose, onCompletePayment }: HandoverModalProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
-  
+  const expectedOtp = getPickupOtp(request.id);
+
   const initialItems: VerifiedWasteItem[] = (request.waste_items && request.waste_items.length > 0
     ? request.waste_items
     : [{ category: 'PAPER' as WasteCategory, approx_weight_kg: request.total_estimated_weight_kg || 5 }]
@@ -35,7 +37,10 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
     };
   });
 
-  const [step, setStep] = useState<'weigh' | 'payment' | 'receipt'>('weigh');
+  const [step, setStep] = useState<'otp' | 'weigh' | 'payment' | 'receipt'>('otp');
+  const [enteredOtp, setEnteredOtp] = useState<string>('');
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [isOtpVerified, setIsOtpVerified] = useState<boolean>(false);
   const [items, setItems] = useState<VerifiedWasteItem[]>(initialItems);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi');
   const [householdUpiId, setHouseholdUpiId] = useState<string>('household@upi');
@@ -161,10 +166,11 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-[#F8FAF9]">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#136B3B]">
-              <Scale className="w-4 h-4" />
+              {step === 'otp' ? <ShieldCheck className="w-4 h-4" /> : <Scale className="w-4 h-4" />}
             </div>
             <div>
               <h2 className="text-base font-extrabold text-[#191C1E] leading-tight">
+                {step === 'otp' && 'Doorstep OTP Verification'}
                 {step === 'weigh' && 'Weigh & Verify Scrap'}
                 {step === 'payment' && 'Pay Household for Scrap'}
                 {step === 'receipt' && 'Payment Receipt'}
@@ -182,13 +188,108 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
           </button>
         </div>
 
+        {/* STEP 0 - DOORSTEP OTP VERIFICATION */}
+        {step === 'otp' && (
+          <div className="p-6 space-y-5 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-[#E6F4EA] border border-[#A6D5B8] flex items-center justify-center text-[#136B3B] mx-auto shadow-xs">
+              <KeyRound className="w-7 h-7" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-black text-[#191C1E]">
+                Enter Customer Doorstep OTP
+              </h3>
+              <p className="text-xs text-[#526056] max-w-xs mx-auto leading-relaxed">
+                Ask <strong>{request.household?.full_name || 'the customer'}</strong> for the 4-digit verification PIN displayed on their screen to authorize scrap handover.
+              </p>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (enteredOtp === expectedOtp) {
+                  setOtpError(null);
+                  setIsOtpVerified(true);
+                  setTimeout(() => setStep('weigh'), 350);
+                } else {
+                  setOtpError('Invalid OTP. Please check with customer.');
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={enteredOtp}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+                    setEnteredOtp(val);
+                    if (val.length === 4) {
+                      if (val === expectedOtp) {
+                        setOtpError(null);
+                        setIsOtpVerified(true);
+                        setTimeout(() => setStep('weigh'), 350);
+                      } else {
+                        setOtpError('Invalid OTP. Please check with customer.');
+                      }
+                    } else {
+                      setOtpError(null);
+                    }
+                  }}
+                  placeholder="• • • •"
+                  autoFocus
+                  className="w-48 mx-auto text-center font-mono font-black text-3xl tracking-[0.6em] py-3 px-4 bg-[#F8FAF9] border-2 border-gray-300 focus:border-[#136B3B] rounded-2xl focus:outline-none transition shadow-inner"
+                />
+              </div>
+
+              {otpError && (
+                <p className="text-xs font-bold text-red-600 animate-in fade-in">
+                  ❌ {otpError}
+                </p>
+              )}
+
+              {isOtpVerified && (
+                <p className="text-xs font-bold text-[#136B3B] flex items-center justify-center gap-1 animate-in fade-in">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>OTP Verified! Unlocking digital scale...</span>
+                </p>
+              )}
+
+              {/* Demo auto-fill helper */}
+              <button
+                type="button"
+                onClick={() => {
+                  setEnteredOtp(expectedOtp);
+                  setOtpError(null);
+                  setIsOtpVerified(true);
+                  setTimeout(() => setStep('weigh'), 350);
+                }}
+                className="text-[11px] text-[#136B3B] font-bold bg-[#EAF5EE] hover:bg-[#D4EBD9] px-3 py-1 rounded-full transition inline-flex items-center gap-1"
+              >
+                <span>💡 Demo Shortcut: Enter OTP ({expectedOtp})</span>
+              </button>
+
+              <button
+                type="submit"
+                disabled={enteredOtp.length < 4}
+                className="w-full py-3.5 bg-[#136B3B] hover:bg-[#0F5730] disabled:opacity-50 text-white font-extrabold text-sm rounded-2xl transition flex items-center justify-center gap-2 shadow-sm touch-feedback"
+              >
+                <span>Verify OTP &amp; Start Weighing</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        )}
+
         {/* STEP 1 - WEIGH & ADJUST */}
         {step === 'weigh' && (
           <div className="p-5 space-y-4">
             <div className="bg-[#EDF7F2] p-3 rounded-2xl border border-[#A6D5B8] flex items-start gap-2.5 text-xs text-[#136B3B]">
-              <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-emerald-600" />
               <p className="leading-relaxed">
-                Weigh the scrap on your digital scale. Adjust weights and rates below. You (collector) will pay the household the calculated amount.
+                <strong>OTP Verified:</strong> Handover authorized. Weigh items on your digital scale and verify rates.
               </p>
             </div>
 

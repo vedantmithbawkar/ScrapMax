@@ -20,12 +20,18 @@ const DEMO_COLLECTOR_REQUESTS: PickupRequest[] = [
   {
     id: 'req-c301-demo-uuid',
     household_id: 'user-h101',
+    household: {
+      id: 'user-h101',
+      full_name: 'Aarav Sharma (Flat 402, Green Heights)',
+      phone: '+91 98201 54321',
+      role: 'household',
+    },
     status: 'pending',
-    address: 'Main Market Road, Near City Center',
+    address: 'Flat 402, Green Heights, Main Market Road, Near City Center',
     latitude: 19.0760,
     longitude: 72.8777,
     scheduled_date: 'Today · 5:30 PM',
-    notes: 'Items packed in bags in garage.',
+    notes: 'Items packed in bags in garage. Ring bell twice upon arrival.',
     total_estimated_weight_kg: 28.5,
     photos: [
       'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
@@ -49,12 +55,18 @@ const DEMO_COLLECTOR_REQUESTS: PickupRequest[] = [
   {
     id: 'req-c302-demo-uuid',
     household_id: 'user-h102',
+    household: {
+      id: 'user-h102',
+      full_name: 'Priya Verma (Building 3B, Tech Park)',
+      phone: '+91 98334 12789',
+      role: 'household',
+    },
     status: 'pending',
-    address: 'Station Road West, Commercial Hub',
+    address: 'Tower B, Station Road West, Commercial Tech Park',
     latitude: 19.0820,
     longitude: 72.8820,
     scheduled_date: 'Today · 6:00 PM',
-    notes: 'Copper scrap and e-waste motherboards',
+    notes: 'Copper scrap and e-waste motherboards. Security pass needed at gate.',
     total_estimated_weight_kg: 42.0,
     photos: [
       'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80',

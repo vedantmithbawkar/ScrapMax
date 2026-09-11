@@ -22,8 +22,18 @@ import {
   ShieldCheck,
   Star,
   Receipt,
+  Bell,
+  Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
+import {
+  initializeTrackingState,
+  subscribeToTracking,
+  formatDistance,
+  getPickupOtp,
+  acceptPickupInTracking,
+  LiveTrackingState,
+} from '@/lib/tracking-service';
 
 // Lazy-load map to avoid SSR issues
 const MapContainer = dynamic(() => import('@/components/map/MapContainer'), { ssr: false });
@@ -168,6 +178,92 @@ export default function TrackPickupPage() {
     if (requestId !== 'demo') load();
   }, [requestId]);
 
+  const [trackingState, setTrackingState] = useState<LiveTrackingState | null>(null);
+
+  // Initialize and subscribe to live tracking across tabs
+  useEffect(() => {
+    let isMounted = true;
+
+    async function init() {
+      const lat = request.latitude || 19.076;
+      const lng = request.longitude || 72.8777;
+
+      const state = await initializeTrackingState({
+        requestId,
+        householdPos: [lat, lng],
+        householdName: 'Aarav Sharma',
+        householdPhone: '+91 98201 54321',
+        householdAddress: request.address,
+        collectorName: request.collector?.full_name,
+        collectorPhone: request.collector?.phone,
+      });
+
+      if (isMounted) {
+        setTrackingState(state);
+      }
+    }
+
+    init();
+
+    const unsubscribe = subscribeToTracking(requestId, (state) => {
+      if (isMounted) {
+        setTrackingState(state);
+        // If collector accepted in another tab
+        if ((state.status === 'accepted' || state.status === 'in_progress') && request.status === 'pending') {
+          setRequest((prev) => ({
+            ...prev,
+            status: state.status,
+            collector: {
+              id: 'collector-c201',
+              full_name: state.collectorName || 'Ramesh Kumar (Verified Kabadiwala)',
+              phone: state.collectorPhone || '+91 98201 45892',
+              role: 'collector',
+              rating: 4.9,
+              completed_pickups: 126,
+            },
+          }));
+        } else if (state.status === 'completed') {
+          setRequest((prev) => ({
+            ...prev,
+            status: 'completed',
+            payment: state.payment || prev.payment,
+          }));
+        } else if (state.status === 'in_progress' && request.status === 'accepted') {
+          setRequest((prev) => ({ ...prev, status: 'in_progress' }));
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [requestId, request.latitude, request.longitude, request.address, request.collector?.full_name, request.status]);
+
+  const pickupOtp = getPickupOtp(requestId);
+
+  const handleSimulateAccept = () => {
+    const updated = acceptPickupInTracking(requestId, {
+      full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+      phone: '+91 98201 45892',
+    });
+    if (updated) {
+      setTrackingState(updated);
+      setRequest((prev) => ({
+        ...prev,
+        status: 'accepted',
+        collector: {
+          id: 'collector-c201',
+          full_name: updated.collectorName,
+          phone: updated.collectorPhone,
+          role: 'collector',
+          rating: 4.9,
+          completed_pickups: 126,
+        },
+      }));
+    }
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeTab]);
@@ -237,12 +333,205 @@ export default function TrackPickupPage() {
         {/* ── TRACK TAB ── */}
         {activeTab === 'track' && (
           <div className="space-y-4">
-            {/* Map */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden h-56 sm:h-72">
+
+            {/* 1. WAITING FOR COLLECTOR STATE (When Pending) */}
+            {request.status === 'pending' && (
+              <div className="bg-white rounded-3xl p-6 border-2 border-emerald-100 shadow-sm space-y-4 text-center relative overflow-hidden">
+                <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-emerald-100 animate-ping opacity-75" />
+                  <span className="absolute inset-2 rounded-full bg-emerald-200 animate-pulse opacity-50" />
+                  <div className="relative w-14 h-14 rounded-2xl bg-[#136B3B] text-white flex items-center justify-center shadow-md text-2xl">
+                    📡
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-800 border border-amber-200">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <span>Searching for Nearby Collectors...</span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-[#191C1E]">
+                    Waiting for a Collector to Accept
+                  </h3>
+                  <p className="text-xs text-[#526056] max-w-sm mx-auto leading-relaxed">
+                    Your scrap pickup request has been broadcasted to verified collectors in your locality. Once accepted, their name, contact phone, live map route, and distance will appear here instantly.
+                  </p>
+                </div>
+
+                {/* Instant Simulation / Demo Button */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleSimulateAccept}
+                    className="py-3 px-5 rounded-2xl bg-[#136B3B] hover:bg-[#0F5730] text-white font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 mx-auto shadow-sm touch-feedback"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
+                    <span>Simulate Collector Accepting (Demo Test)</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 2. BLINKIT-STYLE LIVE DELIVERY TRACKING BANNER (When Accepted/In-Progress) */}
+            {request.status !== 'pending' && (
+              <div className="bg-white rounded-3xl p-5 border border-emerald-100 shadow-sm space-y-3 relative overflow-hidden">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-2xl shrink-0 shadow-xs ${
+                        request.status === 'completed'
+                          ? 'bg-emerald-600 text-white'
+                          : trackingState?.hasArrived
+                          ? 'bg-emerald-500 text-white animate-bounce'
+                          : trackingState?.isNearDoorstep
+                          ? 'bg-amber-500 text-white animate-pulse'
+                          : 'bg-[#136B3B] text-white'
+                      }`}
+                    >
+                      {request.status === 'completed' ? '🎉' : trackingState?.hasArrived ? '🚪' : '🚚'}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#136B3B]">
+                          {request.status === 'completed'
+                            ? 'Pickup Completed'
+                            : trackingState?.hasArrived
+                            ? 'Arrived at Doorstep'
+                            : trackingState?.isNearDoorstep
+                            ? 'Arriving at Your Door'
+                            : 'Collector En Route'}
+                        </span>
+                        {request.status !== 'completed' && (
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                        )}
+                      </div>
+                      <h2 className="text-base sm:text-lg font-black text-[#191C1E] mt-0.5">
+                        {request.status === 'completed'
+                          ? 'Deal Done & Payment Credited!'
+                          : trackingState?.hasArrived
+                          ? 'Collector is at your doorstep!'
+                          : trackingState?.isNearDoorstep
+                          ? 'Near your doorstep (< 1 min away)!'
+                          : `Arriving in ~${trackingState?.etaMinutes || 5} mins`}
+                      </h2>
+                      <p className="text-xs text-[#526056] mt-0.5">
+                        {request.status === 'completed'
+                          ? `₹${request.payment?.totalAmount || Math.round((request.total_estimated_weight_kg || 5) * 18)} received via ${request.payment?.method?.toUpperCase() || 'UPI'}.`
+                          : trackingState?.hasArrived
+                          ? 'Please open the door with your scrap ready for honest weighing.'
+                          : `${formatDistance(trackingState?.distanceMeters || 1400)} away from your home.`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Top Status Pill */}
+                  <div className="bg-[#E6F4EA] border border-[#A6D5B8] px-3 py-1.5 rounded-2xl text-center shrink-0">
+                    <p className="text-[10px] font-bold text-[#526056] uppercase tracking-wider">Distance</p>
+                    <p className="text-sm font-black text-[#136B3B]">
+                      {request.status === 'completed'
+                        ? 'Done'
+                        : trackingState?.hasArrived
+                        ? '0 m'
+                        : formatDistance(trackingState?.distanceMeters || 1400)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Animated Delivery Journey Progress Bar */}
+                <div className="pt-2">
+                  <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden relative">
+                    <div
+                      className="h-full bg-gradient-to-r from-emerald-500 via-[#136B3B] to-emerald-600 rounded-full transition-all duration-700"
+                      style={{
+                        width:
+                          request.status === 'completed'
+                            ? '100%'
+                            : trackingState?.hasArrived
+                            ? '95%'
+                            : trackingState?.isNearDoorstep
+                            ? '75%'
+                            : '45%',
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[10px] font-bold text-gray-400 mt-1.5 px-0.5">
+                    <span className="text-[#136B3B]">Assigned</span>
+                    <span className={trackingState?.distanceMeters ? 'text-[#136B3B]' : ''}>On The Way</span>
+                    <span className={trackingState?.isNearDoorstep || trackingState?.hasArrived ? 'text-[#136B3B]' : ''}>Near Doorstep</span>
+                    <span className={request.status === 'completed' ? 'text-[#136B3B]' : ''}>Paid</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3. PROMINENT DOORSTEP HANDOVER OTP CARD */}
+            {request.status !== 'pending' && request.status !== 'completed' && (
+              <div className="bg-gradient-to-r from-[#136B3B] to-emerald-700 text-white rounded-3xl p-5 shadow-sm space-y-3 relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🔐</span>
+                    <div>
+                      <h4 className="font-extrabold text-xs sm:text-sm uppercase tracking-wider text-emerald-100">
+                        Doorstep Handover OTP
+                      </h4>
+                      <p className="text-[11px] text-emerald-200">
+                        Share this 4-digit code with collector when they arrive
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold bg-white/20 px-2.5 py-0.5 rounded-full text-white border border-white/30">
+                    Security PIN
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-center gap-3 pt-1">
+                  {pickupOtp.split('').map((digit, idx) => (
+                    <div
+                      key={idx}
+                      className="w-12 h-14 bg-white text-[#136B3B] font-black font-mono text-2xl rounded-2xl flex items-center justify-center shadow-md border-2 border-white/50"
+                    >
+                      {digit}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 4. NEAR DOORSTEP PROXIMITY ALERT BOX */}
+            {request.status !== 'completed' && (trackingState?.isNearDoorstep || trackingState?.hasArrived) && (
+              <div className="p-4 rounded-3xl bg-amber-50 border-2 border-amber-300 shadow-md flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl animate-bounce">🔔</span>
+                  <div>
+                    <h4 className="text-sm font-black text-amber-950">
+                      {trackingState?.hasArrived ? 'Collector is right outside your door!' : 'Collector is near your doorstep!'}
+                    </h4>
+                    <p className="text-xs text-amber-900 mt-0.5">
+                      {request.collector?.full_name || 'Ramesh Kumar'} has reached your location. Please keep recyclables handy.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href={`tel:${(request.collector?.phone || '+919820145892').replace(/\s+/g, '')}`}
+                  className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shrink-0 transition shadow-xs"
+                >
+                  Call
+                </a>
+              </div>
+            )}
+
+            {/* 5. INTERACTIVE MAP */}
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden h-64 sm:h-80 relative">
               <MapContainer
-                center={[request.latitude || 12.9716, request.longitude || 77.5946]}
+                center={[request.latitude || 19.076, request.longitude || 72.8777]}
                 zoom={14}
                 requests={[request]}
+                collectorPos={request.status !== 'pending' ? trackingState?.collectorPos : null}
+                routeCoordinates={request.status !== 'pending' ? (trackingState?.routeCoordinates || []) : []}
+                destinationPos={[request.latitude || 19.076, request.longitude || 72.8777]}
+                destinationLabel="Your Doorstep"
+                fitBoundsToRoute={request.status !== 'pending'}
+                useTruckIconForCollector={true}
                 className="h-full w-full"
               />
             </div>
