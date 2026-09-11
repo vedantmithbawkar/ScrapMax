@@ -50,7 +50,7 @@ export default function LandingPage() {
           </Link>
 
           <Link
-            href="/admin"
+            href="/admin/login"
             className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-sm shadow-xs transition touch-feedback"
           >
             <Shield className="w-4 h-4 text-purple-700" />
@@ -75,7 +75,7 @@ export default function LandingPage() {
                 Request pickup
               </Link>
               <Link
-                href="/admin"
+                href="/admin/login"
                 className="inline-flex items-center gap-1.5 bg-[#0F5730] border border-[#A6D5B8]/40 text-white text-xs font-bold px-4 py-2.5 rounded-full hover:bg-[#0c4627] transition"
               >
                 <Shield className="w-3.5 h-3.5" />
@@ -143,7 +143,7 @@ export default function LandingPage() {
           <span>•</span>
           <Link href="/stores" className="hover:text-[#136B3B] transition">Store Locator</Link>
           <span>•</span>
-          <Link href="/admin" className="hover:text-purple-700 transition inline-flex items-center gap-1 font-bold text-purple-700">
+          <Link href="/admin/login" className="hover:text-purple-700 transition inline-flex items-center gap-1 font-bold text-purple-700">
             <Shield className="w-3.5 h-3.5" />
             Admin Portal
           </Link>

@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/common/Navbar';
 import { Shield, Lock, Mail, KeyRound, AlertTriangle, ArrowRight, Eye, EyeOff } from 'lucide-react';
-import { loginAdmin } from '@/lib/admin-auth';
+import { loginAdmin, logoutAdmin } from '@/lib/admin-auth';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -14,6 +14,11 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Reset session whenever the admin login page is opened
+    logoutAdmin();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

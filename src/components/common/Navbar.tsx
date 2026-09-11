@@ -209,7 +209,7 @@ export default function Navbar() {
 
                 {/* Admin Portal Link */}
                 <Link
-                  href={adminSession ? '/admin' : '/admin/login'}
+                  href="/admin/login"
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                     pathname.startsWith('/admin')
                       ? 'bg-[#F3E8FF] text-purple-900'
