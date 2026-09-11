@@ -32,10 +32,12 @@ import {
   maskAadhaar,
   markCollectorAadhaarVerified,
 } from '@/lib/aadhaar-service';
+import { useTranslation } from '@/lib/i18n';
 
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
 
   const roleParam = searchParams.get('role');
   const [role, setRole] = useState<UserRole>(
@@ -112,7 +114,7 @@ function RegisterForm() {
     }
   };
 
-  const roleLabel = role === 'household' ? 'Citizen' : role === 'collector' ? 'Collector' : 'Recycler';
+  const roleLabel = role === 'household' ? t('roleCitizen') : role === 'collector' ? t('roleCollector') : t('roleRecycler');
 
   // Aadhaar Verification State for Collectors
   const [aadhaarInput, setAadhaarInput] = useState('');
@@ -408,13 +410,13 @@ function RegisterForm() {
   return (
     <div className={`w-full ${role === 'recycler' ? 'max-w-2xl' : 'max-w-md'} bg-white border border-gray-100 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 transition-all`}>
       <div className="text-center space-y-1">
-        <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">Create Your Account</h2>
-        <p className="text-xs text-[#6B7280]">Join ScrapMax two-sided circular recycling marketplace</p>
+        <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">{t('createAccountTitle')}</h2>
+        <p className="text-xs text-[#6B7280]">{t('createAccountSubtitle')}</p>
       </div>
 
       {/* Role Selection Switcher */}
       <div>
-        <label className="block text-xs font-bold text-[#191C1E] mb-2">Select Your Role</label>
+        <label className="block text-xs font-bold text-[#191C1E] mb-2">{t('selectYourRole')}</label>
         <div className="grid grid-cols-3 gap-2">
           <button
             type="button"
@@ -426,7 +428,7 @@ function RegisterForm() {
             }`}
           >
             <Recycle className="w-5 h-5 stroke-[2.2]" />
-            <span className="text-[11px]">🏠 Citizen</span>
+            <span className="text-[11px]">{t('roleCitizenLabel')}</span>
           </button>
 
           <button
@@ -439,7 +441,7 @@ function RegisterForm() {
             }`}
           >
             <Truck className="w-5 h-5 stroke-[2.2]" />
-            <span className="text-[11px]">🚛 Collector</span>
+            <span className="text-[11px]">{t('roleCollectorLabel')}</span>
           </button>
 
           <button
@@ -452,7 +454,7 @@ function RegisterForm() {
             }`}
           >
             <Factory className="w-5 h-5 stroke-[2.2]" />
-            <span className="text-[11px]">♻️ Recycler</span>
+            <span className="text-[11px]">{t('roleRecyclerLabel')}</span>
           </button>
         </div>
       </div>
@@ -471,8 +473,8 @@ function RegisterForm() {
         )}
         <span>
           {googleLoading
-            ? 'Connecting to Google...'
-            : `Continue with Google as ${roleLabel}`}
+            ? '...'
+            : `${t('continueWithGoogleAs')} ${roleLabel}`}
         </span>
       </button>
 
@@ -480,7 +482,7 @@ function RegisterForm() {
       <div className="relative flex py-1 items-center">
         <div className="flex-grow border-t border-gray-200"></div>
         <span className="flex-shrink mx-3 text-gray-400 text-xs uppercase tracking-wider font-semibold">
-          Or register with email
+          {t('orRegisterWithEmail')}
         </span>
         <div className="flex-grow border-t border-gray-200"></div>
       </div>
@@ -495,9 +497,9 @@ function RegisterForm() {
         <div className="p-4 bg-[#E6F4EA] border border-[#A6D5B8] text-[#136B3B] rounded-2xl text-xs leading-relaxed space-y-2 font-medium">
           <p>{successMsg}</p>
           <p>
-            Ready to log in?{' '}
+            {t('alreadyHaveAccount')}{' '}
             <Link href="/login" className="underline font-bold text-[#136B3B]">
-              Sign In Here
+              {t('signInHere')}
             </Link>
           </p>
         </div>
@@ -510,26 +512,26 @@ function RegisterForm() {
         <div className="space-y-3.5">
           <div className="flex items-center gap-2 pb-1.5 border-b border-gray-100 text-xs font-bold text-[#191C1E]">
             <User className="w-4 h-4 text-[#136B3B]" />
-            <span>SECTION A — Account Information</span>
+            <span>{t('sectionAccountInfo')}</span>
           </div>
 
           <div>
             <label className="block text-xs font-bold text-[#191C1E] mb-1">
-              {role === 'recycler' ? 'Account Admin Name' : 'Full Name'}
+              {role === 'recycler' ? t('accountAdminNameLabel') : t('fullNameLabel')}
             </label>
             <input
               type="text"
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="e.g. Vikram Joshi"
+              placeholder={t('fullNamePlaceholder')}
               className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[#191C1E] mb-1">Email Address</label>
+              <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('emailLabel')}</label>
               <input
                 type="email"
                 required
@@ -541,7 +543,7 @@ function RegisterForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#191C1E] mb-1">Contact Phone</label>
+              <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('phoneLabel')}</label>
               <input
                 type="tel"
                 required
@@ -555,7 +557,7 @@ function RegisterForm() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[#191C1E] mb-1">Password</label>
+              <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('passwordLabel')}</label>
               <input
                 type="password"
                 required
@@ -567,7 +569,7 @@ function RegisterForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#191C1E] mb-1">Confirm Password</label>
+              <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('confirmPasswordLabel')}</label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -588,12 +590,12 @@ function RegisterForm() {
             <div className="space-y-3.5 pt-2">
               <div className="flex items-center gap-2 pb-1.5 border-b border-gray-100 text-xs font-bold text-[#191C1E]">
                 <Building2 className="w-4 h-4 text-[#136B3B]" />
-                <span>SECTION B — Company &amp; Facility Information</span>
+                <span>{t('sectionCompanyInfo')}</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Company / Facility Name</label>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('companyNameLabel')}</label>
                   <input
                     type="text"
                     required
@@ -605,7 +607,7 @@ function RegisterForm() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Business Type</label>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('businessTypeLabel')}</label>
                   <select
                     value={businessType}
                     onChange={(e) => setBusinessType(e.target.value as RecyclerBusinessType)}
@@ -621,7 +623,7 @@ function RegisterForm() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Authorized Person Name</label>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('authorizedPersonLabel')}</label>
                   <input
                     type="text"
                     required
@@ -633,7 +635,7 @@ function RegisterForm() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Designation</label>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('designationLabel')}</label>
                   <input
                     type="text"
                     value={designation}
@@ -646,7 +648,7 @@ function RegisterForm() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Business Email</label>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('businessEmailLabel')}</label>
                   <input
                     type="email"
                     value={businessEmail}
@@ -657,7 +659,7 @@ function RegisterForm() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Business Phone</label>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('businessPhoneLabel')}</label>
                   <input
                     type="tel"
                     value={businessPhone}
@@ -669,7 +671,7 @@ function RegisterForm() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#191C1E] mb-1">Registered Address</label>
+                <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('registeredAddressLabel')}</label>
                 <input
                   type="text"
                   required
@@ -681,7 +683,7 @@ function RegisterForm() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#191C1E] mb-1">Recycling Facility / Yard Address</label>
+                <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('facilityAddressLabel')}</label>
                 <input
                   type="text"
                   required
@@ -694,7 +696,7 @@ function RegisterForm() {
 
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">City</label>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('cityLabel')}</label>
                   <input
                     type="text"
                     required
@@ -706,7 +708,7 @@ function RegisterForm() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">State</label>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('stateLabel')}</label>
                   <input
                     type="text"
                     required
@@ -718,7 +720,7 @@ function RegisterForm() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">PIN Code</label>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('pincodeLabel')}</label>
                   <input
                     type="text"
                     required
@@ -735,16 +737,16 @@ function RegisterForm() {
             <div className="space-y-3.5 pt-2">
               <div className="flex items-center gap-2 pb-1.5 border-b border-gray-100 text-xs font-bold text-[#191C1E]">
                 <FileCheck2 className="w-4 h-4 text-[#136B3B]" />
-                <span>SECTION C — Compliance &amp; Regulatory Verification</span>
+                <span>{t('sectionComplianceInfo')}</span>
               </div>
 
               <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 leading-relaxed">
-                ℹ️ <strong>Note:</strong> Verification status will be set to <strong>Pending</strong> upon registration. ScrapMax admin reviews SPCB/EPR details prior to marketplace verification badge approval. Sensitive personal identity documents (such as Aadhaar) are never requested.
+                ℹ️ {t('complianceNote')}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">GSTIN</label>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('gstinLabel')}</label>
                   <input
                     type="text"
                     value={gstin}
@@ -755,7 +757,7 @@ function RegisterForm() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Company PAN</label>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('panLabel')}</label>
                   <input
                     type="text"
                     value={pan}
@@ -768,7 +770,7 @@ function RegisterForm() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Recycler Authorization Number</label>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('recyclerAuthNumberLabel')}</label>
                   <input
                     type="text"
                     value={regNumber}
@@ -779,7 +781,7 @@ function RegisterForm() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">State Pollution Control Board (SPCB)</label>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('spcbLabel')}</label>
                   <input
                     type="text"
                     value={spcb}
@@ -791,7 +793,7 @@ function RegisterForm() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#191C1E] mb-1">CPCB / EPR Registration ID (if applicable)</label>
+                <label className="block text-xs font-bold text-[#191C1E] mb-1">{t('cpcbEprLabel')}</label>
                 <input
                   type="text"
                   value={cpcbEprId}
@@ -810,15 +812,15 @@ function RegisterForm() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#14532D]">
                 <ShieldCheck className="w-4 h-4 text-[#16A34A]" />
-                <span>UIDAI Aadhaar e-KYC Verification</span>
+                <span>{t('aadhaarTitle')}</span>
               </div>
               <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                Mandatory
+                {t('mandatoryBadge')}
               </span>
             </div>
 
             <p className="text-[11.5px] text-[#166534] leading-relaxed">
-              ScrapMax requires verified UIDAI Aadhaar credentials for all scrap collectors to ensure identity safety and trust for household pickups.
+              {t('aadhaarKycNotice')}
             </p>
 
             {aadhaarVerified ? (
@@ -829,7 +831,7 @@ function RegisterForm() {
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-emerald-950">Aadhaar Verified</span>
+                      <span className="text-xs font-bold text-emerald-950">{t('aadhaarVerifiedBadge')}</span>
                       <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">UIDAI OK</span>
                     </div>
                     <p className="text-xs font-mono text-gray-600 mt-0.5">{maskedAadhaarVal}</p>
@@ -851,17 +853,17 @@ function RegisterForm() {
               <div className="space-y-2.5 bg-white p-3 rounded-xl border border-gray-200 shadow-2xs">
                 {/* Target Registered Mobile Display */}
                 <div className="flex items-center justify-between p-2 bg-emerald-50/70 border border-emerald-200/80 rounded-lg text-[11px]">
-                  <span className="text-[#166534] font-bold">Registered Mobile for OTP:</span>
+                  <span className="text-[#166534] font-bold">{t('registeredMobileForOtp')}</span>
                   <span className="font-mono font-bold text-[#14532D]">
                     {phone && phone.replace(/\D/g, '').length >= 10
                       ? `+91 ${phone.replace(/\D/g, '').slice(-10)}`
-                      : '⚠️ Enter phone number above'}
+                      : `⚠️ ${t('enterPhoneAboveNotice')}`}
                   </span>
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-bold text-[#191C1E] mb-1">
-                    12-Digit Aadhaar Card Number
+                    {t('aadhaarCardNumberLabel')}
                   </label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
@@ -884,7 +886,7 @@ function RegisterForm() {
                       {aadhaarLoading && !otpSent ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
-                        <span>{otpSent ? 'Resend OTP' : 'Get OTP'}</span>
+                        <span>{otpSent ? t('resendOtpBtn') : t('getOtpBtn')}</span>
                       )}
                     </button>
                   </div>
@@ -920,7 +922,7 @@ function RegisterForm() {
                           onClick={() => setAadhaarOtp(dispatchedOtp)}
                           className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
                         >
-                          <span>⚡ Auto-Fill OTP ({dispatchedOtp})</span>
+                          <span>⚡ {t('autoFillOtp')} ({dispatchedOtp})</span>
                         </button>
 
                         <a
@@ -929,14 +931,14 @@ function RegisterForm() {
                           rel="noopener noreferrer"
                           className="px-3 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
                         >
-                          <span>💬 Send to WhatsApp (+91 {phone.replace(/\D/g, '').slice(-10)})</span>
+                          <span>💬 {t('sendToWhatsApp')} (+91 {phone.replace(/\D/g, '').slice(-10)})</span>
                         </a>
 
                         <a
                           href={`sms:+91${phone.replace(/\D/g, '').slice(-10)}?body=${encodeURIComponent(`ScrapMax UIDAI Aadhaar Verification OTP is: ${dispatchedOtp}`)}`}
                           className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
                         >
-                          <span>📲 Open Phone SMS</span>
+                          <span>📲 {t('openPhoneSms')}</span>
                         </a>
                       </div>
 
@@ -947,7 +949,7 @@ function RegisterForm() {
 
                     <div className="flex items-center justify-between">
                       <label className="block text-[11px] font-bold text-[#191C1E]">
-                        Enter 6-Digit Aadhaar OTP
+                        {t('enterAadhaarOtpLabel')}
                       </label>
                       <span className="text-[10px] text-gray-500 font-medium">Valid for 10 minutes</span>
                     </div>
@@ -975,7 +977,7 @@ function RegisterForm() {
                         ) : (
                           <>
                             <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Verify OTP</span>
+                            <span>{t('verifyOtp')}</span>
                           </>
                         )}
                       </button>
@@ -1008,21 +1010,19 @@ function RegisterForm() {
         >
           <span>
             {loading
-              ? 'Creating account...'
+              ? `${t('loading')}`
               : role === 'collector' && !aadhaarVerified
-              ? 'Verify Aadhaar to Register'
-              : role === 'recycler'
-              ? 'Register Recycler Facility'
-              : `Register as ${role === 'collector' ? 'Collector' : 'Citizen'}`}
+              ? `${t('enterAadhaar')}`
+              : `${t('completeRegistrationBtn')} (${roleLabel})`}
           </span>
           <ArrowRight className="w-4 h-4 stroke-[2.5]" />
         </button>
       </form>
 
       <p className="text-center text-xs text-[#6B7280]">
-        Already registered?{' '}
+        {t('alreadyHaveAccount')}{' '}
         <Link href="/login" className="text-[#136B3B] font-bold hover:underline">
-          Sign In
+          {t('signInHere')}
         </Link>
       </p>
 

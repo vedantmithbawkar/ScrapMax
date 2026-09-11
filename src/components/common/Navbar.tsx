@@ -153,7 +153,7 @@ export default function Navbar() {
                 <Recycle className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div className="flex flex-col">
-                <span className="font-extrabold text-lg tracking-tight text-[#136B3B] leading-none">SCRAPMAX</span>
+                <span className="font-extrabold text-lg tracking-tight text-[#136B3B] leading-none notranslate">SCRAPMAX</span>
                 <span className="text-[10px] font-semibold text-[#6B7280] tracking-wider uppercase mt-0.5 truncate max-w-[150px] sm:max-w-none">
                   {t('footerTagline')}
                 </span>

@@ -5,6 +5,7 @@ import SmartAssistant from "@/components/common/SmartAssistant";
 import NotificationToast from "@/components/common/NotificationToast";
 import PwaRegistration from "@/components/common/PwaRegistration";
 import PwaLanguageModal from "@/components/common/PwaLanguageModal";
+import GlobalLanguageBridge from "@/components/common/GlobalLanguageBridge";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -69,6 +70,7 @@ export default function RootLayout({
         <SmartAssistant />
         <PwaRegistration />
         <PwaLanguageModal />
+        <GlobalLanguageBridge />
       </body>
     </html>
   );

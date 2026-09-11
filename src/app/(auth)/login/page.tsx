@@ -31,10 +31,12 @@ import {
   isCollectorAadhaarVerified,
   markCollectorAadhaarVerified,
 } from '@/lib/aadhaar-service';
+import { useTranslation } from '@/lib/i18n';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -379,15 +381,15 @@ function LoginForm() {
             <div className="inline-flex p-3 bg-[#E6F4EA] border border-[#A6D5B8] rounded-2xl text-[#136B3B] mb-1">
               <Recycle className="w-8 h-8 stroke-[2.2]" />
             </div>
-            <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">Welcome to ScrapMax</h2>
-            <p className="text-xs text-[#6B7280]">Sign in to the circular scrap &amp; recycling marketplace</p>
+            <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">{t('signInTitle')}</h2>
+            <p className="text-xs text-[#6B7280]">{t('signInSubtitle')}</p>
           </div>
 
           {/* Quick Demo 4-Role Buttons */}
           <div className="p-3.5 bg-[#F8FAF9] border border-gray-200 rounded-2xl space-y-2">
             <div className="flex items-center gap-1.5 text-xs text-[#526056] font-bold">
               <Sparkles className="w-3.5 h-3.5 text-[#136B3B]" />
-              <span>1-Click Demo Login by Role:</span>
+              <span>{t('quickDemoLogin')}:</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
@@ -397,7 +399,7 @@ function LoginForm() {
                 className="px-2.5 py-2 bg-white hover:bg-emerald-50 text-xs font-bold text-[#136B3B] rounded-xl border border-gray-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1 disabled:opacity-60"
               >
                 <span>🏠</span>
-                <span className="truncate">{autoLoggingRole === 'household' ? 'Logging in...' : 'Citizen'}</span>
+                <span className="truncate">{autoLoggingRole === 'household' ? `${t('loading')}` : t('roleCitizen')}</span>
               </button>
 
               <button
@@ -407,7 +409,7 @@ function LoginForm() {
                 className="px-2.5 py-2 bg-white hover:bg-slate-50 text-xs font-bold text-[#191C1E] rounded-xl border border-gray-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1 disabled:opacity-60"
               >
                 <Truck className="w-3.5 h-3.5 text-[#136B3B]" />
-                <span className="truncate">{autoLoggingRole === 'collector' ? 'Logging in...' : 'Collector'}</span>
+                <span className="truncate">{autoLoggingRole === 'collector' ? `${t('loading')}` : t('roleCollector')}</span>
               </button>
 
               <button
@@ -417,7 +419,7 @@ function LoginForm() {
                 className="px-2.5 py-2 bg-white hover:bg-amber-50 text-xs font-bold text-amber-900 rounded-xl border border-amber-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1 disabled:opacity-60"
               >
                 <Factory className="w-3.5 h-3.5 text-amber-700" />
-                <span className="truncate">{autoLoggingRole === 'recycler' ? 'Logging in...' : 'Recycler'}</span>
+                <span className="truncate">{autoLoggingRole === 'recycler' ? `${t('loading')}` : t('roleRecycler')}</span>
               </button>
 
               <button
@@ -427,7 +429,7 @@ function LoginForm() {
                 className="px-2.5 py-2 bg-white hover:bg-purple-50 text-xs font-bold text-purple-900 rounded-xl border border-purple-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1 disabled:opacity-60"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-purple-700" />
-                <span className="truncate">{autoLoggingRole === 'admin' ? 'Logging in...' : 'Admin'}</span>
+                <span className="truncate">{autoLoggingRole === 'admin' ? `${t('loading')}` : 'Admin'}</span>
               </button>
             </div>
           </div>
@@ -454,21 +456,21 @@ function LoginForm() {
             ) : (
               <GoogleIcon className="w-5 h-5 shrink-0" />
             )}
-            <span>{googleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+            <span>{googleLoading ? '...' : `${t('continueWithGoogleAs')} Google`}</span>
           </button>
 
           {/* OR Divider */}
           <div className="relative flex py-1 items-center">
             <div className="flex-grow border-t border-gray-200"></div>
             <span className="flex-shrink mx-3 text-gray-400 text-xs uppercase tracking-wider font-semibold">
-              Or sign in with email
+              {t('orRegisterWithEmail')}
             </span>
             <div className="flex-grow border-t border-gray-200"></div>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-[#191C1E] mb-1.5">Email Address</label>
+              <label className="block text-xs font-bold text-[#191C1E] mb-1.5">{t('emailLabel')}</label>
               <div className="relative">
                 <input
                   type="email"
@@ -483,7 +485,7 @@ function LoginForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#191C1E] mb-1.5">Password</label>
+              <label className="block text-xs font-bold text-[#191C1E] mb-1.5">{t('passwordLabel')}</label>
               <div className="relative">
                 <input
                   type="password"
@@ -502,15 +504,15 @@ function LoginForm() {
               disabled={loading}
               className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold rounded-full shadow-sm transition touch-feedback"
             >
-              <span>{loading ? 'Signing in...' : 'Sign In'}</span>
+              <span>{loading ? `${t('loading')}` : `${t('signIn')}`}</span>
               <ArrowRight className="w-4 h-4 stroke-[2.5]" />
             </button>
           </form>
 
           <div className="pt-2 text-center text-xs text-[#6B7280]">
-            Don&apos;t have an account?{' '}
+            {t('dontHaveAccount')}{' '}
             <Link href="/register" className="text-[#136B3B] font-bold hover:underline">
-              Register as Citizen, Collector, or Recycler
+              {t('registerHere')}
             </Link>
           </div>
 
