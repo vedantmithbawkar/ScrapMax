@@ -11,6 +11,7 @@ import {
   getUnreadNotificationsCount,
   subscribeToNotifications,
 } from '@/lib/notification-service';
+import AnnouncementBar from '@/components/common/AnnouncementBar';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -324,6 +325,7 @@ export default function Navbar() {
 
         </div>
       </header>
+      <AnnouncementBar />
 
       {/* Slide-over Notification Drawer */}
       <NotificationDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
