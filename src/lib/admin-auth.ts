@@ -20,13 +20,14 @@ const ADMIN_STORAGE_KEY = 'scrapmax_admin_session';
 export function getAdminSession(): AdminSession | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = localStorage.getItem(ADMIN_STORAGE_KEY);
+    const raw = sessionStorage.getItem(ADMIN_STORAGE_KEY) || localStorage.getItem(ADMIN_STORAGE_KEY);
     if (!raw) return null;
     const session = JSON.parse(raw) as AdminSession;
-    // Session valid for 24 hours
-    if (session && session.role === 'admin' && Date.now() - session.loggedInAt < 86400000) {
+    // Session valid for 4 hours
+    if (session && session.role === 'admin' && Date.now() - session.loggedInAt < 14400000) {
       return session;
     }
+    sessionStorage.removeItem(ADMIN_STORAGE_KEY);
     localStorage.removeItem(ADMIN_STORAGE_KEY);
     return null;
   } catch {
@@ -62,6 +63,7 @@ export async function loginAdmin(
       token: `admin_token_${Date.now()}`,
       loggedInAt: Date.now(),
     };
+    sessionStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(session));
     localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(session));
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('scrapmax_admin_auth_change', { detail: { session } }));
@@ -109,6 +111,7 @@ export async function loginAdmin(
       loggedInAt: Date.now(),
     };
 
+    sessionStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(session));
     localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(session));
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('scrapmax_admin_auth_change', { detail: { session } }));
@@ -124,6 +127,7 @@ export async function loginAdmin(
 
 export async function logoutAdmin(): Promise<void> {
   if (typeof window !== 'undefined') {
+    sessionStorage.removeItem(ADMIN_STORAGE_KEY);
     localStorage.removeItem(ADMIN_STORAGE_KEY);
     window.dispatchEvent(new CustomEvent('scrapmax_admin_auth_change', { detail: { session: null } }));
     try {

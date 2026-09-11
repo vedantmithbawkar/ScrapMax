@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [autoLoggingRole, setAutoLoggingRole] = useState<'household' | 'collector' | null>(null);
 
@@ -21,7 +21,7 @@ export default function LoginPage() {
     setPassword(loginPass);
     if (roleHint) setAutoLoggingRole(roleHint);
     setLoading(true);
-    setErrorMsg('');
+    setErrorMsg(null);
 
     const supabase = createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -62,10 +62,52 @@ export default function LoginPage() {
     await loginWithCredentials(email, password);
   };
 
-  const handleDemoClick = (role: 'household' | 'collector') => {
-    const demoEmail = role === 'household' ? 'household@aicle.demo' : 'collector@aicle.demo';
+  const handleDemoClick = async (role: 'household' | 'collector') => {
+    setAutoLoggingRole(role);
+    setLoading(true);
+    setErrorMsg(null);
+
+    const supabase = createClient();
+    const primaryEmail = role === 'household' ? 'household@scrapmax.demo' : 'collector@scrapmax.demo';
+    const legacyEmail = role === 'household' ? 'household@aicle.demo' : 'collector@aicle.demo';
     const demoPass = 'demo123456';
-    loginWithCredentials(demoEmail, demoPass, role);
+
+    // Try primary scrapmax email first
+    let res = await supabase.auth.signInWithPassword({
+      email: primaryEmail,
+      password: demoPass,
+    });
+
+    // If failed, try legacy email
+    if (res.error && res.error.message.includes('Invalid login credentials')) {
+      res = await supabase.auth.signInWithPassword({
+        email: legacyEmail,
+        password: demoPass,
+      });
+    }
+
+    if (res.error) {
+      setErrorMsg(
+        'Demo account is not yet seeded in your Supabase database. You can create an account on the Register page or seed it via SQL Editor.'
+      );
+      setLoading(false);
+      setAutoLoggingRole(null);
+    } else if (res.data?.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', res.data.user.id)
+        .single();
+
+      const finalRole = profile?.role || role;
+      if (finalRole === 'admin') {
+        router.push('/admin');
+      } else if (finalRole === 'collector') {
+        router.push('/collector');
+      } else {
+        router.push('/household');
+      }
+    }
   };
 
   return (
@@ -242,7 +284,7 @@ export default function LoginPage() {
                       >
                         Supabase Dashboard &gt; Users
                       </a>
-                      , click <em>&quot;Add user&quot;</em> with email <code className="bg-gray-200 px-1 rounded">household@aicle.demo</code> and password <code className="bg-gray-200 px-1 rounded">demo123456</code> with <strong>&quot;Auto Confirm User&quot;</strong> checked.
+                      , click <em>&quot;Add user&quot;</em> with email <code className="bg-gray-200 px-1 rounded">household@scrapmax.demo</code> (or <code className="bg-gray-200 px-1 rounded">household@aicle.demo</code>) and password <code className="bg-gray-200 px-1 rounded">demo123456</code> with <strong>&quot;Auto Confirm User&quot;</strong> checked.
                     </li>
                   </ol>
                 </div>

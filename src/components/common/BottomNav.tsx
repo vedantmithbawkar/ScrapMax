@@ -193,13 +193,13 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         },
         {
           label: 'Profile',
-          href: '/household/profile',
+          href: '/collector/profile',
           icon: (active: boolean) => (
             <svg className={`w-5 h-5 ${active ? 'fill-current text-[#191C1E]' : 'fill-current text-[#526056]'}`} viewBox="0 0 24 24">
               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
             </svg>
           ),
-          isActive: pathname === '/household/profile',
+          isActive: pathname === '/collector/profile',
         },
       ];
 

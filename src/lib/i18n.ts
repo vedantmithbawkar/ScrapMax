@@ -294,12 +294,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
 export function getCurrentLanguage(): SupportedLanguage {
   if (typeof window !== 'undefined') {
     try {
-      const stored = localStorage.getItem('aicle_language');
+      const stored = localStorage.getItem('scrapmax_language') || localStorage.getItem('aicle_language');
       if (stored && stored in TRANSLATIONS) {
         return stored as SupportedLanguage;
       }
       // Check legacy settings key if any
-      const settings = localStorage.getItem('aicle_settings');
+      const settings = localStorage.getItem('scrapmax_settings') || localStorage.getItem('aicle_settings');
       if (settings) {
         const parsed = JSON.parse(settings);
         if (parsed.language && parsed.language in TRANSLATIONS) {
@@ -315,17 +315,20 @@ export function getCurrentLanguage(): SupportedLanguage {
 
 export function setAppLanguage(lang: SupportedLanguage) {
   if (typeof window !== 'undefined') {
+    localStorage.setItem('scrapmax_language', lang);
     localStorage.setItem('aicle_language', lang);
-    // Also sync with aicle_settings
+    // Also sync with settings
     try {
-      const settings = localStorage.getItem('aicle_settings');
+      const settings = localStorage.getItem('scrapmax_settings') || localStorage.getItem('aicle_settings');
       const parsed = settings ? JSON.parse(settings) : {};
       parsed.language = lang;
+      localStorage.setItem('scrapmax_settings', JSON.stringify(parsed));
       localStorage.setItem('aicle_settings', JSON.stringify(parsed));
     } catch {
       // ignore
     }
     // Broadcast event across all components in the tab
+    window.dispatchEvent(new CustomEvent('scrapmax_language_change', { detail: lang }));
     window.dispatchEvent(new CustomEvent('aicle_language_change', { detail: lang }));
   }
 }
@@ -343,10 +346,12 @@ export function useTranslation() {
       }
     };
 
+    window.addEventListener('scrapmax_language_change', handleLangChange);
     window.addEventListener('aicle_language_change', handleLangChange);
     window.addEventListener('storage', handleLangChange);
 
     return () => {
+      window.removeEventListener('scrapmax_language_change', handleLangChange);
       window.removeEventListener('aicle_language_change', handleLangChange);
       window.removeEventListener('storage', handleLangChange);
     };

@@ -7,6 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
 import { Navigation, MessageSquare, MapPin, ChevronRight, Package } from 'lucide-react';
+import { resolveCollectorName } from '@/lib/name-resolver';
 
 const DEMO_REQUESTS: PickupRequest[] = [
   {
@@ -15,7 +16,7 @@ const DEMO_REQUESTS: PickupRequest[] = [
     collector_id: 'collector-c201',
     collector: {
       id: 'collector-c201',
-      full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+      full_name: resolveCollectorName(),
       phone: '+91 98201 45892',
       role: 'collector',
       rating: 4.9,
@@ -87,7 +88,7 @@ export default function HouseholdTrackListPage() {
               const primaryItem = req.waste_items?.[0];
               const meta = primaryItem ? WASTE_CATEGORY_LABELS[primaryItem.category] : null;
               const statusInfo = STATUS_LABELS[req.status];
-              const collectorName = req.collector?.full_name || 'Ramesh Kumar (Kabadiwala)';
+              const collectorName = req.collector?.full_name || 'Assigned Collector';
               const collectorPhone = req.collector?.phone || '+91 98201 45892';
               return (
                 <div key={req.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -110,9 +111,9 @@ export default function HouseholdTrackListPage() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
-                      <MapPin className="w-3.5 h-3.5 text-[#136B3B] flex-shrink-0" />
-                      <span className="truncate">{req.address}</span>
+                    <div className="flex items-start gap-1.5 text-xs text-[#526056] bg-gray-50 p-2 rounded-xl">
+                      <MapPin className="w-3.5 h-3.5 text-[#136B3B] flex-shrink-0 mt-0.5" />
+                      <span className="leading-relaxed break-words font-medium">{req.address}</span>
                     </div>
 
                     {/* Assigned Collector Details Strip */}

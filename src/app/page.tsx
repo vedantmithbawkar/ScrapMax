@@ -23,7 +23,7 @@ export default function LandingPage() {
         {/* Title */}
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#191C1E] max-w-4xl leading-tight sm:leading-tight">
           Turn Your Household Waste Into Value with{' '}
-          <span className="text-[#136B3B]">AiCLE</span>
+          <span className="text-[#136B3B]">ScrapMax</span>
         </h1>
 
         {/* Subtitle */}
@@ -50,7 +50,7 @@ export default function LandingPage() {
           </Link>
 
           <Link
-            href="/admin"
+            href="/admin/login"
             className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-sm shadow-xs transition touch-feedback"
           >
             <Shield className="w-4 h-4 text-purple-700" />
@@ -75,7 +75,7 @@ export default function LandingPage() {
                 Request pickup
               </Link>
               <Link
-                href="/admin"
+                href="/admin/login"
                 className="inline-flex items-center gap-1.5 bg-[#0F5730] border border-[#A6D5B8]/40 text-white text-xs font-bold px-4 py-2.5 rounded-full hover:bg-[#0c4627] transition"
               >
                 <Shield className="w-3.5 h-3.5" />
@@ -143,12 +143,14 @@ export default function LandingPage() {
           <span>•</span>
           <Link href="/stores" className="hover:text-[#136B3B] transition">Store Locator</Link>
           <span>•</span>
-          <Link href="/admin" className="hover:text-purple-700 transition inline-flex items-center gap-1 font-bold text-purple-700">
+          <Link href="/privacy" className="hover:text-[#136B3B] transition">Privacy Policy</Link>
+          <span>•</span>
+          <Link href="/admin/login" className="hover:text-purple-700 transition inline-flex items-center gap-1 font-bold text-purple-700">
             <Shield className="w-3.5 h-3.5" />
             Admin Portal
           </Link>
         </div>
-        <p>&copy; {new Date().getFullYear()} AiCLE — Eco-Waste & Circular Logistics System.</p>
+        <p>&copy; {new Date().getFullYear()} ScrapMax — Eco-Waste & Circular Logistics System.</p>
       </footer>
     </div>
   );

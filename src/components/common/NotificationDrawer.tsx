@@ -13,11 +13,6 @@ import {
   isPushNotificationSupported,
   getNotificationPermission,
   requestPushPermission,
-  triggerCollectorAcceptedNotification,
-  triggerCollectorNearNotification,
-  triggerPickupCompletedNotification,
-  triggerPaymentReceivedNotification,
-  triggerPriceAlertNotification,
 } from '@/lib/notification-service';
 import {
   Bell,
@@ -193,63 +188,7 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
             </div>
           )}
 
-          {/* Quick Simulation Bar (For live testing all 5 notification scenarios) */}
-          <div className="p-3 bg-gray-50 rounded-2xl border border-gray-200/80 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-[#191C1E]">
-                <Sparkles className="w-3.5 h-3.5 text-[#136B3B]" />
-                <span>Simulate Live Smart Notifications</span>
-              </div>
-              <span className="text-[10px] text-gray-500 font-medium">Click to test</span>
-            </div>
 
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                type="button"
-                onClick={() => triggerCollectorAcceptedNotification('Ramesh Scrap Mart')}
-                className="p-2 text-left bg-white hover:bg-emerald-50/70 border border-gray-200 rounded-xl transition group text-xs flex items-center gap-2"
-              >
-                <Truck className="w-3.5 h-3.5 text-[#136B3B] group-hover:scale-110 transition" />
-                <span className="font-semibold text-gray-800 text-[11px] truncate">Collector Accepted</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => triggerCollectorNearNotification(500)}
-                className="p-2 text-left bg-white hover:bg-blue-50/70 border border-gray-200 rounded-xl transition group text-xs flex items-center gap-2"
-              >
-                <MapPin className="w-3.5 h-3.5 text-blue-600 group-hover:scale-110 transition" />
-                <span className="font-semibold text-gray-800 text-[11px] truncate">Collector 500m Away</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => triggerPickupCompletedNotification(18.5, 148)}
-                className="p-2 text-left bg-white hover:bg-emerald-50/70 border border-gray-200 rounded-xl transition group text-xs flex items-center gap-2"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 group-hover:scale-110 transition" />
-                <span className="font-semibold text-gray-800 text-[11px] truncate">Pickup Completed</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => triggerPaymentReceivedNotification(320.0, 'UPI')}
-                className="p-2 text-left bg-white hover:bg-amber-50/70 border border-gray-200 rounded-xl transition group text-xs flex items-center gap-2"
-              >
-                <IndianRupee className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition" />
-                <span className="font-semibold text-gray-800 text-[11px] truncate">Payment Received</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => triggerPriceAlertNotification('Plastic', 22)}
-                className="col-span-2 p-2 text-left bg-white hover:bg-purple-50/70 border border-gray-200 rounded-xl transition group text-xs flex items-center gap-2"
-              >
-                <TrendingUp className="w-3.5 h-3.5 text-purple-600 group-hover:scale-110 transition" />
-                <span className="font-semibold text-gray-800 text-[11px] truncate">Plastic Prices Increased Today (+10%)</span>
-              </button>
-            </div>
-          </div>
 
           {/* Filter Tabs */}
           <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-xl text-xs font-bold">
@@ -285,7 +224,7 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
                 </div>
                 <h4 className="text-sm font-bold text-[#191C1E]">No notifications yet</h4>
                 <p className="text-xs text-gray-500 max-w-xs mx-auto">
-                  Click any of the simulation buttons above to test live push alerts.
+                  You will receive real-time alerts here when a collector accepts, arrives, or credits your payment.
                 </p>
               </div>
             ) : (

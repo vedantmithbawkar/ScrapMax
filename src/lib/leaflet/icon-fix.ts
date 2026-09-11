@@ -117,4 +117,14 @@ export const collectorTruckIcon = typeof window !== 'undefined'
     })
   : ({} as L.DivIcon);
 
+export const collectorOriginIcon = typeof window !== 'undefined'
+  ? L.divIcon({
+      className: 'custom-collector-origin-marker',
+      html: `<div style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:#4F46E5;border:3px solid #ffffff;border-radius:50%;box-shadow:0 4px 14px rgba(79,70,229,0.5);color:white;font-size:18px;">🏢</div>`,
+      iconSize: [38, 38],
+      iconAnchor: [19, 19],
+      popupAnchor: [0, -19],
+    })
+  : ({} as L.DivIcon);
+
 

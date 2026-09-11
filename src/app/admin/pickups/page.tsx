@@ -7,6 +7,7 @@ import Navbar from '@/components/common/Navbar';
 import BottomNav from '@/components/common/BottomNav';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest, PickupStatus, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
+import { resolveCollectorName, resolveHouseholdName } from '@/lib/name-resolver';
 import {
   ArrowLeft,
   Search,
@@ -54,7 +55,7 @@ const DEMO_PICKUPS: PickupRequest[] = [
       method: 'upi',
       txId: 'TXN-984210',
       timestamp: new Date().toISOString(),
-      paidBy: 'Ramesh Kumar (Collector)',
+      paidBy: 'Ramesh Patel (Collector)',
       receivedBy: 'Sahil Household',
     },
     created_at: new Date(Date.now() - 3600000).toISOString(),
@@ -481,7 +482,7 @@ export default function AdminPickupsPage() {
                     {/* Address with MapPin */}
                     <div className="flex items-start gap-2">
                       <MapPin className="w-4 h-4 text-[#136B3B] flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-[#191C1E] font-bold line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-[#191C1E] font-bold break-words leading-relaxed">
                         {pickup.address}
                       </p>
                     </div>
@@ -549,6 +550,32 @@ export default function AdminPickupsPage() {
               >
                 <X className="w-5 h-5" />
               </button>
+            </div>
+
+            {/* Parties */}
+            <div className="grid grid-cols-2 gap-2 bg-gray-50 p-2.5 rounded-2xl border border-gray-100 text-xs">
+              <div>
+                <span className="text-[10px] text-gray-500 font-semibold block">Citizen Household</span>
+                <span className="font-bold text-[#191C1E] truncate block">
+                  {resolveHouseholdName(selectedPickup.household?.full_name || selectedPickup.contact_name) || 'Citizen Household'}
+                </span>
+                <span className="text-[10.5px] font-mono text-blue-700">
+                  {selectedPickup.household?.phone || selectedPickup.contact_phone || '+91 98201 54321'}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-gray-500 font-semibold block">Collector Partner</span>
+                <span className="font-bold text-[#191C1E] truncate block">
+                  {selectedPickup.collector_id
+                    ? (resolveCollectorName(selectedPickup.collector?.full_name) || 'Collector Partner')
+                    : 'Awaiting Assignment'}
+                </span>
+                {selectedPickup.collector_id && (
+                  <span className="text-[10.5px] font-mono text-[#136B3B]">
+                    {selectedPickup.collector?.phone || '+91 98201 45892'}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Location */}

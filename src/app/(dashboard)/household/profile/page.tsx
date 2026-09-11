@@ -10,6 +10,7 @@ import { UserProfile } from '@/types';
 import { ArrowLeft, User, MapPin, Settings, ChevronRight, LogOut, ClipboardList, AlertTriangle } from 'lucide-react';
 import PersonalDashboard from '@/components/dashboard/PersonalDashboard';
 import { useTranslation } from '@/lib/i18n';
+import { resolveHouseholdName } from '@/lib/name-resolver';
 
 export default function UserProfilePage() {
   const router = useRouter();
@@ -23,50 +24,54 @@ export default function UserProfilePage() {
       let cachedPhone = '';
       if (typeof window !== 'undefined') {
         try {
-          const cached = localStorage.getItem('aicle_personal_info');
+          const cached = localStorage.getItem('scrapmax_personal_info') || localStorage.getItem('aicle_personal_info');
           if (cached) {
             const parsed = JSON.parse(cached);
             if (parsed.fullName) cachedName = parsed.fullName;
             if (parsed.phone) cachedPhone = parsed.phone;
           }
-        } catch {
-          // ignore
-        }
+        } catch {}
       }
 
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
-      if (user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+      let detectedRole: 'household' | 'collector' | 'admin' = 'household';
+      let detectedName = cachedName;
+      let detectedPhone = cachedPhone;
 
-        if (data) {
-          const isCollector = (cachedName || data.full_name || '').toLowerCase().includes('collector') || data.role === 'collector';
-          setProfile({
-            ...(data as UserProfile),
-            full_name: cachedName || data.full_name || 'Budi Collector',
-            phone: cachedPhone || data.phone || '+91 9123456780',
-            role: isCollector ? 'collector' : (data.role || 'collector'),
-          });
-        } else {
-          const isCollector = (cachedName || user.user_metadata?.full_name || '').toLowerCase().includes('collector') || user.user_metadata?.role === 'collector';
-          setProfile({
-            id: user.id,
-            full_name: cachedName || user.user_metadata?.full_name || 'Budi Collector',
-            role: isCollector ? 'collector' : ((user.user_metadata?.role as 'household' | 'collector') || 'collector'),
-            phone: cachedPhone || user.user_metadata?.phone || '+91 9123456780',
-          });
-        }
-      } else {
+      if (user) {
+        try {
+          const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (data) {
+            detectedRole = 'household';
+            if (!detectedName) detectedName = data.full_name;
+            if (!detectedPhone) detectedPhone = data.phone;
+          } else if (user.user_metadata) {
+            detectedRole = 'household';
+            if (!detectedName) detectedName = user.user_metadata.full_name;
+            if (!detectedPhone) detectedPhone = user.user_metadata.phone;
+          }
+        } catch {}
+
         setProfile({
-          id: 'demo-user-id',
-          full_name: cachedName || 'Budi Collector',
-          role: 'collector',
-          phone: cachedPhone || '+91 9123456780',
+          id: user.id,
+          full_name: resolveHouseholdName(detectedName || (user.email ? user.email.split('@')[0] : null)),
+          phone: detectedPhone || '+91 98201 54321',
+          role: 'household',
+        });
+      } else {
+        // Guest household session
+        setProfile({
+          id: 'guest-household-id',
+          full_name: resolveHouseholdName(cachedName),
+          role: 'household',
+          phone: cachedPhone || '+91 98201 54321',
         });
       }
     }
@@ -79,9 +84,10 @@ export default function UserProfilePage() {
     router.push('/login');
   };
 
-  const displayName = profile?.full_name || 'Budi Collector';
-  const displayPhone = profile?.phone || '+91 9123456780';
-  const initial = displayName.charAt(0).toUpperCase();
+  const genuineName = resolveHouseholdName(profile?.full_name);
+  const displayName = genuineName || 'Citizen User';
+  const displayPhone = profile?.phone || '+91 98201 54321';
+  const initial = (displayName.charAt(0) || 'C').toUpperCase();
 
   return (
     <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans pb-32">
@@ -111,9 +117,23 @@ export default function UserProfilePage() {
             </div>
             {/* User Info */}
             <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">{displayName}</h2>
+            {!genuineName && (
+              <Link
+                href="/household/profile/personal-info"
+                className="mt-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1 font-semibold flex items-center gap-1 hover:bg-amber-100 transition"
+              >
+                ⚠️ Full Name mandatory. Click here to enter your name.
+              </Link>
+            )}
             <p className="text-[#6B7280] text-sm font-medium mt-0.5 tracking-wide">{displayPhone}</p>
-            <span className="mt-2 inline-block px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#E6F4EA] text-[#136B3B]">
-              Collector
+            <span className={`mt-2 inline-block px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+              profile?.role === 'collector'
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : profile?.role === 'admin'
+                ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                : 'bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8]'
+            }`}>
+              {profile?.role === 'collector' ? 'Verified Collector' : profile?.role === 'admin' ? 'System Admin' : 'Citizen Household'}
             </span>
           </section>
 
@@ -219,7 +239,7 @@ export default function UserProfilePage() {
       </main>
 
       {/* Docked Stitch Bottom Navigation */}
-      <BottomNav role={profile?.role || 'household'} />
+      <BottomNav role="household" />
     </div>
   );
 }

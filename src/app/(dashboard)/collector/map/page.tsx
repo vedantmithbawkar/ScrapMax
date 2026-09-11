@@ -10,6 +10,7 @@ import HandoverModal from '@/components/request/HandoverModal';
 import ReceiptModal from '@/components/request/ReceiptModal';
 import { PickupRequest } from '@/types';
 import { createClient } from '@/lib/supabase/client';
+import { resolveCollectorName, resolveHouseholdName } from '@/lib/name-resolver';
 import {
   MapPin,
   ArrowLeft,
@@ -41,6 +42,8 @@ import {
   completeTrackingPayment,
   formatDistance,
   fetchDrivingRoute,
+  getCollectorSavedLocation,
+  updateCollectorLivePosition,
   LiveTrackingState,
 } from '@/lib/tracking-service';
 import {
@@ -362,7 +365,12 @@ function CollectorMapContent() {
 
   const [requests, setRequests] = useState<PickupRequest[]>(MOCK_MAP_REQUESTS);
   const [selectedReq, setSelectedReq] = useState<PickupRequest | null>(null);
-  const [collectorPos, setCollectorPos] = useState<[number, number] | null>(null);
+  const [collectorPos, setCollectorPos] = useState<[number, number] | null>(() => {
+    if (typeof window !== 'undefined') {
+      return getCollectorSavedLocation().pos;
+    }
+    return null;
+  });
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [isWatchingGps, setIsWatchingGps] = useState<boolean>(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'active'>('all');
@@ -379,7 +387,7 @@ function CollectorMapContent() {
   // Load and merge local and database requests
   useEffect(() => {
     async function loadLiveRequests() {
-      let combinedRequests = [...MOCK_MAP_REQUESTS];
+      let combinedRequests: PickupRequest[] = [];
 
       // 1. Check localStorage for local pickup requests
       try {
@@ -387,30 +395,36 @@ function CollectorMapContent() {
         if (raw) {
           const local = JSON.parse(raw);
           if (Array.isArray(local) && local.length > 0) {
-            combinedRequests = [...local, ...combinedRequests];
+            combinedRequests = [...local];
           }
         }
       } catch (err) {
         console.warn('Error reading local requests:', err);
       }
 
-      // 2. Query Supabase
+      // 2. Query Supabase joining customer profile
       try {
         const supabase = createClient();
         const { data } = await supabase
           .from('pickup_requests')
-          .select('*, waste_items(*)')
+          .select('*, waste_items(*), household:profiles!household_id(id, full_name, phone, role)')
           .in('status', ['pending', 'accepted', 'in_progress'])
           .order('created_at', { ascending: false });
 
         if (data && data.length > 0) {
-          combinedRequests = [...(data as PickupRequest[]), ...combinedRequests];
+          const normalized = (data as any[]).map((r) => ({
+            ...r,
+            payment: r.payment || r.payment_json || undefined,
+            contact_name: r.household?.full_name || r.contact_name,
+            contact_phone: r.household?.phone || r.contact_phone,
+          }));
+          combinedRequests = [...normalized, ...combinedRequests];
         }
       } catch (err) {
         console.warn('Supabase fetch notice:', err);
       }
 
-      // Deduplicate
+      // Deduplicate by ID
       const unique = Array.from(
         new Map(combinedRequests.map((item) => [item.id, item])).values()
       ) as PickupRequest[];
@@ -431,7 +445,7 @@ function CollectorMapContent() {
         }
       }
 
-      // Or select first request
+      // Or select first active request, or first request
       const activeAccepted = unique.find((r) => ['accepted', 'in_progress'].includes(r.status));
       setSelectedReq(activeAccepted || unique[0] || null);
     }
@@ -450,16 +464,19 @@ function CollectorMapContent() {
     let isMounted = true;
 
     async function initRoute() {
+      const savedHub = getCollectorSavedLocation();
       const householdPos: [number, number] = [selectedReq!.latitude, selectedReq!.longitude];
       const startCollectorPos: [number, number] =
-        collectorPos || [householdPos[0] + 0.012, householdPos[1] - 0.014];
+        collectorPos || savedHub.pos || [householdPos[0] + 0.012, householdPos[1] - 0.014];
 
       const state = await initializeTrackingState({
         requestId: selectedReq!.id,
         householdPos,
         collectorPos: startCollectorPos,
-        householdName: selectedReq!.household?.full_name || 'Aarav Sharma',
-        householdPhone: selectedReq!.household?.phone || '+91 98201 54321',
+        collectorOriginPos: savedHub.pos,
+        collectorOriginAddress: savedHub.hubName,
+        householdName: resolveHouseholdName(selectedReq!.household?.full_name || selectedReq!.contact_name),
+        householdPhone: selectedReq!.household?.phone || selectedReq!.contact_phone || '+91 98201 54321',
         householdAddress: selectedReq!.address,
         householdLandmark: selectedReq!.notes || 'Opposite Green Park Gate #2',
       });
@@ -474,7 +491,7 @@ function CollectorMapContent() {
 
     initRoute();
 
-    // Subscribe to live tracking updates (from multi-tab / simulation)
+    // Subscribe to live tracking updates (from multi-tab / real GPS)
     const unsubscribe = subscribeToTracking(selectedReq.id, (newState) => {
       if (isMounted) {
         setTrackingState(newState);
@@ -490,7 +507,35 @@ function CollectorMapContent() {
     };
   }, [selectedReq?.id]);
 
-  // Handle continuous live GPS watch
+  // Continuously stream live GPS coordinates to household when on navigation screen
+  useEffect(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        setCollectorPos(coords);
+        setIsWatchingGps(true);
+
+        if (selectedReq) {
+          const updated = updateCollectorLivePosition(selectedReq.id, coords);
+          if (updated) {
+            setTrackingState(updated);
+          }
+        }
+      },
+      (err) => {
+        console.warn('Live GPS background watch note:', err.message);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [selectedReq?.id]);
+
+  // Handle continuous live GPS watch toggle
   const toggleGpsWatch = () => {
     if (!navigator.geolocation) {
       alert('Geolocation is not supported by your browser.');
@@ -512,13 +557,9 @@ function CollectorMapContent() {
         setIsWatchingGps(true);
 
         if (selectedReq) {
-          const current = getTrackingState(selectedReq.id);
-          if (current) {
-            const dist = Math.round(
-              pos.coords.accuracy || 10
-            );
-            // Re-fetch or update state with real GPS
-            setTrackingState((prev) => (prev ? { ...prev, collectorPos: coords } : prev));
+          const updated = updateCollectorLivePosition(selectedReq.id, coords);
+          if (updated) {
+            setTrackingState(updated);
           }
         }
       },
@@ -526,7 +567,7 @@ function CollectorMapContent() {
         console.warn('GPS error:', err);
         setIsLocating(false);
         setIsWatchingGps(false);
-        alert('Could not lock GPS signal. You can use Route Simulation instead.');
+        alert('Could not lock GPS signal. Please ensure location permissions are enabled.');
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 }
     );
@@ -592,17 +633,49 @@ function CollectorMapContent() {
       data: { user },
     } = await supabase.auth.getUser();
 
+    // Dynamically retrieve collector details from auth metadata, profiles, or cache
+    let collectorFullName = user?.user_metadata?.full_name;
+    let collectorPhoneNum = user?.user_metadata?.phone;
+
+    if (user && (!collectorFullName || !collectorPhoneNum)) {
+      try {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('full_name, phone')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (prof?.full_name) collectorFullName = prof.full_name;
+        if (prof?.phone) collectorPhoneNum = prof.phone;
+      } catch {}
+    }
+
+    if (!collectorFullName && typeof window !== 'undefined') {
+      try {
+        const colCached = localStorage.getItem('scrapmax_collector_profile');
+        if (colCached) {
+          const parsed = JSON.parse(colCached);
+          if (parsed.fullName) collectorFullName = parsed.fullName;
+          if (parsed.phone) collectorPhoneNum = parsed.phone;
+        }
+      } catch {}
+    }
+
+    const finalCollectorName = resolveCollectorName(
+      collectorFullName || (user?.user_metadata?.full_name) || (user?.email ? user.email.split('@')[0] : null)
+    );
+    const finalCollectorPhone = collectorPhoneNum || '+91 98201 45892';
+
     const collectorObj = {
       id: user?.id || 'collector-c201',
-      full_name: 'Ramesh Kumar (Verified Kabadiwala)',
-      phone: '+91 98201 45892',
+      full_name: finalCollectorName,
+      phone: finalCollectorPhone,
       role: 'collector' as const,
       rating: 4.9,
       completed_pickups: 126,
     };
 
     if (newStatus === 'accepted') {
-      triggerCollectorAcceptedNotification('Ramesh Kumar (Verified Kabadiwala)');
+      triggerCollectorAcceptedNotification(finalCollectorName);
       showToast('✅ Pickup Accepted! Live route navigation generated.');
     } else if (newStatus === 'in_progress') {
       triggerCollectorNearNotification(500);
@@ -673,10 +746,14 @@ function CollectorMapContent() {
               ...req,
               status: 'completed' as const,
               payment,
+              payment_json: payment as any,
               updated_at: new Date().toISOString(),
             }
           : req
       );
+      try {
+        localStorage.setItem('local_pickup_requests', JSON.stringify(updated));
+      } catch {}
       return updated;
     });
 
@@ -686,9 +763,45 @@ function CollectorMapContent() {
         ...prev,
         status: 'completed' as const,
         payment,
+        payment_json: payment as any,
         updated_at: new Date().toISOString(),
       };
     });
+
+    // 2. Persist to Supabase pickup_requests
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase
+        .from('pickup_requests')
+        .update({
+          status: 'completed',
+          collector_id: user?.id || selectedReq?.collector_id || undefined,
+          payment_json: payment,
+          total_estimated_weight_kg:
+            payment?.items?.reduce((a, c) => a + c.verifiedWeightKg, 0) ||
+            selectedReq?.total_estimated_weight_kg,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', requestId);
+    } catch (err) {
+      console.warn('Supabase payment sync notice:', err);
+    }
+
+    // 3. Persist notification for household
+    try {
+      const notifications = JSON.parse(localStorage.getItem('scrapmax_payment_notifications') || '[]');
+      notifications.push({
+        id: payment?.transactionId || 'TXN-' + Date.now(),
+        requestId,
+        amount: payment?.totalAmount || 0,
+        method: payment?.method || 'upi',
+        timestamp: new Date().toISOString(),
+        householdId: selectedReq?.household_id,
+        dismissed: false,
+      });
+      localStorage.setItem('scrapmax_payment_notifications', JSON.stringify(notifications));
+    } catch {}
   };
 
   const allCount = requests.length;
@@ -756,7 +869,7 @@ function CollectorMapContent() {
             <div>
               <h1 className="text-lg sm:text-xl font-extrabold text-[#191C1E] flex items-center gap-2">
                 <Navigation className="w-5 h-5 text-[#136B3B]" />
-                <span>Blinkit-Style Pickup Navigation</span>
+                <span>ScrapMax Live Pickup Navigation</span>
               </h1>
               <p className="text-xs text-[#6B7280]">
                 Live doorstep routing, customer contact details, and distance tracking
@@ -844,18 +957,10 @@ function CollectorMapContent() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleToggleSimulation}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-xs ${
-                        isSimulating
-                          ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                          : 'bg-[#136B3B] hover:bg-[#0F5730] text-white'
-                      }`}
-                    >
-                      {isSimulating ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                      <span>{isSimulating ? 'Pause Drive' : 'Simulate Drive'}</span>
-                    </button>
+                    <span className="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-[#136B3B] text-white flex items-center gap-1.5 shadow-xs">
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>Live Route</span>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -866,7 +971,8 @@ function CollectorMapContent() {
               zoom={13}
               requests={displayedRequests}
               selectedRequestId={selectedReq?.id}
-              collectorPos={collectorPos}
+              originPos={trackingState?.collectorOriginPos}
+              originLabel={trackingState?.collectorOriginAddress || 'Collector Hub'}
               routeCoordinates={isActiveJob ? routeCoords : []}
               destinationPos={isActiveJob && selectedReq ? [selectedReq.latitude, selectedReq.longitude] : null}
               destinationLabel={selectedReq?.household?.full_name ? `${selectedReq.household.full_name}'s Home` : 'Customer Doorstep'}
@@ -899,11 +1005,11 @@ function CollectorMapContent() {
                 <div className="flex items-center justify-between gap-2 p-2.5 bg-white rounded-2xl border border-emerald-100 shadow-2xs">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#136B3B] border border-emerald-200 flex items-center justify-center text-sm font-black shrink-0">
-                      {(selectedReq.household?.full_name || 'A').charAt(0)}
+                      {((resolveHouseholdName(selectedReq.household?.full_name || selectedReq.contact_name) || selectedReq.household?.full_name || selectedReq.contact_name || 'C').charAt(0)).toUpperCase()}
                     </div>
                     <div className="min-w-0">
                       <p className="font-extrabold text-xs text-[#191C1E] truncate">
-                        {selectedReq.household?.full_name || 'Customer'}
+                        {resolveHouseholdName(selectedReq.household?.full_name || selectedReq.contact_name) || selectedReq.household?.full_name || selectedReq.contact_name || 'Resident Citizen'}
                       </p>
                       <p className="text-[11px] text-[#526056] truncate">
                         {selectedReq.address}
@@ -912,7 +1018,7 @@ function CollectorMapContent() {
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <a
-                      href={`tel:${(selectedReq.household?.phone || '+919820154321').replace(/\s+/g, '')}`}
+                      href={`tel:${(selectedReq.household?.phone || selectedReq.contact_phone || '+919820154321').replace(/\s+/g, '')}`}
                       className="px-2.5 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-2xs"
                       title="Call Customer"
                     >
@@ -920,7 +1026,7 @@ function CollectorMapContent() {
                       <span>Call</span>
                     </a>
                     <a
-                      href={`https://wa.me/${(selectedReq.household?.phone || '+919820154321').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${selectedReq.household?.full_name || 'Customer'}, I am your ScrapMax collector arriving for your scrap pickup.`)}`}
+                      href={`https://wa.me/${(selectedReq.household?.phone || selectedReq.contact_phone || '+919820154321').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${resolveHouseholdName(selectedReq.household?.full_name || selectedReq.contact_name) || 'Customer'}, I am your ScrapMax collector arriving for your scrap pickup.`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-2xs"
@@ -960,7 +1066,7 @@ function CollectorMapContent() {
                     <button
                       type="button"
                       onClick={handleMarkArrived}
-                      className="py-2 px-3 rounded-xl bg-white hover:bg-emerald-50 text-[#136B3B] border border-[#A6D5B8] text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
+                      className="py-2.5 px-3 rounded-xl bg-white hover:bg-emerald-50 text-[#136B3B] border border-[#A6D5B8] text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
                     >
                       <span>🚪 Mark Arrived</span>
                     </button>
@@ -968,9 +1074,27 @@ function CollectorMapContent() {
                     <button
                       type="button"
                       onClick={() => setShowHandoverModal(true)}
-                      className="py-2 px-3 rounded-xl bg-gradient-to-r from-[#136B3B] to-emerald-700 text-white text-xs font-extrabold transition flex items-center justify-center gap-1.5 shadow-xs"
+                      className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#136B3B] to-emerald-700 text-white text-xs font-extrabold transition flex items-center justify-center gap-1.5 shadow-xs"
                     >
                       <span>🔐 Verify OTP &amp; Settle</span>
+                    </button>
+                  </div>
+
+                  {/* Doorstep Safety OTP reminder */}
+                  <div className="bg-white/90 p-2.5 rounded-2xl border border-emerald-200 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🔐</span>
+                      <div>
+                        <p className="font-extrabold text-[#191C1E] text-[11.5px]">Doorstep Safety OTP</p>
+                        <p className="text-[10px] text-[#526056]">Ask customer for 4-digit PIN before handover</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowHandoverModal(true)}
+                      className="px-2.5 py-1 bg-[#136B3B] hover:bg-[#0F5730] text-white rounded-lg text-[10.5px] font-bold transition shadow-2xs"
+                    >
+                      Enter OTP
                     </button>
                   </div>
                 </div>

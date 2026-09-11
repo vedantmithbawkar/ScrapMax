@@ -64,10 +64,10 @@ const COMPREHENSIVE_INTENTS: IntentPattern[] = [
   {
     id: 'how_it_works',
     category: 'System Workflow',
-    keywords: ['how', 'work', 'works', 'workd', 'working', 'process', 'explain', 'steps', 'flow', 'what is aicle', 'what is scrapmax', 'system'],
+    keywords: ['how', 'work', 'works', 'workd', 'working', 'process', 'explain', 'steps', 'flow', 'what is scrapmax', 'system'],
     patterns: [/how.*work/i, /what.*do/i, /process/i, /explain/i],
     response: () =>
-      `♻️ **Here is how AiCLE works in 4 simple steps:**\n\n` +
+      `♻️ **Here is how ScrapMax works in 4 simple steps:**\n\n` +
       `1️⃣ **Request Pickup:** Click "Request Pickup" to select your scrap items (Paper, Plastic, Metal, E-waste, Glass) and upload photos.\n` +
       `2️⃣ **GPS Pinpoint:** Choose your address or use "Live GPS" to pinpoint your doorstep for nearby collectors.\n` +
       `3️⃣ **Kabadiwala Arrives:** A verified local scrap collector accepts your request, navigates to your location, and weighs your materials on a digital scale.\n` +
@@ -130,7 +130,7 @@ const COMPREHENSIVE_INTENTS: IntentPattern[] = [
     patterns: [/who/i, /trust/i, /safe/i, /verified/i],
     response: () =>
       `🛡️ **Verified Collector Network:**\n\n` +
-      `• All scrap collectors & Kabadiwalas on AiCLE are vetted with verified mobile numbers and local recycling licenses.\n` +
+      `• All scrap collectors & Kabadiwalas on ScrapMax are vetted with verified mobile numbers and local recycling licenses.\n` +
       `• Our **OpenStreetMap Overpass engine** maps active local scrap hubs within 5km radius.\n` +
       `• You can track the collector's approach on the live map and chat with them in real-time.\n` +
       `• Clear customer star ratings and digital receipts ensure complete transparency.`,
@@ -162,7 +162,7 @@ const COMPREHENSIVE_INTENTS: IntentPattern[] = [
     patterns: [/impact/i, /carbon/i, /tree/i, /environ/i, /co2/i],
     response: () =>
       `🌱 **Your Environmental Recycling Impact:**\n\n` +
-      `For every 10 kg of scrap recycled through AiCLE:\n` +
+      `For every 10 kg of scrap recycled through ScrapMax:\n` +
       `• 🌳 **~0.2 Trees Saved** from deforestation\n` +
       `• ☁️ **~18 kg CO₂ Equivalent** emissions prevented\n` +
       `• 💧 **~250 Litres of Water Conserved** compared to virgin manufacturing\n` +
@@ -178,7 +178,7 @@ const COMPREHENSIVE_INTENTS: IntentPattern[] = [
     patterns: [/sih/i, /hackathon/i, /project/i],
     response: () =>
       `🏆 **Smart India Hackathon (SIH) Innovation:**\n\n` +
-      `AiCLE is a **Circular Waste Logistics & Informal Sector Integration Platform** designed to solve Urban Solid Waste Management:\n` +
+      `ScrapMax is a **Circular Waste Logistics & Informal Sector Integration Platform** designed to solve Urban Solid Waste Management:\n` +
       `• Formalizes unorganized Kabadiwalas with digital weighing & UPI payouts.\n` +
       `• Provides citizens transparent rates, zero-bargaining, and GPS doorstep convenience.\n` +
       `• Provides Urban Local Bodies (ULBs) real-time landfill diversion tracking and carbon analytics.`,
@@ -192,7 +192,7 @@ const COMPREHENSIVE_INTENTS: IntentPattern[] = [
     keywords: ['hi', 'hello', 'hey', 'namaste', 'morning', 'afternoon', 'evening', 'good morning', 'hola'],
     patterns: [/^(hi|hello|hey|namaste)/i],
     response: () =>
-      `Namaste! 🙏 Welcome to AiCLE. I'm your AI recycling guide.\n` +
+      `Namaste! 🙏 Welcome to ScrapMax. I'm your AI recycling guide.\n` +
       `How can I help you today? You can ask me about scrap rates, booking pickups, doorstep UPI payouts, or how the platform works!`,
     suggestions: ['How does it work?', 'Current Scrap Rates', 'How Payment Works'],
   },
@@ -204,7 +204,7 @@ const COMPREHENSIVE_INTENTS: IntentPattern[] = [
     keywords: ['thanks', 'thank you', 'great', 'awesome', 'good', 'nice', 'ok', 'super'],
     patterns: [/thank/i, /great/i, /awesome/i],
     response: () =>
-      `You're very welcome! 🌿 Happy recycling with AiCLE. Every piece of scrap diverted from the landfill makes our cities cleaner and greener! Let me know if you need anything else.`,
+      `You're very welcome! 🌿 Happy recycling with ScrapMax. Every piece of scrap diverted from the landfill makes our cities cleaner and greener! Let me know if you need anything else.`,
     suggestions: ['Current Scrap Rates', 'Book a Pickup', 'How Payment Works'],
   },
 ];
@@ -213,11 +213,11 @@ const INITIAL_MESSAGES: Message[] = [
   {
     id: 'welcome-1',
     sender: 'bot',
-    text: "Namaste! 🙏 I'm AiCLE AI, your circular waste & recycling assistant.\n\nAsk me anything: scrap prices, doorstep pickups, UPI payments, or how our system works!",
+    text: "Namaste! 🙏 I'm ScrapMax AI, your circular waste & recycling assistant.\n\nAsk me anything: scrap prices, doorstep pickups, UPI payments, or how our system works!",
     time: 'Online',
     categoryBadge: 'AI Assistant',
     suggestedActions: [
-      { label: 'How Does It Work?', query: 'How does AiCLE work?' },
+      { label: 'How Does It Work?', query: 'How does ScrapMax work?' },
       { label: 'Current Scrap Rates', query: 'What are the current scrap rates?' },
       { label: 'Doorstep UPI Payment', query: 'How does doorstep payment work?' },
     ],
@@ -340,7 +340,7 @@ export default function SmartAssistant() {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          aria-label="Open AiCLE AI Assistant"
+          aria-label="Open ScrapMax AI Assistant"
           className="flex items-center gap-2.5 px-4 py-3 bg-[#136B3B] hover:bg-[#0F5730] text-white rounded-full shadow-lg shadow-[#136B3B]/25 hover:shadow-xl active:scale-95 transition-all touch-feedback group"
         >
           <div className="relative">
@@ -349,7 +349,7 @@ export default function SmartAssistant() {
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400" />
           </div>
           <span className="font-bold text-xs hidden sm:inline tracking-wide">
-            AiCLE AI Help
+            ScrapMax AI Help
           </span>
         </button>
       )}
@@ -368,7 +368,7 @@ export default function SmartAssistant() {
                 <Bot className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-extrabold text-sm leading-tight">AiCLE AI Assistant</h3>
+                <h3 className="font-extrabold text-sm leading-tight">ScrapMax AI Assistant</h3>
                 <span className="text-[10px] text-[#A6D5B8] flex items-center gap-1 font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
                   Smart Recycling &amp; Logistics Engine
@@ -446,7 +446,7 @@ export default function SmartAssistant() {
             <span className="text-[10.5px] font-bold text-[#136B3B] flex-shrink-0">Quick Topics:</span>
             <button
               type="button"
-              onClick={() => handleSend('How does AiCLE work?')}
+              onClick={() => handleSend('How does ScrapMax work?')}
               className="text-[10.5px] text-[#2B6B47] hover:underline flex-shrink-0 font-medium"
             >
               How It Works

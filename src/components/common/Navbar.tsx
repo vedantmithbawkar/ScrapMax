@@ -58,7 +58,7 @@ export default function Navbar() {
         } else {
           setProfile({
             id: user.id,
-            full_name: user.user_metadata?.full_name || 'Sahil',
+            full_name: user.user_metadata?.full_name || (user.email ? user.email.split('@')[0] : 'User'),
             role: (user.user_metadata?.role as 'household' | 'collector') || 'household',
           });
         }
@@ -209,7 +209,7 @@ export default function Navbar() {
 
                 {/* Admin Portal Link */}
                 <Link
-                  href={adminSession ? '/admin' : '/admin/login'}
+                  href="/admin/login"
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                     pathname.startsWith('/admin')
                       ? 'bg-[#F3E8FF] text-purple-900'

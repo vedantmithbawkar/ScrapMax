@@ -7,90 +7,17 @@ import BottomNav from '@/components/common/BottomNav';
 import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
-import { Recycle, Package, Store, IndianRupee, X } from 'lucide-react';
+import { Recycle, Package, Store, IndianRupee, X, Receipt } from 'lucide-react';
 import PersonalDashboard from '@/components/dashboard/PersonalDashboard';
 import { useTranslation } from '@/lib/i18n';
-
-const DEMO_HOUSEHOLD_REQUESTS: PickupRequest[] = [
-  {
-    id: 'req-h101-demo-uuid',
-    household_id: 'user-h101',
-    status: 'pending',
-    address: 'Main Market Road, Near City Center',
-    latitude: 19.0760,
-    longitude: 72.8777,
-    scheduled_date: 'Today · 5:30 PM',
-    notes: 'Please call before arriving. Cardboard boxes packed neat.',
-    total_estimated_weight_kg: 8.5,
-    photos: [
-      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [
-      {
-        category: 'PAPER',
-        approx_weight_kg: 8.5,
-        notes: 'Bundled newspapers & paper',
-        photos: ['https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80'],
-      },
-    ],
-  },
-  {
-    id: 'req-h102-demo-uuid',
-    household_id: 'user-h101',
-    collector_id: 'collector-c201',
-    status: 'accepted',
-    address: 'Koramangala 4th Block, 80ft Road, Bangalore',
-    latitude: 12.9345,
-    longitude: 77.6242,
-    scheduled_date: '28 Aug · 11:00 AM',
-    notes: 'Crushed PET bottles and containers',
-    total_estimated_weight_kg: 5.2,
-    photos: [
-      'https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [
-      {
-        category: 'PLASTIC',
-        approx_weight_kg: 5.2,
-        photos: ['https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80'],
-      },
-    ],
-  },
-  {
-    id: 'req-h103-demo-uuid',
-    household_id: 'user-h101',
-    collector_id: 'collector-c201',
-    status: 'completed',
-    address: 'MG Road, Bangalore',
-    latitude: 12.9756,
-    longitude: 77.6068,
-    scheduled_date: '24 Aug · 3:00 PM',
-    notes: 'Aluminum cans and tin cans',
-    total_estimated_weight_kg: 3.0,
-    photos: [
-      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 172800000).toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [
-      {
-        category: 'METAL',
-        approx_weight_kg: 3.0,
-        photos: ['https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80'],
-      },
-    ],
-  },
-];
+import ReceiptModal from '@/components/request/ReceiptModal';
 
 export default function HouseholdDashboard() {
   const { t } = useTranslation();
-  const [requests, setRequests] = useState<PickupRequest[]>(DEMO_HOUSEHOLD_REQUESTS);
-  const [userName, setUserName] = useState<string>('Sahil');
+  const [requests, setRequests] = useState<PickupRequest[]>([]);
+  const [userName, setUserName] = useState<string>('Friend');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [selectedReceiptReq, setSelectedReceiptReq] = useState<PickupRequest | null>(null);
   const [paymentNotifications, setPaymentNotifications] = useState<Array<{
     id: string;
     requestId: string;
@@ -123,30 +50,35 @@ export default function HouseholdDashboard() {
   };
 
   useEffect(() => {
+    const supabase = createClient();
+
     async function loadRequests() {
       // Check cached name if updated in personal info
       if (typeof window !== 'undefined') {
         try {
-          const cached = localStorage.getItem('aicle_personal_info');
+          const cached = localStorage.getItem('scrapmax_personal_info') || localStorage.getItem('aicle_personal_info');
           if (cached) {
             const parsed = JSON.parse(cached);
             if (parsed.fullName) {
               setUserName(parsed.fullName.split(' ')[0]);
             }
           }
-        } catch {
-          // ignore
-        }
+        } catch {}
       }
 
-      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
       let localRequests: PickupRequest[] = [];
       try {
         const localSaved = localStorage.getItem('local_pickup_requests');
         if (localSaved) {
-          localRequests = JSON.parse(localSaved);
+          const parsed = JSON.parse(localSaved);
+          if (Array.isArray(parsed)) {
+            localRequests = parsed.map((r: any) => ({
+              ...r,
+              payment: r.payment || r.payment_json || undefined,
+            }));
+          }
         }
       } catch (err) {
         console.warn('Local pickup load notice:', err);
@@ -156,34 +88,101 @@ export default function HouseholdDashboard() {
         setIsAuthenticated(true);
         if (user.user_metadata?.full_name) {
           setUserName(user.user_metadata.full_name.split(' ')[0]);
+        } else if (user.email) {
+          setUserName(user.email.split('@')[0]);
         }
 
-        const { data } = await supabase
-          .from('pickup_requests')
-          .select('*, waste_items(*)')
-          .eq('household_id', user.id)
-          .order('created_at', { ascending: false });
+        try {
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (prof?.full_name) {
+            setUserName(prof.full_name.split(' ')[0]);
+          }
+        } catch {}
 
-        if (data && data.length > 0) {
-          setRequests(data as PickupRequest[]);
-        } else if (localRequests.length > 0) {
-          setRequests(localRequests);
-        } else {
-          setRequests([]);
+        try {
+          const { data } = await supabase
+            .from('pickup_requests')
+            .select('*, waste_items(*), collector:profiles!collector_id(id, full_name, phone, role)')
+            .eq('household_id', user.id)
+            .order('created_at', { ascending: false });
+
+          if (data && data.length > 0) {
+            const normalized = (data as any[]).map((r) => ({
+              ...r,
+              payment: r.payment || r.payment_json || undefined,
+            }));
+
+            // Merge with local requests (in case local has fresher status or payment)
+            const mapById = new Map<string, PickupRequest>();
+            for (const r of normalized) mapById.set(r.id, r);
+            for (const l of localRequests) {
+              if (mapById.has(l.id)) {
+                // If local marked completed and DB is lagging, use completed
+                const existing = mapById.get(l.id)!;
+                if (l.status === 'completed' || l.payment) {
+                  mapById.set(l.id, { ...existing, ...l });
+                }
+              } else {
+                mapById.set(l.id, l);
+              }
+            }
+            setRequests(Array.from(mapById.values()));
+          } else if (localRequests.length > 0) {
+            setRequests(localRequests);
+          } else {
+            setRequests([]);
+          }
+        } catch (err) {
+          console.warn('Supabase request fetch notice:', err);
+          if (localRequests.length > 0) setRequests(localRequests);
         }
       } else {
         setIsAuthenticated(false);
-        if (localRequests.length > 0) {
-          setRequests([...localRequests, ...DEMO_HOUSEHOLD_REQUESTS]);
-        } else {
-          setRequests(DEMO_HOUSEHOLD_REQUESTS);
-        }
+        setRequests(localRequests);
       }
     }
+
     loadRequests();
+
+    // Listen for real-time tracking updates, completions, and notifications
+    const handleSync = () => {
+      loadRequests();
+      try {
+        const raw = localStorage.getItem('scrapmax_payment_notifications');
+        if (raw) {
+          setPaymentNotifications(JSON.parse(raw).filter((n: any) => !n.dismissed));
+        }
+      } catch {}
+    };
+
+    window.addEventListener('scrapmax:tracking_update', handleSync);
+    window.addEventListener('storage', handleSync);
+
+    // Supabase Realtime channel subscription
+    const channel = supabase
+      .channel('household_pickup_sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'pickup_requests' },
+        () => {
+          loadRequests();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('scrapmax:tracking_update', handleSync);
+      window.removeEventListener('storage', handleSync);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const activePickup = requests.find((r) => r.status === 'pending' || r.status === 'accepted' || r.status === 'in_progress');
+  const latestCompletedPickup = requests.find((r) => r.status === 'completed');
   const hour = new Date().getHours();
   const greetingKey = hour < 12 ? 'goodMorning' : hour < 17 ? 'goodAfternoon' : 'goodEvening';
 
@@ -386,6 +385,52 @@ export default function HouseholdDashboard() {
           </section>
         )}
 
+        {/* Latest Completed Pickup Card if recently completed */}
+        {!activePickup && latestCompletedPickup && (
+          <section className="space-y-3" data-purpose="completed-pickup-section">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-[#191C1E] tracking-tight">
+                Latest Completed Pickup
+              </h3>
+              <span className="text-xs font-bold text-[#136B3B] bg-[#E6F4EA] px-2.5 py-0.5 rounded-full border border-[#A6D5B8]">
+                ✓ Completed &amp; Paid
+              </span>
+            </div>
+            
+            <div className="bg-gradient-to-br from-[#E6F4EA] via-white to-emerald-50 rounded-2xl p-4.5 border-2 border-[#136B3B] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+              <div className="flex items-center space-x-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-[#136B3B] text-white flex items-center justify-center flex-shrink-0 text-xl font-bold shadow-xs">
+                  ✓
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-[#191C1E] text-[15px] leading-tight flex items-center gap-2">
+                    <span>Scrap Pickup Completed</span>
+                    {latestCompletedPickup.payment?.totalAmount && (
+                      <span className="text-xs font-extrabold text-[#136B3B] bg-white px-2 py-0.5 rounded-full border border-[#A6D5B8]">
+                        ₹{latestCompletedPickup.payment.totalAmount} Received
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-xs text-[#526056] mt-0.5">
+                    {latestCompletedPickup.address}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSelectedReceiptReq(latestCompletedPickup)}
+                  className="flex items-center gap-1.5 px-4 py-2.5 bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold rounded-xl shadow-xs transition touch-feedback"
+                >
+                  <Receipt className="w-4 h-4" />
+                  <span>View Official Receipt</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Recent Activity Section */}
         <section className="space-y-3 pb-2" data-purpose="recent-activity-section">
           <div className="flex items-center justify-between">
@@ -400,8 +445,8 @@ export default function HouseholdDashboard() {
           {requests.length === 0 ? (
             <div className="text-center py-10 bg-white border border-dashed border-gray-200 rounded-2xl text-xs text-[#6B7280] space-y-2">
               <Package className="w-8 h-8 text-gray-300 mx-auto" />
-              <p className="font-bold text-[#191C1E]">No pickup requests in Supabase yet</p>
-              <p>Click &quot;Request pickup&quot; above to create your first pickup request!</p>
+              <p className="font-bold text-[#191C1E]">No pickup requests yet</p>
+              <p>Click &quot;Request pickup&quot; above to create your first scrap pickup request!</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -413,6 +458,14 @@ export default function HouseholdDashboard() {
         </section>
 
       </main>
+
+      {/* Digital Receipt Modal */}
+      {selectedReceiptReq && (
+        <ReceiptModal
+          request={selectedReceiptReq}
+          onClose={() => setSelectedReceiptReq(null)}
+        />
+      )}
 
       {/* Docked Stitch Bottom Navigation */}
       <BottomNav role="household" />

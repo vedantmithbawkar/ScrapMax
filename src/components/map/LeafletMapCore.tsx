@@ -8,6 +8,7 @@ import {
   kabadiwalaLocationIcon,
   doorstepLocationIcon,
   collectorTruckIcon,
+  collectorOriginIcon,
 } from '@/lib/leaflet/icon-fix';
 import { PickupRequest, NearbyKabadiwala } from '@/types';
 
@@ -26,6 +27,8 @@ interface MapCoreProps {
   routeCoordinates?: [number, number][];
   destinationPos?: [number, number] | null;
   destinationLabel?: string;
+  originPos?: [number, number] | null;
+  originLabel?: string;
   fitBoundsToRoute?: boolean;
   useTruckIconForCollector?: boolean;
   selectedRequestId?: string;
@@ -100,6 +103,8 @@ export default function LeafletMapCore({
   routeCoordinates = [],
   destinationPos,
   destinationLabel = 'Household Doorstep',
+  originPos,
+  originLabel = 'Collector Starting Point',
   fitBoundsToRoute = false,
   useTruckIconForCollector = true,
   selectedRequestId,
@@ -121,7 +126,7 @@ export default function LeafletMapCore({
         <ClickHandler onSelectPos={onSelectPos} />
         <RouteBoundsController
           routeCoordinates={routeCoordinates}
-          collectorPos={collectorPos}
+          collectorPos={collectorPos || originPos}
           destinationPos={destinationPos}
           fitBoundsToRoute={fitBoundsToRoute}
         />
@@ -161,6 +166,17 @@ export default function LeafletMapCore({
               <div className="text-xs font-semibold p-1">
                 📌 Your Pickup Pin<br />
                 Lat: {selectedPos[0].toFixed(4)}, Lng: {selectedPos[1].toFixed(4)}
+              </div>
+            </Popup>
+          </Marker>
+        )}
+
+        {/* Collector Origin / Departure Hub Marker */}
+        {originPos && (
+          <Marker position={originPos} icon={collectorOriginIcon}>
+            <Popup autoPan={false}>
+              <div className="text-xs font-bold p-1 text-indigo-900">
+                🏢 {originLabel}
               </div>
             </Popup>
           </Marker>

@@ -21,7 +21,7 @@ interface ChatSummary {
 const DEFAULT_CHATS: ChatSummary[] = [
   {
     requestId: 'req-map-001',
-    householdName: 'Household — Ramesh Kumar Pickup',
+    householdName: 'Household — Doorstep Scrap Pickup',
     address: 'Main Market Road, Near City Center',
     status: 'accepted',
     lastMessage: 'Perfect. I am about 15 minutes away. See you soon! 🚛',
@@ -94,7 +94,7 @@ export default function CollectorChatListPage() {
           const last = msgs[msgs.length - 1];
           return {
             requestId: r.id,
-            householdName: r.userName || 'Household Pickup',
+            householdName: r.household?.full_name || r.userName || 'Household Pickup',
             address: r.address || 'Pickup Location',
             status: r.status || 'accepted',
             lastMessage: last ? last.text : 'Pickup coordination chat',
@@ -151,7 +151,7 @@ export default function CollectorChatListPage() {
               >
                 {/* Avatar */}
                 <div className="w-12 h-12 rounded-full bg-[#EAF5EE] flex items-center justify-center text-xl font-bold text-[#136B3B] flex-shrink-0">
-                  H
+                  {(chat.householdName || 'H').replace(/[^a-zA-Z]/g, '').charAt(0).toUpperCase() || 'H'}
                 </div>
 
                 {/* Content */}

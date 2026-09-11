@@ -39,13 +39,38 @@ export default function MyReportsPage() {
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      setUserId(user?.id ?? null);
-      if (user) {
-        const { reports: data } = await getMyReports(user.id);
-        setReports(data);
+      let localList: Report[] = [];
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('local_reports');
+          if (raw) localList = JSON.parse(raw);
+        } catch {}
       }
+
+      let remoteList: Report[] = [];
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        setUserId(user?.id ?? null);
+        if (user) {
+          const { reports: data } = await getMyReports(user.id);
+          remoteList = data;
+        }
+      } catch {}
+
+      // Deduplicate reports by report_number or id
+      const seen = new Set<string>();
+      const combined: Report[] = [];
+
+      for (const rep of [...localList, ...remoteList]) {
+        const key = rep.report_number || rep.id;
+        if (!seen.has(key)) {
+          seen.add(key);
+          combined.push(rep);
+        }
+      }
+
+      setReports(combined);
       setLoading(false);
     }
     load();
@@ -136,7 +161,7 @@ export default function MyReportsPage() {
         {!loading && filtered.length > 0 && (
           <div className="space-y-3">
             {filtered.map((report) => {
-              const statusCfg = REPORT_STATUS_CONFIG[report.status];
+              const statusCfg = REPORT_STATUS_CONFIG[report.status] || REPORT_STATUS_CONFIG['open'];
               const isPickup = report.report_type === 'transaction';
               return (
                 <Link
