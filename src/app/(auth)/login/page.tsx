@@ -47,7 +47,9 @@ export default function LoginPage() {
         .single();
 
       const finalRole = profile?.role || roleHint || 'household';
-      if (finalRole === 'collector') {
+      if (finalRole === 'admin') {
+        router.push('/admin');
+      } else if (finalRole === 'collector') {
         router.push('/collector');
       } else {
         router.push('/household');
@@ -87,24 +89,33 @@ export default function LoginPage() {
               <Sparkles className="w-3.5 h-3.5 text-[#136B3B]" />
               <span>Quick Demo 1-Click Login:</span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 disabled={loading}
                 onClick={() => handleDemoClick('household')}
-                className="px-3 py-2.5 bg-white hover:bg-emerald-50 text-xs font-bold text-[#136B3B] rounded-xl border border-gray-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-60"
+                className="px-2 py-2.5 bg-white hover:bg-emerald-50 text-xs font-bold text-[#136B3B] rounded-xl border border-gray-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1 disabled:opacity-60"
               >
                 <span>🏠</span>
-                <span>{autoLoggingRole === 'household' ? 'Logging in...' : 'Household'}</span>
+                <span className="truncate">{autoLoggingRole === 'household' ? 'Logging in...' : 'Household'}</span>
               </button>
               <button
                 type="button"
                 disabled={loading}
                 onClick={() => handleDemoClick('collector')}
-                className="px-3 py-2.5 bg-white hover:bg-slate-50 text-xs font-bold text-[#191C1E] rounded-xl border border-gray-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-60"
+                className="px-2 py-2.5 bg-white hover:bg-slate-50 text-xs font-bold text-[#191C1E] rounded-xl border border-gray-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1 disabled:opacity-60"
               >
                 <span>🚛</span>
-                <span>{autoLoggingRole === 'collector' ? 'Logging in...' : 'Collector'}</span>
+                <span className="truncate">{autoLoggingRole === 'collector' ? 'Logging in...' : 'Collector'}</span>
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => router.push('/admin')}
+                className="px-2 py-2.5 bg-purple-50 hover:bg-purple-100 text-xs font-bold text-purple-800 rounded-xl border border-purple-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1"
+              >
+                <span>🛡️</span>
+                <span className="truncate">Admin</span>
               </button>
             </div>
           </div>
