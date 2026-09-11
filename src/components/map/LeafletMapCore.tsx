@@ -1,12 +1,14 @@
-'use client';
-
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
+import L from 'leaflet';
 import {
   fixLeafletIcon,
   householdLocationIcon,
   collectorLocationIcon,
   kabadiwalaLocationIcon,
+  doorstepLocationIcon,
+  collectorTruckIcon,
+  collectorOriginIcon,
 } from '@/lib/leaflet/icon-fix';
 import { PickupRequest, NearbyKabadiwala } from '@/types';
 
@@ -21,6 +23,15 @@ interface MapCoreProps {
   nearbyKabadiwalas?: NearbyKabadiwala[];
   onSelectKabadiwala?: (k: NearbyKabadiwala) => void;
   className?: string;
+  // Route Navigation additions:
+  routeCoordinates?: [number, number][];
+  destinationPos?: [number, number] | null;
+  destinationLabel?: string;
+  originPos?: [number, number] | null;
+  originLabel?: string;
+  fitBoundsToRoute?: boolean;
+  useTruckIconForCollector?: boolean;
+  selectedRequestId?: string;
 }
 
 function ClickHandler({ onSelectPos }: { onSelectPos?: (lat: number, lng: number) => void }) {
@@ -49,6 +60,35 @@ function MapViewController({ center }: { center: [number, number] }) {
   return null;
 }
 
+function RouteBoundsController({
+  routeCoordinates,
+  collectorPos,
+  destinationPos,
+  fitBoundsToRoute,
+}: {
+  routeCoordinates?: [number, number][];
+  collectorPos?: [number, number] | null;
+  destinationPos?: [number, number] | null;
+  fitBoundsToRoute?: boolean;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    if (!fitBoundsToRoute || !map) return;
+    try {
+      if (routeCoordinates && routeCoordinates.length >= 2) {
+        const bounds = L.latLngBounds(routeCoordinates);
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16, animate: false });
+      } else if (collectorPos && destinationPos) {
+        const bounds = L.latLngBounds([collectorPos, destinationPos]);
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16, animate: false });
+      }
+    } catch {
+      // Suppress teardown
+    }
+  }, [map, routeCoordinates, collectorPos, destinationPos, fitBoundsToRoute]);
+  return null;
+}
+
 export default function LeafletMapCore({
   center,
   zoom = 13,
@@ -60,6 +100,14 @@ export default function LeafletMapCore({
   nearbyKabadiwalas = [],
   onSelectKabadiwala,
   className = 'h-[400px] w-full',
+  routeCoordinates = [],
+  destinationPos,
+  destinationLabel = 'Household Doorstep',
+  originPos,
+  originLabel = 'Collector Starting Point',
+  fitBoundsToRoute = false,
+  useTruckIconForCollector = true,
+  selectedRequestId,
 }: MapCoreProps) {
   useEffect(() => {
     fixLeafletIcon();
@@ -76,6 +124,40 @@ export default function LeafletMapCore({
 
         <MapViewController center={center} />
         <ClickHandler onSelectPos={onSelectPos} />
+        <RouteBoundsController
+          routeCoordinates={routeCoordinates}
+          collectorPos={collectorPos || originPos}
+          destinationPos={destinationPos}
+          fitBoundsToRoute={fitBoundsToRoute}
+        />
+
+        {/* Route Polyline (Dual-layered for high contrast like delivery apps) */}
+        {routeCoordinates && routeCoordinates.length >= 2 && (
+          <>
+            {/* Dark background casing */}
+            <Polyline
+              positions={routeCoordinates}
+              pathOptions={{
+                color: '#0f172a',
+                weight: 8,
+                opacity: 0.25,
+                lineCap: 'round',
+                lineJoin: 'round',
+              }}
+            />
+            {/* Vibrant Emerald Delivery Route Line */}
+            <Polyline
+              positions={routeCoordinates}
+              pathOptions={{
+                color: '#136B3B',
+                weight: 5,
+                opacity: 0.95,
+                lineCap: 'round',
+                lineJoin: 'round',
+              }}
+            />
+          </>
+        )}
 
         {/* Selected Marker for Household Location Pickup selection */}
         {selectedPos && (
@@ -89,9 +171,34 @@ export default function LeafletMapCore({
           </Marker>
         )}
 
+        {/* Collector Origin / Departure Hub Marker */}
+        {originPos && (
+          <Marker position={originPos} icon={collectorOriginIcon}>
+            <Popup autoPan={false}>
+              <div className="text-xs font-bold p-1 text-indigo-900">
+                🏢 {originLabel}
+              </div>
+            </Popup>
+          </Marker>
+        )}
+
+        {/* Doorstep Destination Pin (When navigating or tracking, avoid duplicate if request already rendered) */}
+        {destinationPos && (!selectedRequestId || !requests.some((r) => r.id === selectedRequestId)) && (
+          <Marker position={destinationPos} icon={doorstepLocationIcon}>
+            <Popup autoPan={false}>
+              <div className="text-xs font-bold p-1 text-emerald-900">
+                🏠 {destinationLabel}
+              </div>
+            </Popup>
+          </Marker>
+        )}
+
         {/* Collector Live Position Marker */}
         {collectorPos && (
-          <Marker position={collectorPos} icon={collectorLocationIcon}>
+          <Marker
+            position={collectorPos}
+            icon={useTruckIconForCollector ? collectorTruckIcon : collectorLocationIcon}
+          >
             <Popup autoPan={false}>
               <div className="text-xs font-semibold p-1 text-blue-600">
                 🚚 Collector Live Location
@@ -150,32 +257,35 @@ export default function LeafletMapCore({
         ))}
 
         {/* Multiple Request Markers for Collector Map View */}
-        {requests.map((req) => (
-          <Marker
-            key={req.id}
-            position={[req.latitude, req.longitude]}
-            icon={householdLocationIcon}
-            eventHandlers={{
-              click: () => onSelectRequest && onSelectRequest(req),
-            }}
-          >
-            <Popup autoPan={false}>
-              <div className="text-xs p-1 space-y-1">
-                <p className="font-bold text-slate-900">{req.address}</p>
-                <p className="text-emerald-600 font-semibold">Status: {req.status.toUpperCase()}</p>
-                <p className="text-slate-600">Est Weight: {req.total_estimated_weight_kg || 5} kg</p>
-                {onSelectRequest && (
-                  <button
-                    onClick={() => onSelectRequest(req)}
-                    className="mt-1 px-2 py-1 bg-emerald-600 text-white rounded font-bold w-full text-center"
-                  >
-                    View Pickup Details
-                  </button>
-                )}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        {requests.map((req) => {
+          const isSelected = selectedRequestId === req.id;
+          return (
+            <Marker
+              key={req.id}
+              position={[req.latitude, req.longitude]}
+              icon={isSelected ? doorstepLocationIcon : householdLocationIcon}
+              eventHandlers={{
+                click: () => onSelectRequest && onSelectRequest(req),
+              }}
+            >
+              <Popup autoPan={false}>
+                <div className="text-xs p-1 space-y-1">
+                  <p className="font-bold text-slate-900">{req.address}</p>
+                  <p className="text-emerald-600 font-semibold">Status: {req.status.toUpperCase()}</p>
+                  <p className="text-slate-600">Est Weight: {req.total_estimated_weight_kg || 5} kg</p>
+                  {onSelectRequest && (
+                    <button
+                      onClick={() => onSelectRequest(req)}
+                      className="mt-1 px-2 py-1 bg-[#136B3B] text-white rounded font-bold w-full text-center hover:bg-[#0F5730] transition"
+                    >
+                      {isSelected ? '✓ Current Selected' : 'View Pickup Details'}
+                    </button>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
     </div>
   );

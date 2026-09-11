@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { ChatMessage, UserProfile } from '@/types';
 import { Send } from 'lucide-react';
+import { getChatMessages, subscribeToChat, sendChatMessage } from '@/lib/chat-service';
 
 interface ChatWindowProps {
   requestId: string;
@@ -11,81 +11,17 @@ interface ChatWindowProps {
 }
 
 export default function ChatWindow({ requestId, currentUser }: ChatWindowProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => getChatMessages(requestId));
   const [inputText, setInputText] = useState<string>('');
-  const [chatId, setChatId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-
-    async function initChat() {
-      let { data: chat } = await supabase
-        .from('chats')
-        .select('*')
-        .eq('request_id', requestId)
-        .single();
-
-      if (!chat) {
-        const { data: request } = await supabase
-          .from('pickup_requests')
-          .select('*')
-          .eq('id', requestId)
-          .single();
-
-        if (request) {
-          const { data: newChat } = await supabase
-            .from('chats')
-            .insert({
-              request_id: requestId,
-              household_id: request.household_id,
-              collector_id: request.collector_id || currentUser.id,
-            })
-            .select('*')
-            .single();
-
-          chat = newChat;
-        }
-      }
-
-      if (chat) {
-        setChatId(chat.id);
-
-        const { data: initialMessages } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('chat_id', chat.id)
-          .order('created_at', { ascending: true });
-
-        if (initialMessages) {
-          setMessages(initialMessages as ChatMessage[]);
-        }
-
-        const channel = supabase
-          .channel(`chat:${chat.id}`)
-          .on(
-            'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'messages',
-              filter: `chat_id=eq.${chat.id}`,
-            },
-            (payload) => {
-              const newMsg = payload.new as ChatMessage;
-              setMessages((prev) => [...prev, newMsg]);
-            }
-          )
-          .subscribe();
-
-        return () => {
-          supabase.removeChannel(channel);
-        };
-      }
-    }
-
-    initChat();
-  }, [requestId, currentUser.id]);
+    setMessages(getChatMessages(requestId));
+    const unsubscribe = subscribeToChat(requestId, (updatedMsgs) => {
+      setMessages(updatedMsgs);
+    });
+    return () => unsubscribe();
+  }, [requestId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -93,32 +29,13 @@ export default function ChatWindow({ requestId, currentUser }: ChatWindowProps) 
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() || !chatId) return;
+    if (!inputText.trim()) return;
 
-    const supabase = createClient();
     const textToSend = inputText.trim();
     setInputText('');
 
-    const { error } = await supabase.from('messages').insert({
-      chat_id: chatId,
-      sender_id: currentUser.id,
-      text: textToSend,
-    });
-
-    if (error) {
-      console.error('Failed to send message:', error);
-      // Fallback local append for demo
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: String(Date.now()),
-          chat_id: chatId,
-          sender_id: currentUser.id,
-          text: textToSend,
-          created_at: new Date().toISOString(),
-        },
-      ]);
-    }
+    const role = currentUser.role === 'collector' ? 'collector' : 'household';
+    await sendChatMessage(requestId, currentUser.id, textToSend, role);
   };
 
   return (
@@ -159,6 +76,7 @@ export default function ChatWindow({ requestId, currentUser }: ChatWindowProps) 
                 </div>
                 <span className="text-[10px] text-[#6B7280] mt-1 px-1">
                   {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {isMe && ' ✓✓'}
                 </span>
               </div>
             );

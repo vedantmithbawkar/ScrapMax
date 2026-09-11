@@ -97,4 +97,34 @@ export const activeStoreLocationIcon = L.icon({
   shadowSize: [48, 48]
 });
 
+export const doorstepLocationIcon = typeof window !== 'undefined'
+  ? L.divIcon({
+      className: 'custom-doorstep-marker',
+      html: `<div style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:#136B3B;border:3px solid #ffffff;border-radius:50%;box-shadow:0 4px 14px rgba(19,107,59,0.5);color:white;font-size:20px;">🏠</div>`,
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+      popupAnchor: [0, -20],
+    })
+  : ({} as L.DivIcon);
+
+export const collectorTruckIcon = typeof window !== 'undefined'
+  ? L.divIcon({
+      className: 'custom-collector-truck-marker',
+      html: `<div style="position:relative;display:flex;align-items:center;justify-content:center;width:46px;height:46px;background:#0284C7;border:3px solid #ffffff;border-radius:50%;box-shadow:0 6px 18px rgba(2,132,199,0.55);color:white;font-size:22px;"><span style="position:absolute;inset:-6px;border-radius:50%;border:2px solid #0284C7;animation:ping 1.6s cubic-bezier(0,0,0.2,1) infinite;opacity:0.75;"></span>🚚</div>`,
+      iconSize: [46, 46],
+      iconAnchor: [23, 23],
+      popupAnchor: [0, -24],
+    })
+  : ({} as L.DivIcon);
+
+export const collectorOriginIcon = typeof window !== 'undefined'
+  ? L.divIcon({
+      className: 'custom-collector-origin-marker',
+      html: `<div style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:#4F46E5;border:3px solid #ffffff;border-radius:50%;box-shadow:0 4px 14px rgba(79,70,229,0.5);color:white;font-size:18px;">🏢</div>`,
+      iconSize: [38, 38],
+      iconAnchor: [19, 19],
+      popupAnchor: [0, -19],
+    })
+  : ({} as L.DivIcon);
+
 

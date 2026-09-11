@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { PickupRequest, PaymentDetails, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
-import { MapPin, MessageSquare, ChevronRight, Truck, Camera, X, Receipt, Flag, Star } from 'lucide-react';
+import { MapPin, MessageSquare, ChevronRight, Truck, Camera, X, Receipt, Flag, Star, Navigation } from 'lucide-react';
 import HandoverModal from './HandoverModal';
 import ReceiptModal from './ReceiptModal';
 import ReportModal from './ReportModal';
 import RatingModal from './RatingModal';
+import { resolveCollectorName, resolveHouseholdName } from '@/lib/name-resolver';
 
 interface RequestCardProps {
   request: PickupRequest;
   userRole: 'household' | 'collector';
+  collectorDistanceKm?: number;
   onStatusUpdate?: (requestId: string, newStatus: PickupRequest['status']) => void;
   onCompletePayment?: (requestId: string, payment: PaymentDetails) => Promise<void> | void;
 }
@@ -40,6 +42,7 @@ function formatPickupDate(dateStr: string) {
 export default function RequestCard({
   request,
   userRole,
+  collectorDistanceKm,
   onStatusUpdate,
   onCompletePayment,
 }: RequestCardProps) {
@@ -66,6 +69,8 @@ export default function RequestCard({
   });
 
   const statusInfo = STATUS_LABELS[request.status];
+
+  const effectivePayment = request.payment || (request as unknown as { payment_json?: PaymentDetails }).payment_json;
 
   // Derive primary category icon & name
   const primaryItem = request.waste_items?.[0];
@@ -97,15 +102,20 @@ export default function RequestCard({
                 {primaryCatInfo ? primaryCatInfo.label.split('&')[0].trim() : 'Recyclables'}
                 {request.waste_items && request.waste_items.length > 1 && ` +${request.waste_items.length - 1} more`}
               </h3>
-              <p className="text-[13px] font-medium text-[#6B7280] mt-0.5">
-                {request.total_estimated_weight_kg || 5} kg · {formatPickupDate(request.scheduled_date)}
+              <p className="text-[13px] font-medium text-[#6B7280] mt-0.5 flex items-center gap-1.5 flex-wrap">
+                <span>{request.total_estimated_weight_kg || 5} kg · {formatPickupDate(request.scheduled_date)}</span>
+                {userRole === 'collector' && collectorDistanceKm !== undefined && (
+                  <span className="text-[10.5px] font-bold text-[#136B3B] bg-[#E6F4EA] border border-[#A6D5B8] px-2 py-0.2 rounded-full">
+                    📍 {collectorDistanceKm} km away
+                  </span>
+                )}
               </p>
             </div>
           </div>
 
           <div className="text-right flex-shrink-0">
             <span className="text-[18px] sm:text-[20px] font-extrabold text-[#136B3B] leading-tight block">
-              {request.payment ? `₹${request.payment.totalAmount}` : estimatedPoints}
+              {effectivePayment ? `₹${effectivePayment.totalAmount}` : estimatedPoints}
             </span>
             <span
               className={`inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full mt-1 ${
@@ -123,22 +133,46 @@ export default function RequestCard({
           </div>
         </div>
 
-        {/* Address line */}
-        <div className="flex items-center gap-1.5 text-xs text-[#526056] bg-[#F8FAF9] p-2.5 rounded-xl border border-gray-100">
-          <MapPin className="w-3.5 h-3.5 text-[#136B3B] flex-shrink-0" />
-          <span className="truncate">{request.address}</span>
+        {/* Doorstep Address line */}
+        <div className="flex items-start gap-2 text-xs text-[#526056] bg-[#F8FAF9] p-2.5 rounded-xl border border-gray-100">
+          <MapPin className="w-3.5 h-3.5 text-[#136B3B] flex-shrink-0 mt-0.5" />
+          <p className="leading-snug break-words font-medium text-[#191C1E]">{request.address}</p>
         </div>
 
-        {/* Assigned Collector Details Strip for Citizen */}
+        {/* Payment Received Banner for Household */}
+        {userRole === 'household' && request.status === 'completed' && effectivePayment && (
+          <div className="flex items-center gap-2.5 p-3 bg-gradient-to-r from-[#EDF7F2] to-[#E6F4EA] border border-[#A6D5B8] rounded-2xl">
+            <span className="text-xl flex-shrink-0">💰</span>
+            <div className="min-w-0">
+              <p className="text-xs font-extrabold text-[#136B3B]">
+                ₹{effectivePayment.totalAmount} Received!
+              </p>
+              <p className="text-[10px] text-[#2B6B47] leading-snug">
+                {effectivePayment.method === 'upi'
+                  ? 'Money credited to your bank account via UPI.'
+                  : 'Cash received at doorstep.'}
+              </p>
+            </div>
+            <span className="text-[10px] font-bold text-[#136B3B] bg-white px-2 py-0.5 rounded-full border border-[#A6D5B8] flex-shrink-0">
+              ✓ Paid
+            </span>
+          </div>
+        )}
+
         {userRole === 'household' && request.status !== 'pending' && (
           <div className="flex items-center justify-between p-2 sm:p-2.5 bg-[#E6F4EA]/70 border border-[#A6D5B8] rounded-xl text-xs">
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
               <span className="text-base shrink-0">🚛</span>
               <div className="min-w-0">
-                <span className="font-bold text-[#191C1E] truncate block">
-                  {request.collector?.full_name || 'Ramesh Kumar (Verified Kabadiwala)'}
-                </span>
-                <span className="text-[11px] text-[#136B3B] font-mono font-bold block truncate">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-bold text-[#191C1E] truncate">
+                    {resolveCollectorName(request.collector?.full_name) || 'Collector Partner'}
+                  </span>
+                  <span className="text-[10px] font-bold text-[#136B3B] bg-white px-1.5 py-0.5 rounded-full border border-[#A6D5B8] shrink-0">
+                    ✓ Verified Collector
+                  </span>
+                </div>
+                <span className="text-[11px] text-[#136B3B] font-mono font-bold block truncate mt-0.5">
                   {request.collector?.phone || '+91 98201 45892'}
                 </span>
               </div>
@@ -149,6 +183,44 @@ export default function RequestCard({
             >
               Call
             </a>
+          </div>
+        )}
+
+        {/* Household Contact and Address strip for Collector */}
+        {userRole === 'collector' && request.status !== 'pending' && (
+          <div className="flex items-center justify-between p-2.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="text-base shrink-0">🏠</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-bold text-[#191C1E] truncate">
+                    {resolveHouseholdName(request.household?.full_name || request.contact_name) || request.contact_name || request.household?.full_name || 'Resident Citizen'}
+                  </span>
+                  <span className="text-[10px] font-bold text-blue-700 bg-white px-1.5 py-0.5 rounded-full border border-blue-200 shrink-0">
+                    ✓ Verified Citizen
+                  </span>
+                </div>
+                <span className="text-[11px] text-blue-700 font-mono font-bold block truncate mt-0.5">
+                  {request.household?.phone || request.contact_phone || '+91 98201 54321'}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <a
+                href={`tel:${(request.household?.phone || request.contact_phone || '+919820154321').replace(/\s+/g, '')}`}
+                className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg transition shadow-2xs"
+              >
+                Call
+              </a>
+              <a
+                href={`https://wa.me/${(request.household?.phone || request.contact_phone || '+919820154321').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${resolveHouseholdName(request.household?.full_name || request.contact_name) || request.contact_name || 'Citizen'}, I am your ScrapMax collector for pickup #${request.id.slice(0, 8)}.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition shadow-2xs"
+              >
+                WhatsApp
+              </a>
+            </div>
           </div>
         )}
 
@@ -300,6 +372,16 @@ export default function RequestCard({
                   </button>
                 )}
 
+                {(request.status === 'accepted' || request.status === 'in_progress') && (
+                  <Link
+                    href={`/collector/map?requestId=${request.id}`}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold rounded-xl shadow-xs transition"
+                  >
+                    <Navigation className="w-3.5 h-3.5" />
+                    <span>View Route</span>
+                  </Link>
+                )}
+
                 {request.status === 'accepted' && (
                   <button
                     onClick={() => onStatusUpdate(request.id, 'in_progress')}
@@ -346,7 +428,7 @@ export default function RequestCard({
       {/* Digital Recycling Receipt Modal */}
       {showReceiptModal && (
         <ReceiptModal
-          request={request}
+          request={{ ...request, payment: effectivePayment }}
           onClose={() => setShowReceiptModal(false)}
         />
       )}

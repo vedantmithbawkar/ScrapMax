@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/common/Navbar';
 import BottomNav from '@/components/common/BottomNav';
@@ -25,7 +26,7 @@ import { useTranslation, SUPPORTED_LANGUAGES, SupportedLanguage } from '@/lib/i1
 function getStoredSettings() {
   if (typeof window !== 'undefined') {
     try {
-      const stored = localStorage.getItem('aicle_settings');
+      const stored = localStorage.getItem('scrapmax_settings') || localStorage.getItem('aicle_settings');
       if (stored) return JSON.parse(stored);
     } catch {
       // ignore
@@ -67,6 +68,7 @@ export default function HouseholdSettingsPage() {
         language,
         ...patch,
       };
+      localStorage.setItem('scrapmax_settings', JSON.stringify(current));
       localStorage.setItem('aicle_settings', JSON.stringify(current));
     }
     setNotification('Settings preference saved!');
@@ -99,22 +101,22 @@ export default function HouseholdSettingsPage() {
   const handleExportData = () => {
     const exportData = {
       exportDate: new Date().toISOString(),
-      platform: 'AiCLE Circular Waste Platform',
+      platform: 'ScrapMax Circular Waste Platform',
       userSettings: {
         pickupAlerts,
         receiptAlerts,
         rateAlerts,
         language,
       },
-      personalInfo: typeof window !== 'undefined' ? localStorage.getItem('aicle_personal_info') : null,
-      savedAddresses: typeof window !== 'undefined' ? localStorage.getItem('aicle_saved_addresses') : null,
+      personalInfo: typeof window !== 'undefined' ? (localStorage.getItem('scrapmax_personal_info') || localStorage.getItem('aicle_personal_info')) : null,
+      savedAddresses: typeof window !== 'undefined' ? (localStorage.getItem('scrapmax_saved_addresses') || localStorage.getItem('aicle_saved_addresses')) : null,
     };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `aicle_household_data_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `scrapmax_household_data_${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
     setNotification('Recycling data exported to your downloads!');
@@ -124,6 +126,7 @@ export default function HouseholdSettingsPage() {
   const handleClearCache = () => {
     if (confirm('Clear local offline cache? Your saved addresses and preferences will be refreshed.')) {
       if (typeof window !== 'undefined') {
+        localStorage.removeItem('scrapmax_settings');
         localStorage.removeItem('aicle_settings');
       }
       setNotification('Cache cleared successfully.');
@@ -363,6 +366,20 @@ export default function HouseholdSettingsPage() {
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </button>
+
+            <Link
+              href="/privacy"
+              className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded-xl transition cursor-pointer pt-2 border-t border-gray-50 text-left"
+            >
+              <div className="flex items-center gap-3 text-left">
+                <Shield className="w-4 h-4 text-emerald-600" />
+                <div>
+                  <p className="text-sm font-bold text-[#191C1E]">Privacy Policy &amp; Data Rights</p>
+                  <p className="text-xs text-[#6B7280]">DPDP Act 2023 compliance, permissions &amp; charter</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+            </Link>
           </div>
 
           {/* Danger Zone: Logout / Deactivate */}
@@ -388,7 +405,7 @@ export default function HouseholdSettingsPage() {
 
           {/* Version Info */}
           <div className="text-center pt-2 pb-4 text-xs text-gray-400 space-y-1">
-            <p className="font-bold text-gray-500">AiCLE · Eco-Waste &amp; Circular Logistics Platform</p>
+            <p className="font-bold text-gray-500">ScrapMax · Eco-Waste &amp; Circular Logistics Platform</p>
             <p>Version 2.1.0 · Build 2026</p>
           </div>
 

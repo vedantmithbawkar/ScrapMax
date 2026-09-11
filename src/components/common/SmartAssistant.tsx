@@ -60,14 +60,56 @@ function hasFuzzyWord(input: string, targets: string[]): boolean {
 }
 
 const COMPREHENSIVE_INTENTS: IntentPattern[] = [
+  // 0. ABOUT US / ABOUT SCRAPMAX
+  {
+    id: 'about_us',
+    category: 'About ScrapMax',
+    keywords: [
+      'about',
+      'about us',
+      'about scrapmax',
+      'who are you',
+      'who are we',
+      'who made this',
+      'mission',
+      'vision',
+      'what is scrapmax',
+      'team',
+      'company',
+      'organization',
+      'initiative',
+      'background',
+      'story',
+      'goal',
+      'purpose',
+      'developer',
+      'creators',
+      'founders',
+    ],
+    patterns: [/about/i, /who.*(are|made|created)/i, /what.*(is|purpose).*scrapmax/i, /mission/i, /vision/i],
+    response: () =>
+      `🌿 **About Us — ScrapMax:**\n\n` +
+      `ScrapMax is a smart, modern **Doorstep Scrap Recycling & Logistics Platform** designed to make recycling effortless, transparent, and rewarding for everyday households.\n\n` +
+      `🎯 **Our Mission:**\n` +
+      `To revolutionize urban recycling by directly connecting citizens with verified local collectors through real-time technology, guaranteed fair market rates, and certified doorstep collection.\n\n` +
+      `✨ **What Makes Us Different:**\n` +
+      `• ⚖️ **Guaranteed Fair Pricing:** Real-time standardized rates across paper, plastic, metal, and e-waste — weighed on certified digital scales with zero unfair bargaining.\n` +
+      `• 📍 **Smart Doorstep Convenience:** GPS address picker and live collector tracking so you never have to carry scrap or search for a local dealer.\n` +
+      `• ⚡ **Instant Digital Payouts:** Direct digital UPI payment (GPay, PhonePe, Paytm) or verified cash right at your doorstep with instant digital receipts.\n` +
+      `• 💬 **Live Direct Coordination:** Real-time in-app chat with your assigned collector for smooth arrival updates.\n` +
+      `• 🌳 **Your Personal Green Impact:** Live environmental tracker calculating your kilograms diverted from landfills, trees saved, and carbon emissions prevented.\n\n` +
+      `*Empowering greener homes and sustainable communities, one pickup at a time!* ♻️`,
+    suggestions: ['How does ScrapMax work?', 'Current Scrap Rates', 'How Payment Works', 'Book a Pickup Now'],
+  },
+
   // 1. HOW IT WORKS / GENERAL FLOW (Answers "how does it workd", "what is scrapmax", "explain process")
   {
     id: 'how_it_works',
     category: 'System Workflow',
-    keywords: ['how', 'work', 'works', 'workd', 'working', 'process', 'explain', 'steps', 'flow', 'what is aicle', 'what is scrapmax', 'system'],
+    keywords: ['how', 'work', 'works', 'workd', 'working', 'process', 'explain', 'steps', 'flow', 'what is scrapmax', 'system'],
     patterns: [/how.*work/i, /what.*do/i, /process/i, /explain/i],
     response: () =>
-      `♻️ **Here is how AiCLE works in 4 simple steps:**\n\n` +
+      `♻️ **Here is how ScrapMax works in 4 simple steps:**\n\n` +
       `1️⃣ **Request Pickup:** Click "Request Pickup" to select your scrap items (Paper, Plastic, Metal, E-waste, Glass) and upload photos.\n` +
       `2️⃣ **GPS Pinpoint:** Choose your address or use "Live GPS" to pinpoint your doorstep for nearby collectors.\n` +
       `3️⃣ **Kabadiwala Arrives:** A verified local scrap collector accepts your request, navigates to your location, and weighs your materials on a digital scale.\n` +
@@ -130,7 +172,7 @@ const COMPREHENSIVE_INTENTS: IntentPattern[] = [
     patterns: [/who/i, /trust/i, /safe/i, /verified/i],
     response: () =>
       `🛡️ **Verified Collector Network:**\n\n` +
-      `• All scrap collectors & Kabadiwalas on AiCLE are vetted with verified mobile numbers and local recycling licenses.\n` +
+      `• All scrap collectors & Kabadiwalas on ScrapMax are vetted with verified mobile numbers and local recycling licenses.\n` +
       `• Our **OpenStreetMap Overpass engine** maps active local scrap hubs within 5km radius.\n` +
       `• You can track the collector's approach on the live map and chat with them in real-time.\n` +
       `• Clear customer star ratings and digital receipts ensure complete transparency.`,
@@ -162,7 +204,7 @@ const COMPREHENSIVE_INTENTS: IntentPattern[] = [
     patterns: [/impact/i, /carbon/i, /tree/i, /environ/i, /co2/i],
     response: () =>
       `🌱 **Your Environmental Recycling Impact:**\n\n` +
-      `For every 10 kg of scrap recycled through AiCLE:\n` +
+      `For every 10 kg of scrap recycled through ScrapMax:\n` +
       `• 🌳 **~0.2 Trees Saved** from deforestation\n` +
       `• ☁️ **~18 kg CO₂ Equivalent** emissions prevented\n` +
       `• 💧 **~250 Litres of Water Conserved** compared to virgin manufacturing\n` +
@@ -178,7 +220,7 @@ const COMPREHENSIVE_INTENTS: IntentPattern[] = [
     patterns: [/sih/i, /hackathon/i, /project/i],
     response: () =>
       `🏆 **Smart India Hackathon (SIH) Innovation:**\n\n` +
-      `AiCLE is a **Circular Waste Logistics & Informal Sector Integration Platform** designed to solve Urban Solid Waste Management:\n` +
+      `ScrapMax is a **Circular Waste Logistics & Informal Sector Integration Platform** designed to solve Urban Solid Waste Management:\n` +
       `• Formalizes unorganized Kabadiwalas with digital weighing & UPI payouts.\n` +
       `• Provides citizens transparent rates, zero-bargaining, and GPS doorstep convenience.\n` +
       `• Provides Urban Local Bodies (ULBs) real-time landfill diversion tracking and carbon analytics.`,
@@ -192,7 +234,7 @@ const COMPREHENSIVE_INTENTS: IntentPattern[] = [
     keywords: ['hi', 'hello', 'hey', 'namaste', 'morning', 'afternoon', 'evening', 'good morning', 'hola'],
     patterns: [/^(hi|hello|hey|namaste)/i],
     response: () =>
-      `Namaste! 🙏 Welcome to AiCLE. I'm your AI recycling guide.\n` +
+      `Namaste! 🙏 Welcome to ScrapMax. I'm your AI recycling guide.\n` +
       `How can I help you today? You can ask me about scrap rates, booking pickups, doorstep UPI payouts, or how the platform works!`,
     suggestions: ['How does it work?', 'Current Scrap Rates', 'How Payment Works'],
   },
@@ -204,7 +246,7 @@ const COMPREHENSIVE_INTENTS: IntentPattern[] = [
     keywords: ['thanks', 'thank you', 'great', 'awesome', 'good', 'nice', 'ok', 'super'],
     patterns: [/thank/i, /great/i, /awesome/i],
     response: () =>
-      `You're very welcome! 🌿 Happy recycling with AiCLE. Every piece of scrap diverted from the landfill makes our cities cleaner and greener! Let me know if you need anything else.`,
+      `You're very welcome! 🌿 Happy recycling with ScrapMax. Every piece of scrap diverted from the landfill makes our cities cleaner and greener! Let me know if you need anything else.`,
     suggestions: ['Current Scrap Rates', 'Book a Pickup', 'How Payment Works'],
   },
 ];
@@ -213,13 +255,14 @@ const INITIAL_MESSAGES: Message[] = [
   {
     id: 'welcome-1',
     sender: 'bot',
-    text: "Namaste! 🙏 I'm AiCLE AI, your circular waste & recycling assistant.\n\nAsk me anything: scrap prices, doorstep pickups, UPI payments, or how our system works!",
+    text: "Namaste! 🙏 I'm ScrapMax AI, your circular waste & recycling assistant.\n\nAsk me anything: scrap prices, doorstep pickups, UPI payments, or learn all about ScrapMax!",
     time: 'Online',
     categoryBadge: 'AI Assistant',
     suggestedActions: [
-      { label: 'How Does It Work?', query: 'How does AiCLE work?' },
-      { label: 'Current Scrap Rates', query: 'What are the current scrap rates?' },
-      { label: 'Doorstep UPI Payment', query: 'How does doorstep payment work?' },
+      { label: '📖 About Us', query: 'Tell me about ScrapMax and your mission' },
+      { label: '♻️ How It Works', query: 'How does ScrapMax work?' },
+      { label: '💰 Scrap Rates', query: 'What are the current scrap rates?' },
+      { label: '💳 UPI Payments', query: 'How does doorstep payment work?' },
     ],
   },
 ];
@@ -340,7 +383,7 @@ export default function SmartAssistant() {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          aria-label="Open AiCLE AI Assistant"
+          aria-label="Open ScrapMax AI Assistant"
           className="flex items-center gap-2.5 px-4 py-3 bg-[#136B3B] hover:bg-[#0F5730] text-white rounded-full shadow-lg shadow-[#136B3B]/25 hover:shadow-xl active:scale-95 transition-all touch-feedback group"
         >
           <div className="relative">
@@ -349,7 +392,7 @@ export default function SmartAssistant() {
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400" />
           </div>
           <span className="font-bold text-xs hidden sm:inline tracking-wide">
-            AiCLE AI Help
+            ScrapMax AI Help
           </span>
         </button>
       )}
@@ -368,7 +411,7 @@ export default function SmartAssistant() {
                 <Bot className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-extrabold text-sm leading-tight">AiCLE AI Assistant</h3>
+                <h3 className="font-extrabold text-sm leading-tight">ScrapMax AI Assistant</h3>
                 <span className="text-[10px] text-[#A6D5B8] flex items-center gap-1 font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
                   Smart Recycling &amp; Logistics Engine
@@ -446,7 +489,15 @@ export default function SmartAssistant() {
             <span className="text-[10.5px] font-bold text-[#136B3B] flex-shrink-0">Quick Topics:</span>
             <button
               type="button"
-              onClick={() => handleSend('How does AiCLE work?')}
+              onClick={() => handleSend('Tell me about ScrapMax and your mission')}
+              className="text-[10.5px] text-[#2B6B47] hover:underline flex-shrink-0 font-bold"
+            >
+              About Us
+            </button>
+            <span className="text-gray-300">&bull;</span>
+            <button
+              type="button"
+              onClick={() => handleSend('How does ScrapMax work?')}
               className="text-[10.5px] text-[#2B6B47] hover:underline flex-shrink-0 font-medium"
             >
               How It Works

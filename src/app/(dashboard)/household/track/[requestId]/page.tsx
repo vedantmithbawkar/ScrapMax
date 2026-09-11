@@ -7,6 +7,7 @@ import Navbar from '@/components/common/Navbar';
 import ReceiptModal from '@/components/request/ReceiptModal';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest, ChatMessage, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
+import { getChatMessages, subscribeToChat, sendChatMessage } from '@/lib/chat-service';
 import {
   ArrowLeft,
   MapPin,
@@ -21,8 +22,19 @@ import {
   ShieldCheck,
   Star,
   Receipt,
+  Bell,
+  Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
+import {
+  initializeTrackingState,
+  subscribeToTracking,
+  formatDistance,
+  getPickupOtp,
+  acceptPickupInTracking,
+  LiveTrackingState,
+} from '@/lib/tracking-service';
+import { resolveCollectorName, resolveHouseholdName } from '@/lib/name-resolver';
 
 // Lazy-load map to avoid SSR issues
 const MapContainer = dynamic(() => import('@/components/map/MapContainer'), { ssr: false });
@@ -34,7 +46,7 @@ const DEMO_REQUEST: PickupRequest = {
   collector_id: 'collector-c201',
   collector: {
     id: 'collector-c201',
-    full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+    full_name: resolveCollectorName(),
     phone: '+91 98201 45892',
     role: 'collector',
     rating: 4.9,
@@ -97,12 +109,21 @@ export default function TrackPickupPage() {
 
   const [activeTab, setActiveTab] = useState<'track' | 'chat'>('track');
   const [request, setRequest] = useState<PickupRequest>(DEMO_REQUEST);
-  const [messages, setMessages] = useState<ChatMessage[]>(DEMO_MESSAGES);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => getChatMessages(requestId));
   const [inputText, setInputText] = useState('');
   const [chatId, setChatId] = useState<string | null>(null);
   const [currentUserId] = useState('user-h101');
   const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Subscribe to real-time chat sync across tabs & portals
+  useEffect(() => {
+    setMessages(getChatMessages(requestId));
+    const unsubscribe = subscribeToChat(requestId, (updatedMsgs) => {
+      setMessages(updatedMsgs);
+    });
+    return () => unsubscribe();
+  }, [requestId]);
 
   // Load request from Supabase or localStorage fallback
   useEffect(() => {
@@ -115,12 +136,14 @@ export default function TrackPickupPage() {
           if (!localMatch.collector) {
             localMatch.collector = {
               id: localMatch.collector_id || 'collector-c201',
-              full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+              full_name: resolveCollectorName(),
               phone: '+91 98201 45892',
               role: 'collector',
               rating: 4.9,
               completed_pickups: 126,
             };
+          } else {
+            localMatch.collector.full_name = resolveCollectorName(localMatch.collector.full_name);
           }
           setRequest(localMatch);
         }
@@ -129,22 +152,31 @@ export default function TrackPickupPage() {
       const supabase = createClient();
       const { data: req } = await supabase
         .from('pickup_requests')
-        .select('*, waste_items(*)')
+        .select('*, waste_items(*), household:profiles!household_id(id, full_name, phone, role), collector:profiles!collector_id(id, full_name, phone, role)')
         .eq('id', requestId)
         .single();
       if (req) {
-        if (!req.collector && req.collector_id) {
+        const normalized = {
+          ...req,
+          payment: req.payment || (req as any).payment_json || undefined,
+          contact_name: (req as any).household?.full_name || req.contact_name,
+          contact_phone: (req as any).household?.phone || req.contact_phone,
+        };
+        if (!normalized.collector && normalized.collector_id) {
           const { data: colProfile } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', req.collector_id)
+            .eq('id', normalized.collector_id)
             .maybeSingle();
           if (colProfile) {
-            req.collector = colProfile;
+            normalized.collector = {
+              ...colProfile,
+              full_name: resolveCollectorName(colProfile.full_name),
+            };
           } else {
-            req.collector = {
-              id: req.collector_id,
-              full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+            normalized.collector = {
+              id: normalized.collector_id,
+              full_name: resolveCollectorName(),
               phone: '+91 98201 45892',
               role: 'collector',
               rating: 4.9,
@@ -152,48 +184,86 @@ export default function TrackPickupPage() {
             };
           }
         }
-        setRequest(req as PickupRequest);
-      }
-
-      // Init chat
-      let { data: chat } = await supabase
-        .from('chats')
-        .select('*')
-        .eq('request_id', requestId)
-        .single();
-      if (!chat && req) {
-        const { data: newChat } = await supabase
-          .from('chats')
-          .insert({ request_id: requestId, household_id: req.household_id, collector_id: req.collector_id || 'demo' })
-          .select('*')
-          .single();
-        chat = newChat;
-      }
-      if (chat) {
-        setChatId(chat.id);
-        const { data: msgs } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('chat_id', chat.id)
-          .order('created_at', { ascending: true });
-        if (msgs && msgs.length > 0) setMessages(msgs as ChatMessage[]);
+        setRequest(normalized as PickupRequest);
       }
     }
     if (requestId !== 'demo') load();
+
+    const handleSync = () => {
+      if (requestId !== 'demo') load();
+    };
+    window.addEventListener('scrapmax:tracking_update', handleSync);
+    window.addEventListener('storage', handleSync);
+
+    return () => {
+      window.removeEventListener('scrapmax:tracking_update', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
   }, [requestId]);
 
-  // Realtime chat subscription
+  const [trackingState, setTrackingState] = useState<LiveTrackingState | null>(null);
+
+  // Initialize and subscribe to live tracking across tabs
   useEffect(() => {
-    if (!chatId) return;
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`chat:${chatId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` }, (payload) => {
-        setMessages((prev) => [...prev, payload.new as ChatMessage]);
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [chatId]);
+    let isMounted = true;
+
+    async function init() {
+      const lat = request.latitude || 19.076;
+      const lng = request.longitude || 72.8777;
+
+      const state = await initializeTrackingState({
+        requestId,
+        householdPos: [lat, lng],
+        householdName: resolveHouseholdName(request.household?.full_name || request.contact_name),
+        householdPhone: request.household?.phone || request.contact_phone || '+91 98201 54321',
+        householdAddress: request.address,
+        collectorName: resolveCollectorName(request.collector?.full_name),
+        collectorPhone: request.collector?.phone,
+      });
+
+      if (isMounted) {
+        setTrackingState(state);
+      }
+    }
+
+    init();
+
+    const unsubscribe = subscribeToTracking(requestId, (state) => {
+      if (isMounted) {
+        setTrackingState(state);
+        // If collector accepted in another tab
+        if ((state.status === 'accepted' || state.status === 'in_progress') && request.status === 'pending') {
+          setRequest((prev) => ({
+            ...prev,
+            status: state.status,
+            collector: {
+              id: 'collector-c201',
+              full_name: resolveCollectorName(state.collectorName || request.collector?.full_name),
+              phone: state.collectorPhone || request.collector?.phone || '+91 98201 45892',
+              role: 'collector',
+              rating: 4.9,
+              completed_pickups: 126,
+            },
+          }));
+        } else if (state.status === 'completed') {
+          setRequest((prev) => ({
+            ...prev,
+            status: 'completed',
+            payment: state.payment || prev.payment,
+          }));
+        } else if (state.status === 'in_progress' && request.status === 'accepted') {
+          setRequest((prev) => ({ ...prev, status: 'in_progress' }));
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [requestId, request.latitude, request.longitude, request.address, request.collector?.full_name, request.status]);
+
+  const pickupOtp = getPickupOtp(requestId);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -205,19 +275,7 @@ export default function TrackPickupPage() {
     const text = inputText.trim();
     setInputText('');
 
-    const optimistic: ChatMessage = {
-      id: String(Date.now()),
-      chat_id: chatId || 'demo',
-      sender_id: currentUserId,
-      text,
-      created_at: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimistic]);
-
-    if (chatId) {
-      const supabase = createClient();
-      await supabase.from('messages').insert({ chat_id: chatId, sender_id: currentUserId, text });
-    }
+    await sendChatMessage(requestId, currentUserId, text, 'household');
   };
 
   const currentStatusIdx = STATUS_ORDER.indexOf(request.status);
@@ -276,24 +334,232 @@ export default function TrackPickupPage() {
         {/* ── TRACK TAB ── */}
         {activeTab === 'track' && (
           <div className="space-y-4">
-            {/* Map */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden h-56 sm:h-72">
+
+            {/* 1. WAITING FOR COLLECTOR STATE (When Pending) */}
+            {request.status === 'pending' && (
+              <div className="bg-white rounded-3xl p-6 border-2 border-emerald-100 shadow-sm space-y-4 text-center relative overflow-hidden">
+                <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-emerald-100 animate-ping opacity-75" />
+                  <span className="absolute inset-2 rounded-full bg-emerald-200 animate-pulse opacity-50" />
+                  <div className="relative w-14 h-14 rounded-2xl bg-[#136B3B] text-white flex items-center justify-center shadow-md text-2xl">
+                    📡
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-800 border border-amber-200">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <span>Searching for Nearby Collectors...</span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-[#191C1E]">
+                    Waiting for a Collector to Accept
+                  </h3>
+                  <p className="text-xs text-[#526056] max-w-sm mx-auto leading-relaxed">
+                    Your scrap pickup request has been broadcasted to verified collectors in your locality. Once accepted, their name, contact phone, live map route, and distance will appear here instantly.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 2. LIVE DOORSTEP DELIVERY TRACKING BANNER (When Accepted/In-Progress) */}
+            {request.status !== 'pending' && (
+              <div className="bg-white rounded-3xl p-5 border border-emerald-100 shadow-sm space-y-3 relative overflow-hidden">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-2xl shrink-0 shadow-xs ${
+                        request.status === 'completed'
+                          ? 'bg-emerald-600 text-white'
+                          : trackingState?.hasArrived
+                          ? 'bg-emerald-500 text-white animate-bounce'
+                          : trackingState?.isNearDoorstep
+                          ? 'bg-amber-500 text-white animate-pulse'
+                          : 'bg-[#136B3B] text-white'
+                      }`}
+                    >
+                      {request.status === 'completed' ? '🎉' : trackingState?.hasArrived ? '🚪' : '🚚'}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#136B3B]">
+                          {request.status === 'completed'
+                            ? 'Pickup Completed'
+                            : trackingState?.hasArrived
+                            ? 'Arrived at Doorstep'
+                            : trackingState?.isNearDoorstep
+                            ? 'Arriving at Your Door'
+                            : 'Collector En Route'}
+                        </span>
+                        {request.status !== 'completed' && (
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                        )}
+                      </div>
+                      <h2 className="text-base sm:text-lg font-black text-[#191C1E] mt-0.5">
+                        {request.status === 'completed'
+                          ? 'Deal Done & Payment Credited!'
+                          : trackingState?.hasArrived
+                          ? 'Collector is at your doorstep!'
+                          : trackingState?.isNearDoorstep
+                          ? 'Near your doorstep (< 1 min away)!'
+                          : `Arriving in ~${trackingState?.etaMinutes || 5} mins`}
+                      </h2>
+                      <p className="text-xs text-[#526056] mt-0.5">
+                        {request.status === 'completed'
+                          ? `₹${request.payment?.totalAmount || Math.round((request.total_estimated_weight_kg || 5) * 18)} received via ${request.payment?.method?.toUpperCase() || 'UPI'}.`
+                          : trackingState?.hasArrived
+                          ? 'Please open the door with your scrap ready for honest weighing.'
+                          : `${formatDistance(trackingState?.distanceMeters || 1400)} away from your home.`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Top Status Pill */}
+                  <div className="bg-[#E6F4EA] border border-[#A6D5B8] px-3 py-1.5 rounded-2xl text-center shrink-0">
+                    <p className="text-[10px] font-bold text-[#526056] uppercase tracking-wider">Distance</p>
+                    <p className="text-sm font-black text-[#136B3B]">
+                      {request.status === 'completed'
+                        ? 'Done'
+                        : trackingState?.hasArrived
+                        ? '0 m'
+                        : formatDistance(trackingState?.distanceMeters || 1400)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Animated Delivery Journey Progress Bar */}
+                <div className="pt-2">
+                  <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden relative">
+                    <div
+                      className="h-full bg-gradient-to-r from-emerald-500 via-[#136B3B] to-emerald-600 rounded-full transition-all duration-700"
+                      style={{
+                        width:
+                          request.status === 'completed'
+                            ? '100%'
+                            : trackingState?.hasArrived
+                            ? '95%'
+                            : trackingState?.isNearDoorstep
+                            ? '75%'
+                            : '45%',
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[10px] font-bold text-gray-400 mt-1.5 px-0.5">
+                    <span className="text-[#136B3B]">Assigned</span>
+                    <span className={trackingState?.distanceMeters ? 'text-[#136B3B]' : ''}>On The Way</span>
+                    <span className={trackingState?.isNearDoorstep || trackingState?.hasArrived ? 'text-[#136B3B]' : ''}>Near Doorstep</span>
+                    <span className={request.status === 'completed' ? 'text-[#136B3B]' : ''}>Paid</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3. PROMINENT DOORSTEP HANDOVER OTP CARD */}
+            {request.status !== 'pending' && request.status !== 'completed' && (
+              <div className="bg-gradient-to-r from-[#136B3B] to-emerald-700 text-white rounded-3xl p-5 shadow-sm space-y-3 relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🔐</span>
+                    <div>
+                      <h4 className="font-extrabold text-xs sm:text-sm uppercase tracking-wider text-emerald-100">
+                        Doorstep Handover OTP
+                      </h4>
+                      <p className="text-[11px] text-emerald-200">
+                        Share this 4-digit code with collector when they arrive
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold bg-white/20 px-2.5 py-0.5 rounded-full text-white border border-white/30">
+                    Security PIN
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-center gap-3 pt-1">
+                  {pickupOtp.split('').map((digit, idx) => (
+                    <div
+                      key={idx}
+                      className="w-12 h-14 bg-white text-[#136B3B] font-black font-mono text-2xl rounded-2xl flex items-center justify-center shadow-md border-2 border-white/50"
+                    >
+                      {digit}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 4. NEAR DOORSTEP PROXIMITY ALERT BOX */}
+            {request.status !== 'completed' && (trackingState?.isNearDoorstep || trackingState?.hasArrived) && (
+              <div className="p-4 rounded-3xl bg-amber-50 border-2 border-amber-300 shadow-md flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl animate-bounce">🔔</span>
+                  <div>
+                    <h4 className="text-sm font-black text-amber-950">
+                      {trackingState?.hasArrived ? 'Collector is right outside your door!' : 'Collector is near your doorstep!'}
+                    </h4>
+                    <p className="text-xs text-amber-900 mt-0.5">
+                      {request.collector?.full_name || 'Assigned Collector'} has reached your location. Please keep recyclables handy.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href={`tel:${(request.collector?.phone || '+919820145892').replace(/\s+/g, '')}`}
+                  className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shrink-0 transition shadow-xs"
+                >
+                  Call
+                </a>
+              </div>
+            )}
+
+            {/* 5. INTERACTIVE MAP */}
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden h-64 sm:h-80 relative">
               <MapContainer
-                center={[request.latitude || 12.9716, request.longitude || 77.5946]}
+                center={[request.latitude || 19.076, request.longitude || 72.8777]}
                 zoom={14}
                 requests={[request]}
+                collectorPos={request.status !== 'pending' ? trackingState?.collectorPos : null}
+                originPos={request.status !== 'pending' ? trackingState?.collectorOriginPos : undefined}
+                originLabel={trackingState?.collectorOriginAddress || 'Collector Starting Hub'}
+                routeCoordinates={request.status !== 'pending' ? (trackingState?.routeCoordinates || []) : []}
+                destinationPos={[request.latitude || 19.076, request.longitude || 72.8777]}
+                destinationLabel="Your Doorstep"
+                fitBoundsToRoute={request.status !== 'pending'}
+                useTruckIconForCollector={true}
                 className="h-full w-full"
               />
             </div>
 
-            {/* Address */}
-            <div className="flex items-center gap-2.5 bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm">
-              <div className="w-9 h-9 rounded-full bg-[#EAF5EE] flex items-center justify-center flex-shrink-0">
+            {/* Collector Dispatch Origin Information */}
+            {request.status !== 'pending' && (trackingState?.collectorOriginAddress || trackingState?.collectorOriginPos) && (
+              <div className="flex items-center gap-2.5 bg-indigo-50/70 border border-indigo-100 rounded-2xl p-3.5 shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                  <span className="text-base">🏢</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-900">
+                      Dispatched From Operating Hub
+                    </p>
+                    <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+                      Origin Point
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm font-bold text-gray-800 truncate">
+                    {trackingState?.collectorOriginAddress || 'Local Regional Collector Hub'}
+                  </p>
+                  <p className="text-[11px] text-indigo-700/80 font-medium">
+                    Route started towards your doorstep from this hub
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Doorstep Address */}
+            <div className="flex items-start gap-2.5 bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm">
+              <div className="w-9 h-9 rounded-full bg-[#EAF5EE] flex items-center justify-center flex-shrink-0 mt-0.5">
                 <MapPin className="w-4 h-4 text-[#136B3B]" />
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-[#526056]">Pickup address</p>
-                <p className="text-sm font-semibold text-[#191C1E] truncate">{request.address}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-[#526056]">Pickup Doorstep Address</p>
+                <p className="text-sm font-semibold text-[#191C1E] leading-relaxed break-words mt-0.5">{request.address}</p>
               </div>
             </div>
 
@@ -319,12 +585,12 @@ export default function TrackPickupPage() {
                 <div className="flex items-center justify-between gap-3 pt-0.5">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative w-12 h-12 rounded-2xl bg-[#E6F4EA] border border-[#A6D5B8] flex items-center justify-center text-xl font-black text-[#136B3B] shrink-0 shadow-2xs">
-                      {(request.collector?.full_name || 'Ramesh Kumar').charAt(0)}
+                      {(resolveCollectorName(request.collector?.full_name) || 'C').charAt(0)}
                       <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-extrabold text-sm text-[#191C1E] truncate">
-                        {request.collector?.full_name || 'Ramesh Kumar (Verified Kabadiwala)'}
+                        {resolveCollectorName(request.collector?.full_name) || 'Collector Partner'}
                       </h3>
                       <p className="text-xs font-mono font-bold text-[#136B3B] mt-0.5 flex items-center gap-1">
                         <Phone className="w-3 h-3 text-[#136B3B]" />
@@ -474,11 +740,11 @@ export default function TrackPickupPage() {
             {/* Collector info strip */}
             <div className="flex items-center gap-3 bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm mb-3">
               <div className="w-10 h-10 rounded-full bg-[#EAF5EE] flex items-center justify-center text-xl flex-shrink-0 font-bold text-[#136B3B]">
-                {(request.collector?.full_name || 'Ramesh Kumar').charAt(0)}
+                {(resolveCollectorName(request.collector?.full_name) || 'C').charAt(0)}
               </div>
               <div>
                 <p className="text-sm font-bold text-[#191C1E]">
-                  {request.collector?.full_name || 'Ramesh Kumar (Verified Kabadiwala)'}
+                  {resolveCollectorName(request.collector?.full_name) || 'Collector Partner'}
                 </p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />

@@ -1,52 +1,49 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/common/Navbar';
 import {
   Recycle,
   Truck,
-  MapPin,
-  Sparkles,
-  Wallet,
+  TrendingUp,
+  ShieldCheck,
   Leaf,
   Factory,
+  Shield,
   ArrowRight,
-  ShieldCheck,
-  TrendingUp,
 } from 'lucide-react';
 
-export default function LandingPage() {
+export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex-1 flex flex-col justify-center items-center text-center">
+      <section className="flex-1 flex flex-col items-center justify-center text-center px-4 pt-12 pb-16 max-w-5xl mx-auto w-full">
         
-        {/* Soft botanical ambient blur */}
-        <div className="absolute top-12 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#E6F4EA]/80 rounded-full blur-3xl -z-10 pointer-events-none" />
-
-        {/* Pill Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E6F4EA] border border-[#A6D5B8] text-[#136B3B] text-xs font-bold mb-6 shadow-xs">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Two-Sided Circular Scrap &amp; Recycling Marketplace</span>
+        {/* Top Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E6F4EA] border border-[#A6D5B8] text-[#136B3B] text-xs font-bold mb-6">
+          <span className="w-2 h-2 rounded-full bg-[#136B3B] animate-pulse"></span>
+          <span>Pan-India Two-Sided Scrap &amp; Circular Recycling Marketplace</span>
         </div>
 
-        {/* Title */}
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#191C1E] max-w-4xl leading-tight sm:leading-tight">
-          Bridge Scrap Supply to Industrial Demand with{' '}
-          <span className="text-[#136B3B]">ScrapMax</span>
+        {/* Main Headline */}
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#191C1E] max-w-3xl leading-[1.15]">
+          Connecting Scrap Collectors with{' '}
+          <span className="text-[#136B3B]">Authorized Industrial Recyclers</span>
         </h1>
 
         {/* Subtitle */}
-        <p className="mt-5 text-base sm:text-lg text-[#526056] max-w-2xl leading-relaxed">
+        <p className="mt-5 text-sm sm:text-base text-[#526056] max-w-2xl leading-relaxed">
           From doorstep citizen scrap pickups to B2B multi-supplier aggregation for verified recycling facilities — transparent pricing, live GPS logistics, and circular chain-of-custody traceability.
         </p>
 
-        {/* 3-Sided Portal Navigation CTAs */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-2xl">
+        {/* 4-Role Navigation CTAs */}
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full max-w-3xl">
           <Link
             href="/register?role=household"
-            className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold text-xs sm:text-sm shadow-sm transition touch-feedback"
+            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold text-xs sm:text-sm shadow-sm transition touch-feedback"
           >
             <Recycle className="w-4 h-4" />
             <span>Citizen / Sell Scrap</span>
@@ -54,7 +51,7 @@ export default function LandingPage() {
 
           <Link
             href="/register?role=collector"
-            className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-white hover:bg-emerald-50 text-[#191C1E] border border-[#DDE3EA] font-bold text-xs sm:text-sm shadow-xs transition touch-feedback"
+            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-white hover:bg-emerald-50 text-[#191C1E] border border-[#DDE3EA] font-bold text-xs sm:text-sm shadow-xs transition touch-feedback"
           >
             <Truck className="w-4 h-4 text-[#136B3B]" />
             <span>Collector Marketplace</span>
@@ -62,10 +59,18 @@ export default function LandingPage() {
 
           <Link
             href="/register?role=recycler"
-            className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-white hover:bg-amber-50 text-amber-950 border border-amber-200 font-bold text-xs sm:text-sm shadow-xs transition touch-feedback"
+            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-white hover:bg-amber-50 text-amber-950 border border-amber-200 font-bold text-xs sm:text-sm shadow-xs transition touch-feedback"
           >
             <Factory className="w-4 h-4 text-amber-700" />
             <span>Recycler B2B Portal</span>
+          </Link>
+
+          <Link
+            href="/admin/login"
+            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-xs sm:text-sm shadow-xs transition touch-feedback"
+          >
+            <Shield className="w-4 h-4 text-purple-700" />
+            <span>Admin Portal</span>
           </Link>
         </div>
 
@@ -108,7 +113,7 @@ export default function LandingPage() {
         </div>
 
         {/* Feature Cards Grid */}
-        <div className="mt-14 grid grid-cols-1 sm:grid-cols-3 gap-5 w-full text-left max-w-5xl">
+        <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full text-left max-w-6xl">
           
           <div className="p-6 rounded-2xl bg-white border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md transition">
             <div className="w-11 h-11 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#136B3B] mb-4">
@@ -140,13 +145,41 @@ export default function LandingPage() {
             </p>
           </div>
 
+          <div className="p-6 rounded-2xl bg-white border border-purple-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md transition">
+            <div className="w-11 h-11 rounded-full bg-purple-50 flex items-center justify-center text-purple-700 mb-4">
+              <Shield className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold text-[#191C1E]">Admin Control Hub</h3>
+            <p className="mt-2 text-xs text-[#6B7280] leading-relaxed">
+              Enterprise moderation, user lifecycle management, dispute resolution, rate tuning, and live circular waste analytics.
+            </p>
+          </div>
+
         </div>
 
       </section>
 
       {/* Footer */}
-      <footer className="py-6 border-t border-gray-200 bg-white text-center text-xs text-[#6B7280]">
-        &copy; {new Date().getFullYear()} ScrapMax — Circular Scrap &amp; Recycling Marketplace.
+      <footer className="py-8 border-t border-gray-200 bg-white text-center text-xs text-[#6B7280] space-y-3">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-[#526056]">
+          <Link href="/register?role=household" className="hover:text-[#136B3B] transition">Household Portal</Link>
+          <span>•</span>
+          <Link href="/register?role=collector" className="hover:text-[#136B3B] transition">Collector Portal</Link>
+          <span>•</span>
+          <Link href="/register?role=recycler" className="hover:text-[#136B3B] transition">Recycler Portal</Link>
+          <span>•</span>
+          <Link href="/directory" className="hover:text-[#136B3B] transition">Directory</Link>
+          <span>•</span>
+          <Link href="/stores" className="hover:text-[#136B3B] transition">Store Locator</Link>
+          <span>•</span>
+          <Link href="/privacy" className="hover:text-[#136B3B] transition">Privacy Policy</Link>
+          <span>•</span>
+          <Link href="/admin/login" className="hover:text-purple-700 transition inline-flex items-center gap-1 font-bold text-purple-700">
+            <Shield className="w-3.5 h-3.5" />
+            Admin Portal
+          </Link>
+        </div>
+        <p>&copy; {new Date().getFullYear()} ScrapMax — Circular Scrap &amp; Recycling Marketplace.</p>
       </footer>
     </div>
   );

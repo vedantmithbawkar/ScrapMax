@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslation } from '@/lib/i18n';
 import { UserRole } from '@/types';
 import {
   Home,
@@ -17,6 +18,12 @@ import {
   PlusCircle,
   Inbox,
   QrCode,
+  MessageSquare,
+  Users,
+  ClipboardList,
+  Settings,
+  Store,
+  History,
 } from 'lucide-react';
 
 interface BottomNavProps {
@@ -25,6 +32,9 @@ interface BottomNavProps {
 
 export default function BottomNav({ role = 'household' }: BottomNavProps) {
   const pathname = usePathname();
+  const { t } = useTranslation();
+
+  const isAdmin = role === 'admin' || (pathname.startsWith('/admin') && pathname !== '/admin/login');
 
   let tabs: Array<{
     label: string;
@@ -33,36 +43,89 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
     isActive: boolean;
   }> = [];
 
-  if (role === 'recycler') {
+  if (isAdmin) {
+    tabs = [
+      {
+        label: 'Dashboard',
+        href: '/admin',
+        icon: (active: boolean) => (
+          <Layers className={`w-5 h-5 ${active ? 'text-purple-700' : 'text-[#6B7280]'}`} />
+        ),
+        isActive: pathname === '/admin',
+      },
+      {
+        label: 'Users',
+        href: '/admin/users',
+        icon: (active: boolean) => (
+          <Users className={`w-5 h-5 ${active ? 'text-purple-700' : 'text-[#6B7280]'}`} />
+        ),
+        isActive: pathname === '/admin/users',
+      },
+      {
+        label: 'Pickups',
+        href: '/admin/pickups',
+        icon: (active: boolean) => (
+          <Truck className={`w-5 h-5 ${active ? 'text-purple-700' : 'text-[#6B7280]'}`} />
+        ),
+        isActive: pathname === '/admin/pickups',
+      },
+      {
+        label: 'Reports',
+        href: '/admin/reports',
+        icon: (active: boolean) => (
+          <ClipboardList className={`w-5 h-5 ${active ? 'text-purple-700' : 'text-[#6B7280]'}`} />
+        ),
+        isActive: pathname.startsWith('/admin/reports'),
+      },
+      {
+        label: 'Settings',
+        href: '/admin/settings',
+        icon: (active: boolean) => (
+          <Settings className={`w-5 h-5 ${active ? 'text-purple-700' : 'text-[#6B7280]'}`} />
+        ),
+        isActive: pathname === '/admin/settings',
+      },
+    ];
+  } else if (role === 'recycler') {
     tabs = [
       {
         label: 'Dashboard',
         href: '/recycler',
-        icon: (active: boolean) => <Layers className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
+        icon: (active: boolean) => (
+          <Layers className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
         isActive: pathname === '/recycler',
       },
       {
         label: 'Demands',
         href: '/recycler/requirements',
-        icon: (active: boolean) => <PlusCircle className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
+        icon: (active: boolean) => (
+          <PlusCircle className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
         isActive: pathname.startsWith('/recycler/requirements'),
       },
       {
         label: 'Offers',
         href: '/recycler/offers',
-        icon: (active: boolean) => <Inbox className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
+        icon: (active: boolean) => (
+          <Inbox className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
         isActive: pathname === '/recycler/offers',
       },
       {
         label: 'Traceability',
         href: '/recycler/traceability',
-        icon: (active: boolean) => <QrCode className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
+        icon: (active: boolean) => (
+          <QrCode className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
         isActive: pathname === '/recycler/traceability',
       },
       {
         label: 'Facility',
         href: '/recycler/profile',
-        icon: (active: boolean) => <Factory className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
+        icon: (active: boolean) => (
+          <Factory className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
         isActive: pathname === '/recycler/profile',
       },
     ];
@@ -71,80 +134,101 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
       {
         label: 'Pickups',
         href: '/collector',
-        icon: (active: boolean) => <Truck className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
+        icon: (active: boolean) => (
+          <Truck className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
         isActive: pathname === '/collector',
       },
       {
         label: 'Find Buyers',
         href: '/collector/find-buyers',
-        icon: (active: boolean) => <Sparkles className={`w-5 h-5 ${active ? 'text-amber-600' : 'text-[#6B7280]'}`} />,
+        icon: (active: boolean) => (
+          <Sparkles className={`w-5 h-5 ${active ? 'text-amber-600' : 'text-[#6B7280]'}`} />
+        ),
         isActive: pathname === '/collector/find-buyers',
-      },
-      {
-        label: 'Demands',
-        href: '/collector/demand-board',
-        icon: (active: boolean) => <Layers className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
-        isActive: pathname === '/collector/demand-board',
       },
       {
         label: 'My Offers',
         href: '/collector/offers',
-        icon: (active: boolean) => <FileCheck2 className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
+        icon: (active: boolean) => (
+          <FileCheck2 className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
         isActive: pathname === '/collector/offers',
       },
       {
         label: 'Map Route',
         href: '/collector/map',
-        icon: (active: boolean) => <MapPin className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
+        icon: (active: boolean) => (
+          <MapPin className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
         isActive: pathname === '/collector/map',
       },
-    ];
-  } else if (role === 'admin') {
-    tabs = [
       {
-        label: 'Verification',
-        href: '/admin',
-        icon: (active: boolean) => <ShieldCheck className={`w-5 h-5 ${active ? 'text-purple-700' : 'text-[#6B7280]'}`} />,
-        isActive: pathname === '/admin',
+        label: 'Chat',
+        href: '/collector/chat',
+        icon: (active: boolean) => (
+          <MessageSquare className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
+        isActive: pathname.startsWith('/collector/chat'),
       },
       {
-        label: 'Directory',
-        href: '/directory',
-        icon: (active: boolean) => <Factory className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
-        isActive: pathname === '/directory',
+        label: 'Profile',
+        href: '/collector/profile',
+        icon: (active: boolean) => (
+          <User className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
+        isActive: pathname === '/collector/profile',
       },
     ];
   } else {
     // Household / Citizen tabs
     tabs = [
       {
-        label: 'Home',
+        label: t('navHome'),
         href: '/household',
-        icon: (active: boolean) => <Home className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
+        icon: (active: boolean) => (
+          <Home className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
         isActive: pathname === '/household',
       },
       {
-        label: 'Request',
+        label: t('navPickup'),
         href: '/household/request-pickup',
-        icon: (active: boolean) => <PlusCircle className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
+        icon: (active: boolean) => (
+          <PlusCircle className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
         isActive: pathname === '/household/request-pickup',
       },
       {
-        label: 'Track',
+        label: t('navTrack'),
         href: '/household/track',
-        icon: (active: boolean) => <MapPin className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
+        icon: (active: boolean) => (
+          <MapPin className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
         isActive: pathname.startsWith('/household/track'),
       },
       {
-        label: 'Recyclers',
-        href: '/directory',
-        icon: (active: boolean) => <Factory className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
-        isActive: pathname === '/directory',
+        label: 'Stores',
+        href: '/stores',
+        icon: (active: boolean) => (
+          <Store className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
+        isActive: pathname === '/stores',
       },
       {
-        label: 'Profile',
+        label: t('navHistory'),
+        href: '/household/history',
+        icon: (active: boolean) => (
+          <History className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
+        isActive: pathname === '/household/history',
+      },
+      {
+        label: t('navProfile'),
         href: '/household/profile',
-        icon: (active: boolean) => <User className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />,
+        icon: (active: boolean) => (
+          <User className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+        ),
         isActive: pathname === '/household/profile',
       },
     ];
@@ -161,10 +245,10 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
             <Link
               key={tab.label}
               href={tab.href}
-              className="flex flex-col items-center group py-0.5 min-w-[54px] touch-feedback"
+              className="flex flex-col items-center group py-0.5 min-w-[50px] touch-feedback"
             >
               <div
-                className={`w-12 h-7 rounded-full flex items-center justify-center transition-all ${
+                className={`w-11 h-7 rounded-full flex items-center justify-center transition-all ${
                   tab.isActive ? 'bg-[#EAE6F8]' : 'group-hover:bg-[#F2F4F6]'
                 }`}
               >

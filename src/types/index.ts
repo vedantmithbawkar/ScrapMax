@@ -17,6 +17,9 @@ export interface UserProfile {
   preferred_pickup_slot?: string;
   rating?: number;
   completed_pickups?: number;
+  aadhaar_number?: string;
+  aadhaar_verified?: boolean;
+  aadhaar_verified_at?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -43,6 +46,9 @@ export interface WasteItem {
   request_id?: string;
   category: WasteCategory;
   approx_weight_kg: number;
+  actual_weight_kg?: number;
+  price_per_kg?: number;
+  total_price?: number;
   photos?: string[];
   notes?: string;
   created_at?: string;
@@ -65,6 +71,20 @@ export interface PaymentDetails {
   items: VerifiedWasteItem[];
   upiVpa?: string;
   cashGivenBy?: string;
+  paidBy?: string;
+  receivedBy?: string;
+  bankCreditNote?: string;
+}
+
+export interface PaymentJson {
+  amount: number;
+  method: 'upi' | 'cash';
+  txId?: string;
+  timestamp: string;
+  paidBy?: string;
+  receivedBy?: string;
+  upiApp?: string;
+  bankCreditNote?: string;
 }
 
 export interface PickupRequest {
@@ -78,8 +98,11 @@ export interface PickupRequest {
   scheduled_date: string;
   notes?: string;
   total_estimated_weight_kg?: number;
+  contact_name?: string;
+  contact_phone?: string;
   photos?: string[];
   payment?: PaymentDetails;
+  payment_json?: PaymentJson | null;
   created_at: string;
   updated_at: string;
   // Joined fields
@@ -147,44 +170,144 @@ export const WASTE_CATEGORY_LABELS: Record<WasteCategory, { label: string; icon:
   ORGANIC: { label: 'Organic / Compost', icon: '🌱', color: 'bg-green-100 text-green-800 border-green-300', estRatePerKg: '₹2 - ₹5' },
 };
 
-export type ReportCategory =
+// ========================================================
+// REPORT SYSTEM TYPES
+// ========================================================
+
+export type ReportType = 'transaction' | 'platform';
+
+export type ReportStatus =
+  | 'open'
+  | 'submitted'
+  | 'under_review'
+  | 'investigating'
+  | 'resolution_proposed'
+  | 'resolved'
+  | 'closed';
+
+export type ReportPriority = 'low' | 'normal' | 'high' | 'critical';
+
+// ── Transaction / Pickup-specific categories ──────────────────────────────
+export type TransactionReportCategory =
   | 'no_show'
   | 'wrong_price'
   | 'wrong_weight'
   | 'payment_issue'
   | 'behaviour'
+  | 'pickup_problem'
+  | 'scrap_handling'
   | 'other';
 
-export type ReportStatus = 'open' | 'under_review' | 'resolved';
+// ── General platform categories ───────────────────────────────────────────
+export type PlatformReportCategory =
+  | 'app_bug'
+  | 'account_login'
+  | 'notification'
+  | 'chat_problem'
+  | 'location_map'
+  | 'general_payment'
+  | 'feature_not_working'
+  | 'suggestion'
+  | 'other_problem';
+
+export type ReportCategory = TransactionReportCategory | PlatformReportCategory;
 
 export interface Report {
   id: string;
-  request_id: string;
-  reporter_id?: string;
+  report_number: string;
+  reporter_id: string;
+  report_type: ReportType;
   category: ReportCategory;
+  subject?: string;
   description?: string;
+  evidence_urls?: string[];
   status: ReportStatus;
+  priority: ReportPriority;
+  // transaction-specific
+  pickup_id?: string | null;
+  collector_id?: string | null;
+  // admin
+  admin_notes?: string | null;
+  resolution?: string | null;
+  resolved_at?: string | null;
   created_at: string;
+  updated_at: string;
+  // joined
+  reporter?: UserProfile;
+  pickup?: PickupRequest;
 }
 
-export const REPORT_CATEGORIES: Record<
-  ReportCategory,
+export interface ReportEvent {
+  id: string;
+  report_id: string;
+  actor_id?: string | null;
+  event_type: 'status_change' | 'priority_change' | 'note_added' | 'resolved' | 'created';
+  old_value?: string | null;
+  new_value?: string | null;
+  note?: string | null;
+  created_at: string;
+  actor?: UserProfile;
+}
+
+export const TRANSACTION_REPORT_CATEGORIES: Record<
+  TransactionReportCategory,
   { label: string; icon: string; description: string }
 > = {
-  no_show:       { label: "Collector didn't arrive", icon: '🚫', description: 'The collector never showed up at the scheduled time.' },
-  wrong_price:   { label: 'Wrong price quoted',      icon: '💰', description: 'The price offered was lower than expected.' },
-  wrong_weight:  { label: 'Wrong weight measured',   icon: '⚖️', description: 'The weight reading seemed inaccurate.' },
-  payment_issue: { label: 'Payment problem',         icon: '💳', description: 'There was an issue with the payment.' },
-  behaviour:     { label: 'Behaviour issue',         icon: '😠', description: 'The collector behaved inappropriately.' },
-  other:         { label: 'Other',                   icon: '📝', description: 'Something else went wrong.' },
+  no_show:         { label: "Collector didn't arrive", icon: '🚫', description: 'The collector never showed up at the scheduled time.' },
+  wrong_price:     { label: 'Wrong price quoted',      icon: '💰', description: 'The price offered was lower than agreed or expected.' },
+  wrong_weight:    { label: 'Wrong weight measured',   icon: '⚖️', description: 'The weight reading seemed inaccurate or unfair.' },
+  payment_issue:   { label: 'Payment problem',         icon: '💳', description: 'There was an issue with the payment received.' },
+  behaviour:       { label: 'Behaviour issue',         icon: '😠', description: 'The collector behaved inappropriately or rudely.' },
+  pickup_problem:  { label: 'Pickup/Collection problem', icon: '🚚', description: 'There was a problem during the pickup process.' },
+  scrap_handling:  { label: 'Scrap handling problem',  icon: '📦', description: 'The scrap was mishandled or improperly sorted.' },
+  other:           { label: 'Other',                   icon: '❓', description: 'Something else went wrong with this pickup.' },
 };
 
-export const STATUS_LABELS: Record<PickupStatus, { label: string; badgeColor: string }> = {
-  pending: { label: 'Pending Collector', badgeColor: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
-  accepted: { label: 'Collector Assigned', badgeColor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
-  in_progress: { label: 'Pickup In Progress', badgeColor: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' },
-  completed: { label: 'Completed & Paid', badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
-  cancelled: { label: 'Cancelled', badgeColor: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400' },
+export const PLATFORM_REPORT_CATEGORIES: Record<
+  PlatformReportCategory,
+  { label: string; icon: string; description: string }
+> = {
+  app_bug:             { label: 'App Bug / Technical Problem',  icon: '🐛', description: 'The app crashed, froze, or has a technical glitch.' },
+  account_login:       { label: 'Account / Login Problem',      icon: '🔐', description: 'Cannot log in, account locked, or profile issue.' },
+  notification:        { label: 'Notification Problem',         icon: '🔔', description: 'Notifications not working or showing incorrectly.' },
+  chat_problem:        { label: 'Chat Problem',                 icon: '💬', description: 'Chat is not loading or messages not sending.' },
+  location_map:        { label: 'Location / Map Problem',       icon: '📍', description: 'Map is inaccurate or location not detected.' },
+  general_payment:     { label: 'General Payment Problem',      icon: '💰', description: 'Payment-related issue not tied to a specific pickup.' },
+  feature_not_working: { label: 'Feature Not Working',          icon: '⚙️', description: 'A feature of the app is broken or not available.' },
+  suggestion:          { label: 'Suggestion / Feedback',        icon: '💡', description: 'I have a suggestion to improve ScrapMax.' },
+  other_problem:       { label: 'Other Problem',                icon: '🚨', description: 'Something else is wrong with the platform.' },
+};
+
+export const REPORT_STATUS_CONFIG: Record<
+  ReportStatus,
+  { label: string; color: string; dot: string }
+> = {
+  submitted:           { label: 'Submitted',           color: 'bg-blue-100 text-blue-700',      dot: 'bg-blue-500' },
+  open:                { label: 'Open',                color: 'bg-red-100 text-red-700',        dot: 'bg-red-500' },
+  under_review:        { label: 'Under Review',        color: 'bg-amber-100 text-amber-700',    dot: 'bg-amber-500' },
+  investigating:       { label: 'Investigating',       color: 'bg-blue-100 text-blue-700',      dot: 'bg-blue-500' },
+  resolution_proposed: { label: 'Resolution Proposed', color: 'bg-purple-100 text-purple-700',  dot: 'bg-purple-500' },
+  resolved:            { label: 'Resolved',            color: 'bg-emerald-100 text-emerald-700',dot: 'bg-emerald-500' },
+  closed:              { label: 'Closed',              color: 'bg-gray-100 text-gray-600',      dot: 'bg-gray-400' },
+};
+
+export const REPORT_PRIORITY_CONFIG: Record<
+  ReportPriority,
+  { label: string; color: string }
+> = {
+  low:      { label: 'Low',      color: 'bg-gray-100 text-gray-600' },
+  normal:   { label: 'Normal',   color: 'bg-blue-100 text-blue-700' },
+  high:     { label: 'High',     color: 'bg-amber-100 text-amber-700' },
+  critical: { label: 'Critical', color: 'bg-red-100 text-red-700' },
+};
+
+
+export const STATUS_LABELS: Record<PickupStatus, { label: string; badgeColor: string; color: string }> = {
+  pending:     { label: 'Pending Collector',   badgeColor: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',     color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
+  accepted:    { label: 'Collector Assigned',  badgeColor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',         color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
+  in_progress: { label: 'Pickup In Progress',  badgeColor: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' },
+  completed:   { label: 'Completed & Paid',    badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
+  cancelled:   { label: 'Cancelled',           badgeColor: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',           color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400' },
 };
 
 export type ReviewerType = 'customer' | 'kabadiwala' | 'collector';
