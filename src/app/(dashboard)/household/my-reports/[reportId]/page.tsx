@@ -80,8 +80,8 @@ export default function ReportDetailPage() {
   }
 
   const catInfo = getCategoryInfo(report);
-  const statusCfg = REPORT_STATUS_CONFIG[report.status];
-  const priorityCfg = REPORT_PRIORITY_CONFIG[report.priority];
+  const statusCfg = (report.status && REPORT_STATUS_CONFIG[report.status]) || REPORT_STATUS_CONFIG['open'];
+  const priorityCfg = (report.priority && REPORT_PRIORITY_CONFIG[report.priority]) || REPORT_PRIORITY_CONFIG['normal'];
   const isPickup = report.report_type === 'transaction';
 
   return (

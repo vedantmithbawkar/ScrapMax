@@ -161,7 +161,7 @@ export default function MyReportsPage() {
         {!loading && filtered.length > 0 && (
           <div className="space-y-3">
             {filtered.map((report) => {
-              const statusCfg = REPORT_STATUS_CONFIG[report.status];
+              const statusCfg = REPORT_STATUS_CONFIG[report.status] || REPORT_STATUS_CONFIG['open'];
               const isPickup = report.report_type === 'transaction';
               return (
                 <Link
