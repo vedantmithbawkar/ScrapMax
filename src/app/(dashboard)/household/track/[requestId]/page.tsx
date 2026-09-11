@@ -602,12 +602,12 @@ export default function TrackPickupPage() {
                 <div className="flex items-center justify-between gap-3 pt-0.5">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative w-12 h-12 rounded-2xl bg-[#E6F4EA] border border-[#A6D5B8] flex items-center justify-center text-xl font-black text-[#136B3B] shrink-0 shadow-2xs">
-                      {(resolveCollectorName(request.collector?.full_name)).charAt(0)}
+                      {(resolveCollectorName(request.collector?.full_name) || 'C').charAt(0)}
                       <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-extrabold text-sm text-[#191C1E] truncate">
-                        {resolveCollectorName(request.collector?.full_name)}
+                        {resolveCollectorName(request.collector?.full_name) || 'Collector Partner'}
                       </h3>
                       <p className="text-xs font-mono font-bold text-[#136B3B] mt-0.5 flex items-center gap-1">
                         <Phone className="w-3 h-3 text-[#136B3B]" />
@@ -757,11 +757,11 @@ export default function TrackPickupPage() {
             {/* Collector info strip */}
             <div className="flex items-center gap-3 bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm mb-3">
               <div className="w-10 h-10 rounded-full bg-[#EAF5EE] flex items-center justify-center text-xl flex-shrink-0 font-bold text-[#136B3B]">
-                {(resolveCollectorName(request.collector?.full_name)).charAt(0)}
+                {(resolveCollectorName(request.collector?.full_name) || 'C').charAt(0)}
               </div>
               <div>
                 <p className="text-sm font-bold text-[#191C1E]">
-                  {resolveCollectorName(request.collector?.full_name)}
+                  {resolveCollectorName(request.collector?.full_name) || 'Collector Partner'}
                 </p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />

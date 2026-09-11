@@ -28,13 +28,13 @@ const DEFAULT_NOTIFICATIONS: SmartNotification[] = [
   {
     id: 'notif-seed-1',
     title: 'Collector accepted your request',
-    message: 'Ramesh Patel (Verified Collector) accepted your pickup scheduled for Today at 5:30 PM.',
+    message: 'Your assigned Verified Collector accepted your pickup scheduled for Today at 5:30 PM.',
     type: 'collector_accepted',
     category: 'pickup',
     timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 mins ago
     read: false,
     actionUrl: '/household',
-    metadata: { collectorName: 'Ramesh Patel', eta: '5:30 PM' },
+    metadata: { collectorName: 'Collector Partner', eta: '5:30 PM' },
   },
   {
     id: 'notif-seed-2',
@@ -322,10 +322,10 @@ export function getUnreadNotificationsCount(): number {
 ======================================================================= */
 
 export function triggerCollectorAcceptedNotification(collectorName?: string) {
-  const finalName = resolveCollectorName(collectorName);
+  const finalName = resolveCollectorName(collectorName) || 'Verified Collector Partner';
   return pushSmartNotification({
     title: 'Collector accepted your request',
-    message: `${finalName} (Verified Collector) accepted your doorstep scrap pickup. Collector is en route!`,
+    message: `${finalName} accepted your doorstep scrap pickup. Collector is en route!`,
     type: 'collector_accepted',
     category: 'pickup',
     actionUrl: '/household',

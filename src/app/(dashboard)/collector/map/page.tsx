@@ -729,11 +729,11 @@ function CollectorMapContent() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#136B3B] border border-emerald-200 flex items-center justify-center text-xl font-black shrink-0">
-                        {(resolveHouseholdName(selectedReq.household?.full_name || selectedReq.contact_name)).charAt(0)}
+                        {(resolveHouseholdName(selectedReq.household?.full_name || selectedReq.contact_name) || 'C').charAt(0)}
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-extrabold text-sm text-[#191C1E] truncate">
-                          {resolveHouseholdName(selectedReq.household?.full_name || selectedReq.contact_name)}
+                          {resolveHouseholdName(selectedReq.household?.full_name || selectedReq.contact_name) || 'Citizen Household'}
                         </h3>
                         <p className="text-xs font-mono font-bold text-[#136B3B] mt-0.5 flex items-center gap-1">
                           <Phone className="w-3 h-3" />

@@ -346,6 +346,10 @@ export default function RequestPickupPage() {
       alert('Please enter or select a valid pickup address.');
       return;
     }
+    if (!contactName.trim() || contactName.trim().length < 2) {
+      alert('⚠️ Full Name is Mandatory: Please enter your Full Name under Contact Details before requesting pickup.');
+      return;
+    }
 
     setSubmitting(true);
     const supabase = createClient();
@@ -357,13 +361,20 @@ export default function RequestPickupPage() {
         ? `${flatBuilding.trim() ? `${flatBuilding.trim()}, ` : ''}${areaStreet.trim()}${landmark.trim() ? `, Near ${landmark.trim()}` : ''}, ${city.trim() || 'Mumbai'} - ${pincode.trim() || ''}`
         : address.trim();
 
-    const resolvedCitizenName = resolveHouseholdName(
-      contactName.trim() || (user ? user.user_metadata?.full_name : null)
-    );
+    const finalCitizenName = contactName.trim();
+
+    // Auto-save genuine name to personal info so profile page remembers it
+    try {
+      const existingInfo = JSON.parse(localStorage.getItem('scrapmax_personal_info') || '{}');
+      existingInfo.fullName = finalCitizenName;
+      if (contactPhone.trim()) existingInfo.phone = contactPhone.trim();
+      localStorage.setItem('scrapmax_personal_info', JSON.stringify(existingInfo));
+      localStorage.setItem('aicle_personal_info', JSON.stringify(existingInfo));
+    } catch {}
 
     const householdObj = {
       id: user ? user.id : 'guest-user',
-      full_name: resolvedCitizenName,
+      full_name: finalCitizenName,
       phone: contactPhone.trim() || (user ? user.user_metadata?.phone : null) || '+91 98201 54321',
       role: 'household' as const,
     };
@@ -1138,16 +1149,19 @@ export default function RequestPickupPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#191C1E] mb-1">
-                    Contact Person Name (Optional)
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1 flex items-center justify-between">
+                    <span>Your Full Name (Citizen) *</span>
+                    <span className="text-[10px] font-bold text-red-600 uppercase">Mandatory</span>
                   </label>
                   <div className="flex items-center bg-[#F8FAF9] border border-gray-200 rounded-xl px-3 py-2 focus-within:border-[#136B3B] focus-within:bg-white transition">
-                    <User className="w-3.5 h-3.5 text-gray-500 mr-2 shrink-0" />
+                    <User className="w-3.5 h-3.5 text-[#136B3B] mr-2 shrink-0" />
                     <input
                       type="text"
+                      required
+                      minLength={2}
                       value={contactName}
                       onChange={(e) => setContactName(e.target.value)}
-                      placeholder="Enter Full Name"
+                      placeholder="Enter your Full Name (Mandatory)"
                       className="w-full bg-transparent text-xs font-semibold text-[#191C1E] placeholder-gray-400 focus:outline-none"
                     />
                   </div>

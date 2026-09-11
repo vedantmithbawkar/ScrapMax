@@ -557,7 +557,7 @@ export default function AdminPickupsPage() {
               <div>
                 <span className="text-[10px] text-gray-500 font-semibold block">Citizen Household</span>
                 <span className="font-bold text-[#191C1E] truncate block">
-                  {resolveHouseholdName(selectedPickup.household?.full_name || selectedPickup.contact_name)}
+                  {resolveHouseholdName(selectedPickup.household?.full_name || selectedPickup.contact_name) || 'Citizen Household'}
                 </span>
                 <span className="text-[10.5px] font-mono text-blue-700">
                   {selectedPickup.household?.phone || selectedPickup.contact_phone || '+91 98201 54321'}
@@ -567,7 +567,7 @@ export default function AdminPickupsPage() {
                 <span className="text-[10px] text-gray-500 font-semibold block">Collector Partner</span>
                 <span className="font-bold text-[#191C1E] truncate block">
                   {selectedPickup.collector_id
-                    ? resolveCollectorName(selectedPickup.collector?.full_name)
+                    ? (resolveCollectorName(selectedPickup.collector?.full_name) || 'Collector Partner')
                     : 'Awaiting Assignment'}
                 </span>
                 {selectedPickup.collector_id && (

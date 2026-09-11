@@ -84,8 +84,8 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
   const handleConfirmSettlement = async () => {
     setIsProcessing(true);
     const txId = 'TXN-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + Date.now().toString().slice(-4);
-    const finalPaidBy = resolveCollectorName(request.collector?.full_name);
-    const finalReceivedBy = resolveHouseholdName(request.household?.full_name || request.contact_name);
+    const finalPaidBy = resolveCollectorName(request.collector?.full_name) || 'Collector Partner';
+    const finalReceivedBy = resolveHouseholdName(request.household?.full_name || request.contact_name) || 'Citizen Household';
 
     const paymentData: PaymentDetails = {
       transactionId: txId,
@@ -128,7 +128,7 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
     }
   };
 
-  const householdName = resolveHouseholdName(request.household?.full_name || request.contact_name);
+  const householdName = resolveHouseholdName(request.household?.full_name || request.contact_name) || 'Citizen Customer';
   const upiIntentUri = `upi://pay?pa=${encodeURIComponent(householdUpiId)}&pn=${encodeURIComponent(householdName)}&am=${totalPayout}&cu=INR&tn=${encodeURIComponent(`ScrapMax Pickup #${request.id.slice(0, 6)}`)}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiIntentUri)}`;
 
@@ -314,7 +314,7 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
                 Enter Customer Doorstep OTP
               </h3>
               <p className="text-xs text-[#526056] max-w-xs mx-auto leading-relaxed">
-                Ask <strong>{resolveHouseholdName(request.household?.full_name || request.contact_name)}</strong> for the 4-digit verification PIN displayed on their screen to authorize scrap handover.
+                Ask <strong>{resolveHouseholdName(request.household?.full_name || request.contact_name) || 'Citizen'}</strong> for the 4-digit verification PIN displayed on their screen to authorize scrap handover.
               </p>
             </div>
 
@@ -653,7 +653,7 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
                     <span className="text-[10px] text-[#6B7280] font-medium block">Paid By (Collector)</span>
                     <span className="text-[9px] font-bold text-[#136B3B] bg-[#E6F4EA] px-1.5 py-0.5 rounded border border-[#A6D5B8]">✓ Verified</span>
                   </div>
-                  <span className="text-xs font-bold text-[#191C1E] block truncate">{resolveCollectorName(completedPayment.paidBy)}</span>
+                  <span className="text-xs font-bold text-[#191C1E] block truncate">{resolveCollectorName(completedPayment.paidBy) || 'Collector Partner'}</span>
                   <span className="text-[10.5px] font-mono text-[#136B3B] font-bold block">{request.collector?.phone || '+91 98201 45892'}</span>
                 </div>
                 <div className="p-2.5 bg-[#EDF7F2] rounded-xl border border-[#A6D5B8] space-y-1">
@@ -661,7 +661,7 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
                     <span className="text-[10px] text-[#136B3B] font-medium block">Received By (Household)</span>
                     <span className="text-[9px] font-bold text-emerald-800 bg-white/80 px-1.5 py-0.5 rounded border border-[#A6D5B8]">Citizen</span>
                   </div>
-                  <span className="text-xs font-bold text-[#136B3B] block truncate">{resolveHouseholdName(completedPayment.receivedBy)}</span>
+                  <span className="text-xs font-bold text-[#136B3B] block truncate">{resolveHouseholdName(completedPayment.receivedBy) || 'Citizen Household'}</span>
                   <span className="text-[10.5px] font-mono text-[#136B3B] font-bold block">{request.household?.phone || request.contact_phone || '+91 98201 54321'}</span>
                 </div>
               </div>

@@ -24,13 +24,37 @@ import { resolveCollectorName } from '@/lib/name-resolver';
 
 export default function CollectorProfilePage() {
   const router = useRouter();
-  const [collectorName, setCollectorName] = useState<string>('Ramesh Patel');
-  const [collectorPhone, setCollectorPhone] = useState<string>('+91 98201 45892');
+  const [collectorName, setCollectorName] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('scrapmax_collector_profile');
+        if (cached) return JSON.parse(cached)?.fullName || '';
+      } catch {}
+    }
+    return '';
+  });
+  const [collectorPhone, setCollectorPhone] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('scrapmax_collector_profile');
+        if (cached) return JSON.parse(cached)?.phone || '+91 98201 45892';
+      } catch {}
+    }
+    return '+91 98201 45892';
+  });
   const [email, setEmail] = useState<string>('collector@scrapmax.demo');
   const [completedCount, setCompletedCount] = useState<number>(24);
   const [totalWeight, setTotalWeight] = useState<number>(412);
   const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState('Ramesh Patel');
+  const [editName, setEditName] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('scrapmax_collector_profile');
+        if (cached) return JSON.parse(cached)?.fullName || '';
+      } catch {}
+    }
+    return '';
+  });
   const [editPhone, setEditPhone] = useState('+91 98201 45892');
 
   useEffect(() => {
@@ -136,7 +160,7 @@ export default function CollectorProfilePage() {
             {!isEditing ? (
               <div className="text-center">
                 <div className="flex items-center justify-center gap-2">
-                  <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">{collectorName}</h2>
+                  <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">{collectorName || 'Set Partner Full Name'}</h2>
                   <button
                     onClick={() => {
                       setEditName(collectorName);
@@ -150,6 +174,11 @@ export default function CollectorProfilePage() {
                     <Edit2 className="w-4 h-4" />
                   </button>
                 </div>
+                {!collectorName && (
+                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1 mt-1.5 font-semibold inline-block">
+                    ⚠️ Full Name is mandatory. Click the pencil icon to enter your name.
+                  </p>
+                )}
                 <p className="text-[#6B7280] text-sm font-medium mt-0.5">{collectorPhone}</p>
                 <span className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
                   <ShieldCheck className="w-3.5 h-3.5" />
@@ -160,7 +189,11 @@ export default function CollectorProfilePage() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  const finalN = editName.trim() || 'Ramesh Patel';
+                  if (!editName.trim() || editName.trim().length < 2) {
+                    alert('⚠️ Partner Name is mandatory. Please enter your genuine full name.');
+                    return;
+                  }
+                  const finalN = editName.trim();
                   const finalP = editPhone.trim() || '+91 98201 45892';
                   setCollectorName(finalN);
                   setCollectorPhone(finalP);
@@ -175,13 +208,18 @@ export default function CollectorProfilePage() {
                 className="w-full max-w-xs space-y-2 bg-white p-3 rounded-2xl border border-gray-200 shadow-xs"
               >
                 <div>
-                  <label className="text-[10px] font-bold text-gray-500 uppercase">Partner Name</label>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase flex items-center justify-between">
+                    <span>Partner Full Name *</span>
+                    <span className="text-[9px] text-red-600 font-bold">Mandatory</span>
+                  </label>
                   <input
                     type="text"
+                    required
+                    minLength={2}
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     className="w-full text-sm font-bold p-1.5 border rounded-lg"
-                    placeholder="Enter Partner Name"
+                    placeholder="Enter Partner Full Name (Mandatory)"
                   />
                 </div>
                 <div>

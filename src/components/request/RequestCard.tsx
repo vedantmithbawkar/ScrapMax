@@ -164,7 +164,7 @@ export default function RequestCard({
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="font-bold text-[#191C1E] truncate">
-                    {resolveCollectorName(request.collector?.full_name)}
+                    {resolveCollectorName(request.collector?.full_name) || 'Collector Partner'}
                   </span>
                   <span className="text-[10px] font-bold text-[#136B3B] bg-white px-1.5 py-0.5 rounded-full border border-[#A6D5B8] shrink-0">
                     ✓ Verified Collector
@@ -192,7 +192,7 @@ export default function RequestCard({
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="font-bold text-[#191C1E] truncate">
-                    {resolveHouseholdName(request.household?.full_name || request.contact_name)}
+                    {resolveHouseholdName(request.household?.full_name || request.contact_name) || 'Citizen Household'}
                   </span>
                   <span className="text-[10px] font-bold text-blue-700 bg-white px-1.5 py-0.5 rounded-full border border-blue-200 shrink-0">
                     Citizen Household
@@ -211,7 +211,7 @@ export default function RequestCard({
                 Call
               </a>
               <a
-                href={`https://wa.me/${(request.household?.phone || request.contact_phone || '+919820154321').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${resolveHouseholdName(request.household?.full_name || request.contact_name)}, I am your ScrapMax collector for pickup #${request.id.slice(0, 8)}.`)}`}
+                href={`https://wa.me/${(request.household?.phone || request.contact_phone || '+919820154321').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${resolveHouseholdName(request.household?.full_name || request.contact_name) || 'Citizen'}, I am your ScrapMax collector for pickup #${request.id.slice(0, 8)}.`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition shadow-2xs"

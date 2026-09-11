@@ -1,13 +1,9 @@
 /**
  * Centralized Name Resolver for ScrapMax
- * Ensures that whenever a Collector Partner or Household Citizen name is displayed
- * or saved, it resolves directly from the user's Profile, Auth metadata, or Local Cache.
- * Completely filters out generic system placeholders like "Verified Scrap Collector",
- * "Household Customer", "Collector", or "Household".
+ * Directly resolves from the user's explicit input, Profile, Auth metadata, or Local Cache.
+ * Does NOT inject fake default person names.
+ * Ensures names are pulled directly from what the user entered in their profile or pickup request.
  */
-
-export const DEFAULT_COLLECTOR_NAME = 'Ramesh Patel';
-export const DEFAULT_HOUSEHOLD_NAME = 'Raj Mishra';
 
 const PLACEHOLDER_COLLECTOR_NAMES = new Set([
   'verified scrap collector',
@@ -31,7 +27,7 @@ const PLACEHOLDER_HOUSEHOLD_NAMES = new Set([
  * Checks:
  * 1. Provided name (if not a placeholder)
  * 2. Dedicated collector profile in localStorage ('scrapmax_collector_profile')
- * 3. Default verified partner name ('Ramesh Patel')
+ * 3. Returns empty string if no genuine partner name was entered.
  */
 export function resolveCollectorName(name?: string | null): string {
   if (name && typeof name === 'string') {
@@ -56,7 +52,7 @@ export function resolveCollectorName(name?: string | null): string {
     } catch {}
   }
 
-  return DEFAULT_COLLECTOR_NAME;
+  return '';
 }
 
 /**
@@ -64,7 +60,7 @@ export function resolveCollectorName(name?: string | null): string {
  * Checks:
  * 1. Provided name (if not a placeholder)
  * 2. Personal info in localStorage ('scrapmax_personal_info' or 'aicle_personal_info')
- * 3. Default citizen name ('Raj Mishra')
+ * 3. Returns empty string if no genuine citizen name was entered.
  */
 export function resolveHouseholdName(name?: string | null): string {
   if (name && typeof name === 'string') {
@@ -90,5 +86,5 @@ export function resolveHouseholdName(name?: string | null): string {
     } catch {}
   }
 
-  return DEFAULT_HOUSEHOLD_NAME;
+  return '';
 }

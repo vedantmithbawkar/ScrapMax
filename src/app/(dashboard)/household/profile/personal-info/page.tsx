@@ -86,6 +86,10 @@ export default function PersonalInfoPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      alert('⚠️ Full Name is mandatory. Please enter your name before saving.');
+      return;
+    }
     setSaving(true);
     setSavedSuccess(false);
 
@@ -196,16 +200,20 @@ export default function PersonalInfoPage() {
           
           {/* Full Name */}
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-2xs space-y-1.5">
-            <label className="block text-xs font-bold text-[#191C1E] flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-[#136B3B]" />
-              <span>Full Name</span>
+            <label className="block text-xs font-bold text-[#191C1E] flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-[#136B3B]" />
+                <span>Full Name *</span>
+              </span>
+              <span className="text-[10px] font-bold text-red-600 uppercase">Mandatory</span>
             </label>
             <input
               type="text"
               required
+              minLength={2}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="Enter your full name"
+              placeholder="Enter your full name (Mandatory)"
               className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-sm font-medium text-[#191C1E] focus:outline-none focus:border-[#136B3B] transition"
             />
           </div>

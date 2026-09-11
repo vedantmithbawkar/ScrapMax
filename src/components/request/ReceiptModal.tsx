@@ -26,9 +26,9 @@ export default function ReceiptModal({ request, onClose }: ReceiptModalProps) {
   const txId = payment?.transactionId || `TXN-VERIFIED-${request.id.slice(0, 6).toUpperCase()}`;
   const timestamp = payment?.timestamp || request.updated_at || request.created_at;
 
-  const householdName = resolveHouseholdName(payment?.receivedBy || request.household?.full_name || request.contact_name);
+  const householdName = resolveHouseholdName(payment?.receivedBy || request.household?.full_name || request.contact_name) || 'Citizen Household';
   const householdPhone = request.household?.phone || request.contact_phone || '+91 98201 54321';
-  const collectorName = resolveCollectorName(payment?.paidBy || request.collector?.full_name);
+  const collectorName = resolveCollectorName(payment?.paidBy || request.collector?.full_name) || 'Collector Partner';
   const collectorPhone = request.collector?.phone || '+91 98201 45892';
 
   // Isolated, clean iframe printing (never prints background UI or modal backdrop)

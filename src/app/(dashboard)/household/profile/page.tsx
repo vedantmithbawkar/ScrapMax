@@ -84,9 +84,10 @@ export default function UserProfilePage() {
     router.push('/login');
   };
 
-  const displayName = resolveHouseholdName(profile?.full_name);
+  const genuineName = resolveHouseholdName(profile?.full_name);
+  const displayName = genuineName || 'Citizen User';
   const displayPhone = profile?.phone || '+91 98201 54321';
-  const initial = displayName.charAt(0).toUpperCase();
+  const initial = (displayName.charAt(0) || 'C').toUpperCase();
 
   return (
     <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans pb-32">
@@ -116,6 +117,14 @@ export default function UserProfilePage() {
             </div>
             {/* User Info */}
             <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">{displayName}</h2>
+            {!genuineName && (
+              <Link
+                href="/household/profile/personal-info"
+                className="mt-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1 font-semibold flex items-center gap-1 hover:bg-amber-100 transition"
+              >
+                ⚠️ Full Name mandatory. Click here to enter your name.
+              </Link>
+            )}
             <p className="text-[#6B7280] text-sm font-medium mt-0.5 tracking-wide">{displayPhone}</p>
             <span className={`mt-2 inline-block px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
               profile?.role === 'collector'
