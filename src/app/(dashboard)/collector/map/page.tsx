@@ -61,7 +61,7 @@ const MOCK_MAP_REQUESTS: PickupRequest[] = [
       role: 'household',
     },
     status: 'pending',
-    address: 'Flat 402, Green Heights, Main Market Road, Near City Center',
+    address: 'Flat 402, Green Heights, Main Market Road, City Center',
     latitude: 19.0760,
     longitude: 72.8777,
     scheduled_date: 'Today · 5:30 PM',
@@ -70,7 +70,7 @@ const MOCK_MAP_REQUESTS: PickupRequest[] = [
     photos: [
       'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
     ],
-    created_at: new Date().toISOString(),
+    created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
     updated_at: new Date().toISOString(),
     waste_items: [{ category: 'PAPER', approx_weight_kg: 18.5 }],
   },
@@ -84,16 +84,16 @@ const MOCK_MAP_REQUESTS: PickupRequest[] = [
       role: 'household',
     },
     status: 'pending',
-    address: 'Tower B, Station Road West, Commercial Tech Park',
-    latitude: 19.0820,
-    longitude: 72.8820,
+    address: 'Tower B, Station Road West, Commercial Tech Park, Andheri East',
+    latitude: 19.1136,
+    longitude: 72.8697,
     scheduled_date: 'Today · 6:00 PM',
     notes: 'Electronic waste, wiring, and computer scrap. Please call before arriving.',
     total_estimated_weight_kg: 35.0,
     photos: [
       'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80',
     ],
-    created_at: new Date().toISOString(),
+    created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
     updated_at: new Date().toISOString(),
     waste_items: [{ category: 'E_WASTE', approx_weight_kg: 35.0 }],
   },
@@ -102,21 +102,21 @@ const MOCK_MAP_REQUESTS: PickupRequest[] = [
     household_id: 'user-h103',
     household: {
       id: 'user-h103',
-      full_name: 'Vikram Mehta (Shop 12)',
+      full_name: 'Vikram Mehta (Gala 14)',
       phone: '+91 98112 34567',
       role: 'household',
     },
     status: 'pending',
-    address: 'Ring Road Link, Industrial Estate, Gala No 14',
+    address: 'Ring Road Link, Industrial Estate, Gala No 14, Kurla West',
     latitude: 19.0685,
-    longitude: 72.8942,
+    longitude: 72.8842,
     scheduled_date: 'Today · 6:30 PM',
     notes: 'Heavy scrap metal, iron pieces, and packaging boxes.',
     total_estimated_weight_kg: 22.0,
     photos: [
       'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
     ],
-    created_at: new Date().toISOString(),
+    created_at: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
     updated_at: new Date().toISOString(),
     waste_items: [{ category: 'METAL', approx_weight_kg: 22.0 }],
   },
@@ -130,18 +130,229 @@ const MOCK_MAP_REQUESTS: PickupRequest[] = [
       role: 'household',
     },
     status: 'pending',
-    address: 'Green Park Colony, Sector 4, Behind Central Bank',
-    latitude: 19.0780,
-    longitude: 72.8690,
+    address: 'Green Park Colony, Sector 4, Behind Central Bank, Bandra West',
+    latitude: 19.0596,
+    longitude: 72.8295,
     scheduled_date: 'Today · 7:00 PM',
     notes: 'Sorted plastic bottles and cardboard packaging.',
     total_estimated_weight_kg: 14.2,
     photos: [
       'https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80',
     ],
-    created_at: new Date().toISOString(),
+    created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
     updated_at: new Date().toISOString(),
     waste_items: [{ category: 'PLASTIC', approx_weight_kg: 14.2 }],
+  },
+  {
+    id: 'req-map-005',
+    household_id: 'user-h105',
+    household: {
+      id: 'user-h105',
+      full_name: 'Ananya Deshmukh (Flat 801)',
+      phone: '+91 98205 67890',
+      role: 'household',
+    },
+    status: 'pending',
+    address: 'Sunview Heights, 10th Road, JVPD Scheme, Juhu',
+    latitude: 19.1075,
+    longitude: 72.8263,
+    scheduled_date: 'Tomorrow · 10:00 AM',
+    notes: 'Glass bottles and newspaper bundles ready on balcony.',
+    total_estimated_weight_kg: 26.0,
+    photos: [
+      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
+    ],
+    created_at: new Date(Date.now() - 1000 * 60 * 150).toISOString(),
+    updated_at: new Date().toISOString(),
+    waste_items: [
+      { category: 'GLASS', approx_weight_kg: 12.0 },
+      { category: 'PAPER', approx_weight_kg: 14.0 },
+    ],
+  },
+  {
+    id: 'req-map-006',
+    household_id: 'user-h106',
+    household: {
+      id: 'user-h106',
+      full_name: 'Rajesh Kulkarni (Tower 12B)',
+      phone: '+91 98701 23456',
+      role: 'household',
+    },
+    status: 'pending',
+    address: 'Cliff Tower 12B, Central Avenue, Hiranandani Gardens, Powai',
+    latitude: 19.1197,
+    longitude: 72.9051,
+    scheduled_date: 'Tomorrow · 11:30 AM',
+    notes: 'Old CPU cabinets, aluminium frames, and copper wires.',
+    total_estimated_weight_kg: 41.5,
+    photos: [
+      'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80',
+    ],
+    created_at: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
+    updated_at: new Date().toISOString(),
+    waste_items: [
+      { category: 'E_WASTE', approx_weight_kg: 21.5 },
+      { category: 'METAL', approx_weight_kg: 20.0 },
+    ],
+  },
+  {
+    id: 'req-map-007',
+    household_id: 'user-h107',
+    household: {
+      id: 'user-h107',
+      full_name: 'Kavita Nair (House 19)',
+      phone: '+91 98198 76543',
+      role: 'household',
+    },
+    status: 'pending',
+    address: 'Shivaji Park View, Cadell Road, Dadar West',
+    latitude: 19.0282,
+    longitude: 72.8384,
+    scheduled_date: 'Tomorrow · 2:00 PM',
+    notes: 'Old school notebooks and magazines tied in rope.',
+    total_estimated_weight_kg: 16.0,
+    photos: [
+      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
+    ],
+    created_at: new Date(Date.now() - 1000 * 60 * 210).toISOString(),
+    updated_at: new Date().toISOString(),
+    waste_items: [{ category: 'PAPER', approx_weight_kg: 16.0 }],
+  },
+  {
+    id: 'req-map-008',
+    household_id: 'user-h108',
+    household: {
+      id: 'user-h108',
+      full_name: 'Mohit Agarwal (Flat 302)',
+      phone: '+91 98212 34987',
+      role: 'household',
+    },
+    status: 'pending',
+    address: 'Diamond Garden Society, 2nd Main Road, Chembur East',
+    latitude: 19.0522,
+    longitude: 72.8994,
+    scheduled_date: 'Tomorrow · 3:30 PM',
+    notes: 'Stainless steel utensils and crushed plastic bottles.',
+    total_estimated_weight_kg: 29.0,
+    photos: [
+      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
+    ],
+    created_at: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
+    updated_at: new Date().toISOString(),
+    waste_items: [
+      { category: 'METAL', approx_weight_kg: 15.0 },
+      { category: 'PLASTIC', approx_weight_kg: 14.0 },
+    ],
+  },
+  {
+    id: 'req-map-009',
+    household_id: 'user-h109',
+    household: {
+      id: 'user-h109',
+      full_name: 'Sunil Joshi (Wing C)',
+      phone: '+91 98331 45678',
+      role: 'household',
+    },
+    status: 'pending',
+    address: 'Neelkanth Valley, Building 4, Ghatkopar East',
+    latitude: 19.0864,
+    longitude: 72.9082,
+    scheduled_date: 'Tomorrow · 4:30 PM',
+    notes: 'Large cardboard appliance packaging boxes and plastic containers.',
+    total_estimated_weight_kg: 19.5,
+    photos: [
+      'https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80',
+    ],
+    created_at: new Date(Date.now() - 1000 * 60 * 270).toISOString(),
+    updated_at: new Date().toISOString(),
+    waste_items: [{ category: 'PAPER', approx_weight_kg: 19.5 }],
+  },
+  {
+    id: 'req-map-010',
+    household_id: 'user-h110',
+    household: {
+      id: 'user-h110',
+      full_name: 'Farhan Shaikh (Silver Arch)',
+      phone: '+91 98200 87654',
+      role: 'household',
+    },
+    status: 'pending',
+    address: 'Silver Arch, Lokhandwala Complex, Andheri West',
+    latitude: 19.1392,
+    longitude: 72.8265,
+    scheduled_date: 'Tomorrow · 5:00 PM',
+    notes: 'Old microwave, broken toaster, and brass fittings.',
+    total_estimated_weight_kg: 24.0,
+    photos: [
+      'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80',
+    ],
+    created_at: new Date(Date.now() - 1000 * 60 * 300).toISOString(),
+    updated_at: new Date().toISOString(),
+    waste_items: [
+      { category: 'E_WASTE', approx_weight_kg: 14.0 },
+      { category: 'METAL', approx_weight_kg: 10.0 },
+    ],
+  },
+  {
+    id: 'req-map-011',
+    household_id: 'user-h111',
+    household: {
+      id: 'user-h111',
+      full_name: 'Meera Sen (Sea Face Enclave)',
+      phone: '+91 98190 11223',
+      role: 'household',
+    },
+    status: 'pending',
+    address: 'Sea Face Enclave, Dr. Annie Besant Road, Worli',
+    latitude: 19.0125,
+    longitude: 72.8182,
+    scheduled_date: 'Tomorrow · 6:00 PM',
+    notes: 'Corrugated cartons and newspapers packed in sacks.',
+    total_estimated_weight_kg: 15.0,
+    photos: [
+      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
+    ],
+    created_at: new Date(Date.now() - 1000 * 60 * 330).toISOString(),
+    updated_at: new Date().toISOString(),
+    waste_items: [{ category: 'PAPER', approx_weight_kg: 15.0 }],
+  },
+  {
+    id: 'req-map-012',
+    household_id: 'user-h112',
+    household: {
+      id: 'user-h112',
+      full_name: 'Deepak Chawla (Panchsheel Heights)',
+      phone: '+91 98209 99887',
+      role: 'household',
+    },
+    status: 'completed',
+    address: 'Panchsheel Heights, New Link Road, Malad West',
+    latitude: 19.1865,
+    longitude: 72.8481,
+    scheduled_date: 'Yesterday · 4:00 PM',
+    notes: 'Completed scrap pickup. Verified weight & instant UPI payment settled.',
+    total_estimated_weight_kg: 21.0,
+    payment: {
+      transactionId: 'TXN-882194',
+      method: 'upi',
+      totalAmount: 380,
+      timestamp: new Date(Date.now() - 86400000).toISOString(),
+      items: [
+        { category: 'PAPER', verifiedWeightKg: 11.0, ratePerKg: 14, subtotal: 154 },
+        { category: 'PLASTIC', verifiedWeightKg: 10.0, ratePerKg: 22, subtotal: 226 },
+      ],
+      paidBy: 'Ramesh Kumar (Verified Kabadiwala)',
+      receivedBy: 'Deepak Chawla',
+    },
+    photos: [
+      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
+    ],
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 86400000).toISOString(),
+    waste_items: [
+      { category: 'PAPER', approx_weight_kg: 11.0 },
+      { category: 'PLASTIC', approx_weight_kg: 10.0 },
+    ],
   },
 ];
 
@@ -154,7 +365,7 @@ function CollectorMapContent() {
   const [collectorPos, setCollectorPos] = useState<[number, number] | null>(null);
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [isWatchingGps, setIsWatchingGps] = useState<boolean>(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'accepted'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'active'>('all');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedAddress, setCopiedAddress] = useState(false);
 
@@ -211,11 +422,16 @@ function CollectorMapContent() {
         const target = unique.find((r) => r.id === queryRequestId);
         if (target) {
           setSelectedReq(target);
+          if (['accepted', 'in_progress'].includes(target.status)) {
+            setStatusFilter('active');
+          } else if (target.status === 'pending' || (target.status as string) === 'open') {
+            setStatusFilter('pending');
+          }
           return;
         }
       }
 
-      // Or select first accepted request, or first request
+      // Or select first request
       const activeAccepted = unique.find((r) => ['accepted', 'in_progress'].includes(r.status));
       setSelectedReq(activeAccepted || unique[0] || null);
     }
@@ -475,20 +691,41 @@ function CollectorMapContent() {
     });
   };
 
+  const allCount = requests.length;
+  const pendingCount = requests.filter(
+    (r) => r.status === 'pending' || (r.status as string) === 'open'
+  ).length;
+  const activeCount = requests.filter(
+    (r) => r.status === 'accepted' || r.status === 'in_progress'
+  ).length;
+
   const displayedRequests = requests.filter((r) => {
-    if (statusFilter === 'pending') return r.status === 'pending';
-    if (statusFilter === 'accepted') return ['accepted', 'in_progress'].includes(r.status);
+    if (statusFilter === 'pending') {
+      return r.status === 'pending' || (r.status as string) === 'open';
+    }
+    if (statusFilter === 'active') {
+      return r.status === 'accepted' || r.status === 'in_progress';
+    }
     return true;
   });
 
-  const isActiveJob = selectedReq && ['accepted', 'in_progress'].includes(selectedReq.status);
+  // Automatically synchronize selectedReq whenever statusFilter or displayedRequests changes
+  useEffect(() => {
+    if (displayedRequests.length === 0) {
+      setSelectedReq(null);
+    } else if (!selectedReq || !displayedRequests.some((r) => r.id === selectedReq.id)) {
+      setSelectedReq(displayedRequests[0]);
+    }
+  }, [statusFilter, displayedRequests]);
 
-  // Dynamic map center: prioritize route midpoint, collector pos, or selected pickup
+  const isActiveJob = Boolean(selectedReq && ['accepted', 'in_progress'].includes(selectedReq.status));
+
+  // Dynamic map center: prioritize selected pickup, collector pos, or first displayed request
   const mapCenter: [number, number] = collectorPos || (
-    selectedReq
+    selectedReq && displayedRequests.some((r) => r.id === selectedReq.id)
       ? [selectedReq.latitude, selectedReq.longitude]
-      : requests.length > 0
-      ? [requests[0].latitude, requests[0].longitude]
+      : displayedRequests.length > 0
+      ? [displayedRequests[0].latitude, displayedRequests[0].longitude]
       : [19.076, 72.8777]
   );
 
@@ -533,35 +770,35 @@ function CollectorMapContent() {
               <button
                 type="button"
                 onClick={() => setStatusFilter('all')}
-                className={`px-2.5 py-1 rounded-lg transition ${
+                className={`px-3 py-1.5 rounded-lg transition ${
                   statusFilter === 'all'
-                    ? 'bg-white text-[#191C1E] shadow-2xs'
+                    ? 'bg-white text-[#191C1E] shadow-2xs font-extrabold'
                     : 'text-gray-500 hover:text-gray-900'
                 }`}
               >
-                All ({requests.length})
+                All ({allCount})
               </button>
               <button
                 type="button"
                 onClick={() => setStatusFilter('pending')}
-                className={`px-2.5 py-1 rounded-lg transition ${
+                className={`px-3 py-1.5 rounded-lg transition ${
                   statusFilter === 'pending'
-                    ? 'bg-white text-[#191C1E] shadow-2xs'
+                    ? 'bg-white text-[#191C1E] shadow-2xs font-extrabold'
                     : 'text-gray-500 hover:text-gray-900'
                 }`}
               >
-                Pending ({requests.filter((r) => r.status === 'pending').length})
+                Pending ({pendingCount})
               </button>
               <button
                 type="button"
-                onClick={() => setStatusFilter('accepted')}
-                className={`px-2.5 py-1 rounded-lg transition ${
-                  statusFilter === 'accepted'
-                    ? 'bg-white text-[#191C1E] shadow-2xs'
+                onClick={() => setStatusFilter('active')}
+                className={`px-3 py-1.5 rounded-lg transition ${
+                  statusFilter === 'active'
+                    ? 'bg-white text-[#191C1E] shadow-2xs font-extrabold'
                     : 'text-gray-500 hover:text-gray-900'
                 }`}
               >
-                Active ({requests.filter((r) => ['accepted', 'in_progress'].includes(r.status)).length})
+                Active ({activeCount})
               </button>
             </div>
 
@@ -626,250 +863,220 @@ function CollectorMapContent() {
 
             <MapContainer
               center={mapCenter}
-              zoom={14}
+              zoom={13}
               requests={displayedRequests}
+              selectedRequestId={selectedReq?.id}
               collectorPos={collectorPos}
-              routeCoordinates={routeCoords}
-              destinationPos={selectedReq ? [selectedReq.latitude, selectedReq.longitude] : null}
+              routeCoordinates={isActiveJob ? routeCoords : []}
+              destinationPos={isActiveJob && selectedReq ? [selectedReq.latitude, selectedReq.longitude] : null}
               destinationLabel={selectedReq?.household?.full_name ? `${selectedReq.household.full_name}'s Home` : 'Customer Doorstep'}
-              fitBoundsToRoute={routeCoords.length >= 2}
+              fitBoundsToRoute={Boolean(isActiveJob && routeCoords.length >= 2)}
               useTruckIconForCollector={true}
               onSelectRequest={(req) => setSelectedReq(req)}
               className="h-full min-h-[440px] lg:min-h-[580px] w-full rounded-2xl overflow-hidden"
             />
           </div>
 
-          {/* Right Column: Blinkit Customer & Navigation Details Panel */}
-          <div className="lg:col-span-5 flex flex-col space-y-4">
-            {selectedReq ? (
-              <div className="space-y-4">
-                
-                {/* 1. Proper Household Address & Customer Contact Card */}
-                <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-xs space-y-4">
-                  <div className="flex items-center justify-between pb-1 border-b border-gray-100">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" />
-                      <span>Household Customer</span>
-                    </span>
-                    <span className="text-xs font-mono font-bold text-gray-500">
-                      Req #{selectedReq.id.slice(0, 8)}
-                    </span>
+          {/* Right Column: Blinkit Customer, Live Navigation, & Dynamic Requests List */}
+          <div className="lg:col-span-5 flex flex-col space-y-3">
+            
+            {/* 1. Active Route Driving Controls & Customer Quick Actions (When Active Job is Selected) */}
+            {isActiveJob && selectedReq && (
+              <div className="bg-gradient-to-br from-[#E6F4EA] via-white to-emerald-50 rounded-3xl p-4 border-2 border-[#136B3B] shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#136B3B] animate-ping" />
+                    <h4 className="font-extrabold text-sm text-[#136B3B]">
+                      Live Navigation Active
+                    </h4>
                   </div>
+                  <span className="text-xs font-black text-[#191C1E] bg-white px-2.5 py-0.5 rounded-full border border-emerald-200 shadow-2xs">
+                    {trackingState?.hasArrived ? 'Arrived at Doorstep' : `${formatDistance(trackingState?.distanceMeters || 1800)} away`}
+                  </span>
+                </div>
 
-                  {/* Customer Name & Direct Call / WhatsApp Actions */}
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#136B3B] border border-emerald-200 flex items-center justify-center text-xl font-black shrink-0">
-                        {(selectedReq.household?.full_name || 'Aarav').charAt(0)}
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="font-extrabold text-sm text-[#191C1E] truncate">
-                          {selectedReq.household?.full_name || 'Aarav Sharma'}
-                        </h3>
-                        <p className="text-xs font-mono font-bold text-[#136B3B] mt-0.5 flex items-center gap-1">
-                          <Phone className="w-3 h-3" />
-                          <span>{selectedReq.household?.phone || '+91 98201 54321'}</span>
-                        </p>
-                      </div>
+                {/* Customer Contact Strip */}
+                <div className="flex items-center justify-between gap-2 p-2.5 bg-white rounded-2xl border border-emerald-100 shadow-2xs">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#136B3B] border border-emerald-200 flex items-center justify-center text-sm font-black shrink-0">
+                      {(selectedReq.household?.full_name || 'A').charAt(0)}
                     </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <a
-                        href={`tel:${(selectedReq.household?.phone || '+919820154321').replace(/\s+/g, '')}`}
-                        className="px-3 py-2 rounded-xl bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold transition flex items-center gap-1 shadow-xs"
-                        title="Call Customer"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                        <span>Call</span>
-                      </a>
-                      <a
-                        href={`https://wa.me/${(selectedReq.household?.phone || '+919820154321').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${selectedReq.household?.full_name || 'Sir/Madam'}, I am your ScrapMax collector arriving for your scrap pickup.`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs"
-                        title="WhatsApp Chat"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>WhatsApp</span>
-                      </a>
+                    <div className="min-w-0">
+                      <p className="font-extrabold text-xs text-[#191C1E] truncate">
+                        {selectedReq.household?.full_name || 'Customer'}
+                      </p>
+                      <p className="text-[11px] text-[#526056] truncate">
+                        {selectedReq.address}
+                      </p>
                     </div>
                   </div>
-
-                  {/* Complete Household Address Breakdown */}
-                  <div className="bg-[#F8FAF9] p-3.5 rounded-2xl border border-gray-100 space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-[#136B3B] shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-[11px] font-bold text-[#526056] uppercase tracking-wider">
-                            Pickup Doorstep Address
-                          </p>
-                          <p className="text-xs sm:text-sm font-semibold text-[#191C1E] mt-0.5 leading-snug">
-                            {selectedReq.address}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={copyAddress}
-                        className="p-1.5 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg text-gray-600 transition shrink-0"
-                        title="Copy Address"
-                      >
-                        {copiedAddress ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-
-                    {selectedReq.notes && (
-                      <div className="pt-2 border-t border-gray-200/60 text-xs text-[#6B7280]">
-                        <strong className="text-[#191C1E]">Notes:</strong> &quot;{selectedReq.notes}&quot;
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Navigation Action Buttons */}
-                  <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${selectedReq.latitude},${selectedReq.longitude}`}
+                      href={`tel:${(selectedReq.household?.phone || '+919820154321').replace(/\s+/g, '')}`}
+                      className="px-2.5 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-2xs"
+                      title="Call Customer"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>Call</span>
+                    </a>
+                    <a
+                      href={`https://wa.me/${(selectedReq.household?.phone || '+919820154321').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${selectedReq.household?.full_name || 'Customer'}, I am your ScrapMax collector arriving for your scrap pickup.`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold text-xs flex items-center justify-center gap-1.5 transition"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Open Google Maps</span>
-                    </a>
-
-                    <Link
-                      href={`/collector/chat/${selectedReq.id}`}
-                      className="py-2.5 px-3 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold text-xs flex items-center justify-center gap-1.5 transition"
+                      className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-2xs"
+                      title="WhatsApp Chat"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
-                      <span>In-App Chat</span>
-                    </Link>
+                      <span>WhatsApp</span>
+                    </a>
                   </div>
                 </div>
 
-                {/* 2. Driver Route Status & Doorstep Actions (When Active) */}
-                {isActiveJob && (
-                  <div className="bg-gradient-to-br from-[#E6F4EA] via-white to-emerald-50 rounded-3xl p-5 border-2 border-[#136B3B] shadow-xs space-y-3.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#136B3B] animate-ping" />
-                        <h4 className="font-extrabold text-sm text-[#136B3B]">
-                          Live Navigation Active
-                        </h4>
-                      </div>
-                      <span className="text-xs font-black text-[#191C1E] bg-white px-2.5 py-0.5 rounded-full border border-emerald-200 shadow-2xs">
-                        {trackingState?.hasArrived ? 'Arrived at Doorstep' : `${formatDistance(trackingState?.distanceMeters || 1800)} away`}
-                      </span>
-                    </div>
+                {/* Simulation Controls & Doorstep Actions */}
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={handleToggleSimulation}
+                    className={`w-full py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-sm touch-feedback ${
+                      isSimulating
+                        ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                        : 'bg-[#136B3B] hover:bg-[#0F5730] text-white'
+                    }`}
+                  >
+                    {isSimulating ? (
+                      <>
+                        <Pause className="w-4 h-4" />
+                        <span>Pause Live Drive Simulation</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 fill-white" />
+                        <span>Simulate Drive to Customer Doorstep</span>
+                      </>
+                    )}
+                  </button>
 
-                    {/* Simulation Controls */}
-                    <div className="space-y-2">
-                      <button
-                        type="button"
-                        onClick={handleToggleSimulation}
-                        className={`w-full py-3 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-sm touch-feedback ${
-                          isSimulating
-                            ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                            : 'bg-[#136B3B] hover:bg-[#0F5730] text-white'
-                        }`}
-                      >
-                        {isSimulating ? (
-                          <>
-                            <Pause className="w-4 h-4" />
-                            <span>Pause Live Drive Simulation</span>
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-4 h-4 fill-white" />
-                            <span>Simulate Drive to Customer Doorstep</span>
-                          </>
-                        )}
-                      </button>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={handleMarkArrived}
-                          className="py-2.5 px-3 rounded-xl bg-white hover:bg-emerald-50 text-[#136B3B] border border-[#A6D5B8] text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
-                        >
-                          <span>🚪 Mark Arrived</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setShowHandoverModal(true)}
-                          className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#136B3B] to-emerald-700 text-white text-xs font-extrabold transition flex items-center justify-center gap-1.5 shadow-xs"
-                        >
-                          <span>🔐 Verify OTP &amp; Settle</span>
-                        </button>
-                      </div>
-
-                      {/* Doorstep OTP reminder */}
-                      <div className="bg-white/90 p-2.5 rounded-2xl border border-emerald-200 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="text-base">🔐</span>
-                          <div>
-                            <p className="font-extrabold text-[#191C1E] text-[11.5px]">Doorstep Safety OTP</p>
-                            <p className="text-[10px] text-[#526056]">Ask customer for 4-digit PIN before handover</p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowHandoverModal(true)}
-                          className="px-2.5 py-1 bg-[#136B3B] hover:bg-[#0F5730] text-white rounded-lg text-[10.5px] font-bold transition shadow-2xs"
-                        >
-                          Enter OTP
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 3. Deal Completed Banner if Completed */}
-                {selectedReq.status === 'completed' && (
-                  <div className="bg-gradient-to-br from-[#E6F4EA] to-white rounded-3xl p-5 border-2 border-[#136B3B] shadow-sm space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#136B3B] text-white flex items-center justify-center shadow-xs">
-                        <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
-                      </div>
-                      <div>
-                        <h4 className="font-extrabold text-sm text-[#136B3B]">
-                          Pickup Successfully Completed &amp; Settled!
-                        </h4>
-                        <p className="text-xs text-[#526056] mt-0.5">
-                          Total Paid: ₹{selectedReq.payment?.totalAmount || Math.round((selectedReq.total_estimated_weight_kg || 5) * 18)} via {selectedReq.payment?.method?.toUpperCase() || 'UPI'}
-                        </p>
-                      </div>
-                    </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={handleMarkArrived}
+                      className="py-2 px-3 rounded-xl bg-white hover:bg-emerald-50 text-[#136B3B] border border-[#A6D5B8] text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
+                    >
+                      <span>🚪 Mark Arrived</span>
+                    </button>
 
                     <button
                       type="button"
-                      onClick={() => setShowReceiptModal(true)}
-                      className="w-full py-3 bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-xs"
+                      onClick={() => setShowHandoverModal(true)}
+                      className="py-2 px-3 rounded-xl bg-gradient-to-r from-[#136B3B] to-emerald-700 text-white text-xs font-extrabold transition flex items-center justify-center gap-1.5 shadow-xs"
                     >
-                      <Receipt className="w-4 h-4" />
-                      <span>View Official Digital Receipt</span>
+                      <span>🔐 Verify OTP &amp; Settle</span>
                     </button>
                   </div>
-                )}
+                </div>
+              </div>
+            )}
 
-                {/* 4. RequestCard with full details & payment modal trigger */}
-                <RequestCard
-                  request={selectedReq}
-                  userRole="collector"
-                  onStatusUpdate={handleStatusUpdate}
-                  onCompletePayment={handleCompletePayment}
-                />
+            {/* 2. Deal Completed Settlement Banner if selected request is completed */}
+            {selectedReq && selectedReq.status === 'completed' && (
+              <div className="bg-gradient-to-br from-[#E6F4EA] to-white rounded-2xl p-4 border border-[#136B3B] shadow-2xs flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#136B3B] text-white flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-extrabold text-xs text-[#136B3B] truncate">
+                      Pickup Completed &amp; Settled
+                    </p>
+                    <p className="text-[11px] text-[#526056] truncate">
+                      Total Paid: ₹{selectedReq.payment?.totalAmount || 380} via {selectedReq.payment?.method?.toUpperCase() || 'UPI'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowReceiptModal(true)}
+                  className="px-3 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold text-xs rounded-xl transition flex items-center gap-1 shadow-xs shrink-0"
+                >
+                  <Receipt className="w-3.5 h-3.5" />
+                  <span>Receipt</span>
+                </button>
+              </div>
+            )}
 
+            {/* 3. Section Header for Filtered Pickups List */}
+            <div className="flex items-center justify-between px-1 pt-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs sm:text-sm font-extrabold text-[#191C1E] uppercase tracking-wider">
+                  {statusFilter === 'all'
+                    ? 'All Pickup Requests'
+                    : statusFilter === 'pending'
+                    ? 'Pending Available Requests'
+                    : 'Active Assigned Pickups'}
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8]">
+                  {displayedRequests.length}
+                </span>
+              </div>
+              <span className="text-[11px] text-[#6B7280]">
+                {displayedRequests.length > 0 ? 'Click card or pin to select' : ''}
+              </span>
+            </div>
+
+            {/* 4. Dynamic List of Request Cards or Empty State */}
+            {displayedRequests.length > 0 ? (
+              <div className="space-y-3 overflow-y-auto max-h-[calc(100vh-240px)] pr-1.5 pb-8">
+                {displayedRequests.map((req) => {
+                  const isSelected = selectedReq?.id === req.id;
+                  return (
+                    <div
+                      key={req.id}
+                      id={`pickup-card-${req.id}`}
+                      onClick={() => setSelectedReq(req)}
+                      className={`transition-all rounded-2xl cursor-pointer ${
+                        isSelected
+                          ? 'ring-2 ring-[#136B3B] shadow-md bg-emerald-50/15'
+                          : 'hover:shadow-xs hover:border-gray-300'
+                      }`}
+                    >
+                      <RequestCard
+                        request={req}
+                        userRole="collector"
+                        onStatusUpdate={handleStatusUpdate}
+                        onCompletePayment={handleCompletePayment}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             ) : (
-              <div className="p-12 text-center bg-white border border-dashed border-gray-200 rounded-3xl text-[#6B7280] text-sm space-y-3">
-                <MapPin className="w-10 h-10 text-gray-400 mx-auto" />
-                <p className="font-bold text-[#191C1E] text-base">Select a pickup on the map</p>
-                <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
-                  Click any pin to see the household address, call the customer, or start live turn-by-turn route navigation.
-                </p>
+              <div className="p-8 sm:p-10 text-center bg-white border border-dashed border-gray-200 rounded-3xl text-[#6B7280] space-y-3 shadow-xs">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#136B3B] border border-emerald-200 flex items-center justify-center mx-auto text-2xl font-black">
+                  {statusFilter === 'active' ? '🚚' : '📋'}
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-[#191C1E] text-base">
+                    {statusFilter === 'active'
+                      ? 'No active pickups currently'
+                      : statusFilter === 'pending'
+                      ? 'No pending pickups available'
+                      : 'No pickups found'}
+                  </h4>
+                  <p className="text-xs text-gray-500 max-w-xs mx-auto mt-1 leading-relaxed">
+                    {statusFilter === 'active'
+                      ? 'You have no pickups accepted or in progress. Switch to the Pending tab to review nearby requests and start navigation.'
+                      : 'All pickup requests matching this filter have been processed.'}
+                  </p>
+                </div>
+                {statusFilter === 'active' && pendingCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('pending')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#136B3B] hover:bg-[#0F5730] text-white rounded-xl text-xs font-bold transition shadow-xs"
+                  >
+                    <span>View Pending Requests ({pendingCount})</span>
+                  </button>
+                )}
               </div>
             )}
           </div>

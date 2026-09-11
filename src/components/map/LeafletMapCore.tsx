@@ -28,6 +28,7 @@ interface MapCoreProps {
   destinationLabel?: string;
   fitBoundsToRoute?: boolean;
   useTruckIconForCollector?: boolean;
+  selectedRequestId?: string;
 }
 
 function ClickHandler({ onSelectPos }: { onSelectPos?: (lat: number, lng: number) => void }) {
@@ -101,6 +102,7 @@ export default function LeafletMapCore({
   destinationLabel = 'Household Doorstep',
   fitBoundsToRoute = false,
   useTruckIconForCollector = true,
+  selectedRequestId,
 }: MapCoreProps) {
   useEffect(() => {
     fixLeafletIcon();
@@ -164,8 +166,8 @@ export default function LeafletMapCore({
           </Marker>
         )}
 
-        {/* Doorstep Destination Pin (When navigating or tracking) */}
-        {destinationPos && (
+        {/* Doorstep Destination Pin (When navigating or tracking, avoid duplicate if request already rendered) */}
+        {destinationPos && (!selectedRequestId || !requests.some((r) => r.id === selectedRequestId)) && (
           <Marker position={destinationPos} icon={doorstepLocationIcon}>
             <Popup autoPan={false}>
               <div className="text-xs font-bold p-1 text-emerald-900">
@@ -239,32 +241,35 @@ export default function LeafletMapCore({
         ))}
 
         {/* Multiple Request Markers for Collector Map View */}
-        {requests.map((req) => (
-          <Marker
-            key={req.id}
-            position={[req.latitude, req.longitude]}
-            icon={householdLocationIcon}
-            eventHandlers={{
-              click: () => onSelectRequest && onSelectRequest(req),
-            }}
-          >
-            <Popup autoPan={false}>
-              <div className="text-xs p-1 space-y-1">
-                <p className="font-bold text-slate-900">{req.address}</p>
-                <p className="text-emerald-600 font-semibold">Status: {req.status.toUpperCase()}</p>
-                <p className="text-slate-600">Est Weight: {req.total_estimated_weight_kg || 5} kg</p>
-                {onSelectRequest && (
-                  <button
-                    onClick={() => onSelectRequest(req)}
-                    className="mt-1 px-2 py-1 bg-emerald-600 text-white rounded font-bold w-full text-center"
-                  >
-                    View Pickup Details
-                  </button>
-                )}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        {requests.map((req) => {
+          const isSelected = selectedRequestId === req.id;
+          return (
+            <Marker
+              key={req.id}
+              position={[req.latitude, req.longitude]}
+              icon={isSelected ? doorstepLocationIcon : householdLocationIcon}
+              eventHandlers={{
+                click: () => onSelectRequest && onSelectRequest(req),
+              }}
+            >
+              <Popup autoPan={false}>
+                <div className="text-xs p-1 space-y-1">
+                  <p className="font-bold text-slate-900">{req.address}</p>
+                  <p className="text-emerald-600 font-semibold">Status: {req.status.toUpperCase()}</p>
+                  <p className="text-slate-600">Est Weight: {req.total_estimated_weight_kg || 5} kg</p>
+                  {onSelectRequest && (
+                    <button
+                      onClick={() => onSelectRequest(req)}
+                      className="mt-1 px-2 py-1 bg-[#136B3B] text-white rounded font-bold w-full text-center hover:bg-[#0F5730] transition"
+                    >
+                      {isSelected ? '✓ Current Selected' : 'View Pickup Details'}
+                    </button>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
     </div>
   );
