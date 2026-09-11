@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Recycle, LogOut, MapPin, Truck, History, PlusCircle, Bell, Store, Shield, Users, ClipboardList, Settings } from 'lucide-react';
+import { Recycle, LogOut, MapPin, Truck, History, PlusCircle, Bell, Store, Shield, Users, ClipboardList, Settings, Landmark } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { UserProfile } from '@/types';
 import NotificationDrawer from '@/components/common/NotificationDrawer';
@@ -11,6 +11,9 @@ import {
   getUnreadNotificationsCount,
   subscribeToNotifications,
 } from '@/lib/notification-service';
+import GovTopBar from '@/components/gov/GovTopBar';
+import GovTicker from '@/components/gov/GovTicker';
+import { EmblemOfIndia, SwachhBharatLogo, SihBadge } from '@/components/gov/GovLogos';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -56,7 +59,7 @@ export default function Navbar() {
         } else {
           setProfile({
             id: user.id,
-            full_name: user.user_metadata?.full_name || 'Sahil',
+            full_name: user.user_metadata?.full_name || 'Citizen User',
             role: (user.user_metadata?.role as 'household' | 'collector') || 'household',
           });
         }
@@ -76,258 +79,225 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E5E7EB] text-[#191C1E] shadow-[0_1px_4px_rgba(0,0,0,0.02)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      {/* 1. Official Government of India Top Accessibility & Utility Bar */}
+      <GovTopBar />
+
+      {/* 2. Main Portal Government Header */}
+      <header className="sticky top-0 z-40 bg-white/98 backdrop-blur-md border-b border-[#D8E2DC] text-[#191C1E] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3">
           
-          {/* Brand Logo & DB status badge */}
+          {/* Brand & State Emblem of India */}
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5 hover:opacity-95 transition">
-              <div className="w-10 h-10 rounded-xl bg-[#E6F4EA] flex items-center justify-center text-[#136B3B] font-bold shadow-xs">
-                <Recycle className="w-5 h-5 stroke-[2.2]" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-extrabold text-lg tracking-tight text-[#136B3B] leading-none">ScrapMax</span>
-                <span className="text-[10px] font-semibold text-[#6B7280] tracking-wider uppercase mt-0.5">Circular Recycling</span>
+            {/* Ashoka Lion Capital (State Emblem) */}
+            <Link href="/" className="flex items-center gap-2.5 hover:opacity-95 transition" title="National Circular Recycling Portal">
+              <EmblemOfIndia className="h-11 sm:h-12" />
+
+              <div className="hidden sm:block h-8 w-[1px] bg-gray-300" />
+
+              <div className="flex flex-col text-left">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-black text-lg sm:text-xl tracking-tight text-[#046A38] leading-none">
+                    ScrapMax
+                  </span>
+                  <span className="text-xs font-bold text-[#FF671F] font-serif">
+                    स्क्रैपमैक्स
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-[#526056] tracking-tight leading-tight mt-0.5">
+                  National Circular Economy &amp; EPR Portal
+                </span>
+                <span className="text-[9px] font-semibold text-[#8C9B91] leading-none">
+                  MoEF&amp;CC · Swachh Bharat Mission (Urban)
+                </span>
               </div>
             </Link>
+
+            {/* Smart India Hackathon badge */}
+            <div className="hidden xl:block ml-2">
+              <SihBadge className="h-8" />
+            </div>
 
             {isAdmin && (
               <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200 shadow-2xs">
                 <Shield className="w-3.5 h-3.5 text-purple-600" />
-                <span>Admin Console</span>
-              </span>
-            )}
-
-            {!isAdmin && dbConnected === true && (
-              <span
-                title="Connected to live Supabase PostgreSQL database"
-                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8]"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#136B3B] animate-pulse"></span>
-                <span>Supabase DB Live</span>
+                <span>Municipal Admin Console</span>
               </span>
             )}
           </div>
 
-          {/* Dynamic Navigation Links */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Dynamic Government Navigation Links */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             
+            {/* Swachh Bharat Gandhi Glasses (visible on medium+ screens) */}
+            <div className="hidden lg:block mr-2">
+              <SwachhBharatLogo className="h-7" />
+            </div>
+
             {isAdmin ? (
               <>
                 <Link
                   href="/admin"
-                  className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition border ${
                     pathname === '/admin'
-                      ? 'bg-[#EAE6F8] text-[#191C1E]'
-                      : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                      ? 'bg-[#E6F4EA] text-[#046A38] border-[#A6D5B8]'
+                      : 'text-[#526056] border-transparent hover:bg-gray-100 hover:text-[#191C1E]'
                   }`}
                 >
-                  <Shield className="w-4 h-4 text-purple-700" />
+                  <Shield className="w-3.5 h-3.5 text-purple-700" />
                   <span>Overview</span>
                 </Link>
                 <Link
                   href="/admin/pickups"
-                  className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                  className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition border ${
                     pathname === '/admin/pickups'
-                      ? 'bg-[#EAE6F8] text-[#191C1E]'
-                      : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                      ? 'bg-[#E6F4EA] text-[#046A38] border-[#A6D5B8]'
+                      : 'text-[#526056] border-transparent hover:bg-gray-100 hover:text-[#191C1E]'
                   }`}
                 >
-                  <Truck className="w-4 h-4 text-emerald-600" />
+                  <Truck className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Pickups</span>
                 </Link>
                 <Link
                   href="/admin/users"
-                  className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                  className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition border ${
                     pathname === '/admin/users'
-                      ? 'bg-[#EAE6F8] text-[#191C1E]'
-                      : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                      ? 'bg-[#E6F4EA] text-[#046A38] border-[#A6D5B8]'
+                      : 'text-[#526056] border-transparent hover:bg-gray-100 hover:text-[#191C1E]'
                   }`}
                 >
-                  <Users className="w-4 h-4 text-blue-600" />
+                  <Users className="w-3.5 h-3.5 text-blue-600" />
                   <span>Users</span>
                 </Link>
                 <Link
                   href="/admin/reports"
-                  className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                  className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition border ${
                     pathname.startsWith('/admin/reports')
-                      ? 'bg-[#EAE6F8] text-[#191C1E]'
-                      : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                      ? 'bg-[#E6F4EA] text-[#046A38] border-[#A6D5B8]'
+                      : 'text-[#526056] border-transparent hover:bg-gray-100 hover:text-[#191C1E]'
                   }`}
                 >
-                  <ClipboardList className="w-4 h-4 text-red-600" />
+                  <ClipboardList className="w-3.5 h-3.5 text-red-600" />
                   <span>Reports</span>
                 </Link>
                 <Link
                   href="/admin/settings"
-                  className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                  className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition border ${
                     pathname === '/admin/settings'
-                      ? 'bg-[#EAE6F8] text-[#191C1E]'
-                      : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                      ? 'bg-[#E6F4EA] text-[#046A38] border-[#A6D5B8]'
+                      : 'text-[#526056] border-transparent hover:bg-gray-100 hover:text-[#191C1E]'
                   }`}
                 >
-                  <Settings className="w-4 h-4 text-gray-700" />
+                  <Settings className="w-3.5 h-3.5 text-gray-700" />
                   <span>Settings</span>
                 </Link>
               </>
             ) : (
               <>
-                {/* Store Map Link (Accessible to all non-admins) */}
+                {/* Citizen Services Tab */}
                 <Link
-                  href="/stores"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                    pathname === '/stores'
-                      ? 'bg-[#EAE6F8] text-[#191C1E]'
-                      : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                  href="/household"
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition border ${
+                    pathname.startsWith('/household')
+                      ? 'bg-[#E6F4EA] text-[#046A38] border-[#A6D5B8]'
+                      : 'text-[#526056] border-transparent hover:bg-gray-100 hover:text-[#191C1E]'
                   }`}
                 >
-                  <Store className="w-4 h-4 text-[#136B3B]" />
-                  <span className="hidden sm:inline">Store Map</span>
+                  <Recycle className="w-3.5 h-3.5 text-[#046A38]" />
+                  <span>Citizen Portal</span>
                 </Link>
 
-                {/* Admin Portal Link */}
+                {/* Collector Network Tab */}
+                <Link
+                  href="/collector"
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition border ${
+                    pathname.startsWith('/collector')
+                      ? 'bg-[#E6F4EA] text-[#046A38] border-[#A6D5B8]'
+                      : 'text-[#526056] border-transparent hover:bg-gray-100 hover:text-[#191C1E]'
+                  }`}
+                >
+                  <Truck className="w-3.5 h-3.5 text-[#FF671F]" />
+                  <span className="hidden sm:inline">Kabadiwala Portal</span>
+                </Link>
+
+                {/* Municipal Admin Portal Link */}
                 <Link
                   href="/admin"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition border ${
                     pathname.startsWith('/admin')
-                      ? 'bg-[#F3E8FF] text-purple-900'
-                      : 'text-purple-700 hover:text-purple-900 hover:bg-purple-50'
+                      ? 'bg-purple-100 text-purple-900 border-purple-300'
+                      : 'text-purple-700 border-transparent hover:bg-purple-50'
                   }`}
                 >
-                  <Shield className="w-4 h-4 text-purple-600" />
+                  <Landmark className="w-3.5 h-3.5 text-purple-700" />
                   <span className="hidden sm:inline">Admin</span>
                 </Link>
-
-                {profile?.role === 'household' && (
-                  <>
-                    <Link
-                      href="/household"
-                      className={`hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
-                        pathname === '/household'
-                          ? 'bg-[#EAE6F8] text-[#191C1E]'
-                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
-                      }`}
-                    >
-                      <History className="w-4 h-4" />
-                      <span>Dashboard</span>
-                    </Link>
-                    <Link
-                      href="/household/history"
-                      className={`hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
-                        pathname === '/household/history'
-                          ? 'bg-[#EAE6F8] text-[#191C1E]'
-                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
-                      }`}
-                    >
-                      <History className="w-4 h-4" />
-                      <span>Activity</span>
-                    </Link>
-                    <Link
-                      href="/household/request-pickup"
-                      className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-[#136B3B] hover:bg-[#0F5730] text-white shadow-sm transition"
-                    >
-                      <PlusCircle className="w-4 h-4" />
-                      <span>Request Pickup</span>
-                    </Link>
-                  </>
-                )}
-
-                {profile?.role === 'collector' && (
-                  <>
-                    <Link
-                      href="/collector"
-                      className={`hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
-                        pathname === '/collector'
-                          ? 'bg-[#EAE6F8] text-[#191C1E]'
-                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
-                      }`}
-                    >
-                      <Truck className="w-4 h-4" />
-                      <span>Available Pickups</span>
-                    </Link>
-                    <Link
-                      href="/collector/map"
-                      className={`hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
-                        pathname === '/collector/map'
-                          ? 'bg-[#EAE6F8] text-[#191C1E]'
-                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
-                      }`}
-                    >
-                      <MapPin className="w-4 h-4" />
-                      <span>Map Route</span>
-                    </Link>
-                  </>
-                )}
               </>
             )}
 
-            {/* Profile Info Badge */}
-            {profile ? (
-              <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-[#E5E7EB]">
-                <Link
-                  href={profile.role === 'admin' ? '/admin' : '/household/profile'}
-                  className="flex items-center gap-2 py-1 px-1.5 rounded-xl hover:bg-[#F2F4F6] transition"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#136B3B] font-bold text-sm select-none">
-                    {profile.full_name?.charAt(0) || 'S'}
-                  </div>
-                  <div className="text-left hidden md:block">
-                    <p className="text-xs font-bold text-[#191C1E] leading-tight">{profile.full_name}</p>
-                    <span className="text-[10px] uppercase font-bold text-[#136B3B]">
-                      {profile.role}
-                    </span>
-                  </div>
-                </Link>
-
-                <button
-                  onClick={handleLogout}
-                  title="Logout"
-                  className="p-2 rounded-xl text-[#6B7280] hover:text-[#BA1A1A] hover:bg-[#FEE2E2] transition hidden sm:block"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/login"
-                  className="px-3 py-1.5 text-xs font-bold text-[#191C1E] hover:bg-[#F2F4F6] rounded-xl transition"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/register"
-                  className="px-3.5 py-1.5 text-xs font-bold text-white bg-[#136B3B] hover:bg-[#0F5730] rounded-full shadow-sm transition"
-                >
-                  Get Started
-                </Link>
-              </div>
-            )}
-
-            {/* Smart Notification Bell Button */}
+            {/* Notification Bell */}
             <button
-              type="button"
               onClick={() => setIsDrawerOpen(true)}
-              title="Smart Notifications"
-              className="relative p-2 rounded-xl text-[#191C1E] hover:bg-[#F2F4F6] transition active:scale-95"
-              aria-label="Open notifications"
+              aria-label="Government Alerts & Notifications"
+              className="relative p-2 rounded-lg text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6] transition"
             >
-              <Bell className="w-5 h-5 text-gray-700" />
+              <Bell className="w-4 h-4" />
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 bg-[#BA1A1A] text-white text-[10px] font-extrabold rounded-full flex items-center justify-center border-2 border-white shadow-xs animate-pulse">
+                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF671F] text-[9px] font-bold text-white shadow-2xs">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </button>
 
-          </div>
+            {/* Profile or Login */}
+            {profile ? (
+              <div className="flex items-center gap-2 pl-1 border-l border-gray-200">
+                <Link
+                  href={profile.role === 'collector' ? '/collector' : '/household/profile'}
+                  className="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-gray-100 transition text-left"
+                >
+                  <div className="w-7 h-7 rounded-full bg-[#046A38] text-white flex items-center justify-center text-xs font-black shadow-2xs">
+                    {(profile.full_name || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="hidden lg:flex flex-col">
+                    <span className="text-xs font-bold text-[#191C1E] leading-none truncate max-w-[100px]">
+                      {profile.full_name || 'Citizen'}
+                    </span>
+                    <span className="text-[9px] text-[#046A38] font-bold uppercase mt-0.5">
+                      {profile.role || 'Citizen'}
+                    </span>
+                  </div>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  title="Sign out of portal"
+                  className="p-1.5 text-gray-400 hover:text-red-600 transition rounded-lg hover:bg-red-50"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 pl-1">
+                <Link
+                  href="/login"
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold text-[#046A38] hover:bg-[#E6F4EA] border border-[#A6D5B8] transition"
+                >
+                  Login / साइन इन
+                </Link>
+              </div>
+            )}
 
+          </div>
         </div>
       </header>
 
-      {/* Slide-over Notification Drawer */}
-      <NotificationDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
+      {/* 3. Official Government Notification Ticker */}
+      <GovTicker />
+
+      {/* Slide-out notification drawer */}
+      <NotificationDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
     </>
   );
 }
-
