@@ -230,6 +230,13 @@ function RegisterForm() {
           Sign In
         </Link>
       </p>
+
+      <p className="text-center text-[11px] text-gray-400 pt-1">
+        By registering, you agree to our{' '}
+        <Link href="/privacy" className="text-[#136B3B] underline hover:text-[#0F5730] font-medium">
+          Privacy Policy &amp; Data Charter
+        </Link>
+      </p>
     </div>
   );
 }
