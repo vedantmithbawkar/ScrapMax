@@ -7,6 +7,7 @@ import Navbar from '@/components/common/Navbar';
 import ReceiptModal from '@/components/request/ReceiptModal';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest, ChatMessage, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
+import { getChatMessages, subscribeToChat, sendChatMessage } from '@/lib/chat-service';
 import {
   ArrowLeft,
   MapPin,
@@ -97,12 +98,21 @@ export default function TrackPickupPage() {
 
   const [activeTab, setActiveTab] = useState<'track' | 'chat'>('track');
   const [request, setRequest] = useState<PickupRequest>(DEMO_REQUEST);
-  const [messages, setMessages] = useState<ChatMessage[]>(DEMO_MESSAGES);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => getChatMessages(requestId));
   const [inputText, setInputText] = useState('');
   const [chatId, setChatId] = useState<string | null>(null);
   const [currentUserId] = useState('user-h101');
   const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Subscribe to real-time chat sync across tabs & portals
+  useEffect(() => {
+    setMessages(getChatMessages(requestId));
+    const unsubscribe = subscribeToChat(requestId, (updatedMsgs) => {
+      setMessages(updatedMsgs);
+    });
+    return () => unsubscribe();
+  }, [requestId]);
 
   // Load request from Supabase or localStorage fallback
   useEffect(() => {
@@ -154,46 +164,9 @@ export default function TrackPickupPage() {
         }
         setRequest(req as PickupRequest);
       }
-
-      // Init chat
-      let { data: chat } = await supabase
-        .from('chats')
-        .select('*')
-        .eq('request_id', requestId)
-        .single();
-      if (!chat && req) {
-        const { data: newChat } = await supabase
-          .from('chats')
-          .insert({ request_id: requestId, household_id: req.household_id, collector_id: req.collector_id || 'demo' })
-          .select('*')
-          .single();
-        chat = newChat;
-      }
-      if (chat) {
-        setChatId(chat.id);
-        const { data: msgs } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('chat_id', chat.id)
-          .order('created_at', { ascending: true });
-        if (msgs && msgs.length > 0) setMessages(msgs as ChatMessage[]);
-      }
     }
     if (requestId !== 'demo') load();
   }, [requestId]);
-
-  // Realtime chat subscription
-  useEffect(() => {
-    if (!chatId) return;
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`chat:${chatId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` }, (payload) => {
-        setMessages((prev) => [...prev, payload.new as ChatMessage]);
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [chatId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -205,19 +178,7 @@ export default function TrackPickupPage() {
     const text = inputText.trim();
     setInputText('');
 
-    const optimistic: ChatMessage = {
-      id: String(Date.now()),
-      chat_id: chatId || 'demo',
-      sender_id: currentUserId,
-      text,
-      created_at: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimistic]);
-
-    if (chatId) {
-      const supabase = createClient();
-      await supabase.from('messages').insert({ chat_id: chatId, sender_id: currentUserId, text });
-    }
+    await sendChatMessage(requestId, currentUserId, text, 'household');
   };
 
   const currentStatusIdx = STATUS_ORDER.indexOf(request.status);

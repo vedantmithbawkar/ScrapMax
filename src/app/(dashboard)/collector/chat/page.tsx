@@ -1,27 +1,48 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/common/Navbar';
 import BottomNav from '@/components/common/BottomNav';
 import { MessageSquare, MapPin, Clock, ChevronRight } from 'lucide-react';
+import { getChatMessages, subscribeToChat } from '@/lib/chat-service';
+import { createClient } from '@/lib/supabase/client';
 
-const DEMO_CHATS = [
+interface ChatSummary {
+  requestId: string;
+  householdName: string;
+  address: string;
+  status: string;
+  lastMessage: string;
+  time: string;
+  unread: number;
+}
+
+const DEFAULT_CHATS: ChatSummary[] = [
   {
-    requestId: 'req-c301-demo-uuid',
-    householdName: 'Household — City Center',
+    requestId: 'req-map-001',
+    householdName: 'Household — Ramesh Kumar Pickup',
     address: 'Main Market Road, Near City Center',
     status: 'accepted',
-    lastMessage: 'Items packed in bags in garage.',
-    time: '5 min ago',
-    unread: 2,
+    lastMessage: 'Perfect. I am about 15 minutes away. See you soon! 🚛',
+    time: 'Just now',
+    unread: 0,
+  },
+  {
+    requestId: 'req-h102-demo-uuid',
+    householdName: 'Household — Koramangala',
+    address: '80ft Road, Koramangala 4th Block',
+    status: 'accepted',
+    lastMessage: 'Recyclables ready near the gate.',
+    time: '20 min ago',
+    unread: 0,
   },
   {
     requestId: 'req-c302-demo-uuid',
     householdName: 'Household — Commercial Hub',
     address: 'Station Road West, Commercial Hub',
     status: 'in_progress',
-    lastMessage: 'I\'ll be there in 10 minutes!',
+    lastMessage: "I'll be there in 10 minutes!",
     time: '1 hr ago',
     unread: 0,
   },
@@ -41,6 +62,66 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function CollectorChatListPage() {
+  const [chats, setChats] = useState<ChatSummary[]>(DEFAULT_CHATS);
+
+  const refreshLastMessages = () => {
+    setChats((prev) =>
+      prev.map((c) => {
+        const msgs = getChatMessages(c.requestId);
+        if (msgs && msgs.length > 0) {
+          const last = msgs[msgs.length - 1];
+          return {
+            ...c,
+            lastMessage: last.text,
+            time: new Date(last.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          };
+        }
+        return c;
+      })
+    );
+  };
+
+  useEffect(() => {
+    // 1. Initial message refresh
+    refreshLastMessages();
+
+    // 2. Load requests from local storage if available
+    try {
+      const local = JSON.parse(localStorage.getItem('local_pickup_requests') || '[]');
+      if (Array.isArray(local) && local.length > 0) {
+        const localChats: ChatSummary[] = local.map((r: any) => {
+          const msgs = getChatMessages(r.id);
+          const last = msgs[msgs.length - 1];
+          return {
+            requestId: r.id,
+            householdName: r.userName || 'Household Pickup',
+            address: r.address || 'Pickup Location',
+            status: r.status || 'accepted',
+            lastMessage: last ? last.text : 'Pickup coordination chat',
+            time: last ? new Date(last.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today',
+            unread: 0,
+          };
+        });
+
+        setChats((existing) => {
+          const map = new Map<string, ChatSummary>();
+          localChats.forEach((c) => map.set(c.requestId, c));
+          existing.forEach((c) => {
+            if (!map.has(c.requestId)) map.set(c.requestId, c);
+          });
+          return Array.from(map.values());
+        });
+      }
+    } catch {}
+
+    // Listen for live updates
+    const unsub = subscribeToChat('req-map-001', () => {
+      refreshLastMessages();
+    });
+
+    return () => unsub();
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans pb-24">
       <Navbar />
@@ -54,7 +135,7 @@ export default function CollectorChatListPage() {
           <p className="text-sm text-[#526056] mt-1">Chat with households for your active pickups</p>
         </div>
 
-        {DEMO_CHATS.length === 0 ? (
+        {chats.length === 0 ? (
           <div className="text-center py-16 bg-white border border-dashed border-gray-200 rounded-3xl text-[#6B7280] text-sm">
             <MessageSquare className="w-10 h-10 text-gray-200 mx-auto mb-3" />
             <p className="font-bold text-[#191C1E]">No active chats</p>
@@ -62,7 +143,7 @@ export default function CollectorChatListPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {DEMO_CHATS.map((chat) => (
+            {chats.map((chat) => (
               <Link
                 key={chat.requestId}
                 href={`/collector/chat/${chat.requestId}`}
@@ -77,8 +158,8 @@ export default function CollectorChatListPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <p className="text-sm font-bold text-[#191C1E] truncate">{chat.householdName}</p>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${STATUS_COLORS[chat.status]}`}>
-                      {STATUS_LABELS[chat.status]}
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${STATUS_COLORS[chat.status] || 'bg-gray-100 text-gray-700'}`}>
+                      {STATUS_LABELS[chat.status] || 'Active'}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-[#6B7280] mb-1">
