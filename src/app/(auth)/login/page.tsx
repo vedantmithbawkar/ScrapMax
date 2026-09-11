@@ -21,6 +21,7 @@ import {
   KeyRound,
   Loader2,
   Fingerprint,
+  Phone,
   X,
 } from 'lucide-react';
 import {
@@ -55,6 +56,7 @@ export default function LoginPage() {
   // Aadhaar Login Gate State for Collectors
   const [showAadhaarGateModal, setShowAadhaarGateModal] = useState(false);
   const [pendingCollectorUser, setPendingCollectorUser] = useState<{ id: string; email: string; phone?: string } | null>(null);
+  const [gatePhoneInput, setGatePhoneInput] = useState('');
   const [gateAadhaarInput, setGateAadhaarInput] = useState('');
   const [gateAadhaarOtp, setGateAadhaarOtp] = useState('');
   const [gateTxnId, setGateTxnId] = useState('');
@@ -62,6 +64,7 @@ export default function LoginPage() {
   const [gateLoading, setGateLoading] = useState(false);
   const [gateError, setGateError] = useState<string | null>(null);
   const [gateNotice, setGateNotice] = useState<string | null>(null);
+  const [gateSmsMessage, setGateSmsMessage] = useState<string | null>(null);
 
   const handleRoleRouting = async (user: any, profileRole?: string, roleHint?: UserRole) => {
     const supabase = createClient();
@@ -91,11 +94,15 @@ export default function LoginPage() {
       );
 
       if (!isVerified) {
+        // Collector is NOT verified - BLOCK LOGIN!
+        const userPhone = profile?.phone || user.user_metadata?.phone || '+91 98201 45892';
         setPendingCollectorUser({
           id: user.id,
           email: user.email || '',
-          phone: profile?.phone || user.user_metadata?.phone,
+          phone: userPhone,
         });
+        setGatePhoneInput(userPhone);
+        setGateSmsMessage(null);
         setShowAadhaarGateModal(true);
         setLoading(false);
         setAutoLoggingRole(null);
@@ -182,10 +189,18 @@ export default function LoginPage() {
     setGateLoading(true);
     setGateError(null);
     setGateNotice(null);
+    setGateSmsMessage(null);
 
     const clean = gateAadhaarInput.replace(/\s+/g, '');
     if (clean.length !== 12) {
       setGateError('Please enter a valid 12-digit Aadhaar number.');
+      setGateLoading(false);
+      return;
+    }
+
+    const cleanPhone = (gatePhoneInput || pendingCollectorUser?.phone || '').replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
+      setGateError('Please enter your valid 10-digit registered mobile number.');
       setGateLoading(false);
       return;
     }
@@ -197,7 +212,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           action: 'send-otp',
           aadhaarNumber: clean,
-          phone: pendingCollectorUser?.phone || '+91 9876543210',
+          phone: cleanPhone,
         }),
       });
 
@@ -207,7 +222,10 @@ export default function LoginPage() {
       } else {
         setGateTxnId(data.txnId || '');
         setGateOtpSent(true);
-        setGateNotice(data.message || 'OTP dispatched to your Aadhaar-linked mobile.');
+        setGateNotice(data.message || `OTP dispatched via SMS to your registered number: ${data.registeredPhone || cleanPhone}`);
+        if (data.smsMessage) {
+          setGateSmsMessage(data.smsMessage);
+        }
       }
     } catch (err: any) {
       setGateError(err.message || 'Network error while contacting Aadhaar API.');
@@ -482,6 +500,23 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-3 bg-[#F8FAF9] p-4 rounded-2xl border border-gray-200">
+                {/* Registered Phone Input for OTP Delivery */}
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">
+                    Registered Mobile Number for OTP
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      value={gatePhoneInput}
+                      onChange={(e) => setGatePhoneInput(e.target.value)}
+                      placeholder="+91 9876543210"
+                      className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-mono text-[#191C1E] tracking-wide placeholder-gray-400 focus:outline-none focus:border-[#136B3B]"
+                    />
+                    <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-[#191C1E] mb-1.5">
                     12-Digit Aadhaar Card Number
@@ -515,6 +550,24 @@ export default function LoginPage() {
 
                 {gateOtpSent && (
                   <div className="pt-2 border-t border-gray-200 space-y-2">
+                    {/* Incoming SMS Notification Display */}
+                    {gateSmsMessage && (
+                      <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900 space-y-1 animate-in fade-in">
+                        <div className="flex items-center justify-between font-bold text-blue-950">
+                          <span className="flex items-center gap-1">
+                            <span>💬</span>
+                            <span>SMS Delivered to Registered Mobile:</span>
+                          </span>
+                          <span className="text-[10px] font-mono bg-blue-100 px-1.5 py-0.5 rounded text-blue-800">
+                            +91 {gatePhoneInput.replace(/\D/g, '').slice(-10)}
+                          </span>
+                        </div>
+                        <p className="font-mono bg-white p-2 rounded-lg border border-blue-100 text-slate-800 text-[11px] leading-relaxed shadow-2xs">
+                          &quot;{gateSmsMessage}&quot;
+                        </p>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between">
                       <label className="block text-[11px] font-bold text-[#191C1E]">
                         Enter 6-Digit Aadhaar OTP

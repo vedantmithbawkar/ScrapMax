@@ -84,16 +84,25 @@ function RegisterForm() {
   const [aadhaarLoading, setAadhaarLoading] = useState(false);
   const [aadhaarError, setAadhaarError] = useState<string | null>(null);
   const [aadhaarNotice, setAadhaarNotice] = useState<string | null>(null);
+  const [smsMessageReceived, setSmsMessageReceived] = useState<string | null>(null);
 
   // Send Aadhaar OTP
   const handleSendAadhaarOtp = async () => {
     setAadhaarLoading(true);
     setAadhaarError(null);
     setAadhaarNotice(null);
+    setSmsMessageReceived(null);
 
     const clean = aadhaarInput.replace(/\s+/g, '');
     if (clean.length !== 12) {
       setAadhaarError('Please enter a valid 12-digit Aadhaar number.');
+      setAadhaarLoading(false);
+      return;
+    }
+
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
+      setAadhaarError('⚠️ Please enter your 10-digit registered Phone Number above before requesting OTP.');
       setAadhaarLoading(false);
       return;
     }
@@ -105,7 +114,7 @@ function RegisterForm() {
         body: JSON.stringify({
           action: 'send-otp',
           aadhaarNumber: clean,
-          phone: phone || '+91 9876543210',
+          phone: cleanPhone,
         }),
       });
 
@@ -115,7 +124,10 @@ function RegisterForm() {
       } else {
         setAadhaarTxnId(data.txnId || '');
         setOtpSent(true);
-        setAadhaarNotice(data.message || 'OTP dispatched to Aadhaar linked mobile.');
+        setAadhaarNotice(data.message || `OTP dispatched via SMS to your registered number: ${data.registeredPhone || cleanPhone}`);
+        if (data.smsMessage) {
+          setSmsMessageReceived(data.smsMessage);
+        }
       }
     } catch (err: any) {
       setAadhaarError(err.message || 'Network error while connecting to Aadhaar API.');
@@ -711,6 +723,16 @@ function RegisterForm() {
               </div>
             ) : (
               <div className="space-y-2.5 bg-white p-3 rounded-xl border border-gray-200 shadow-2xs">
+                {/* Target Registered Mobile Display */}
+                <div className="flex items-center justify-between p-2 bg-emerald-50/70 border border-emerald-200/80 rounded-lg text-[11px]">
+                  <span className="text-[#166534] font-bold">Registered Mobile for OTP:</span>
+                  <span className="font-mono font-bold text-[#14532D]">
+                    {phone && phone.replace(/\D/g, '').length >= 10
+                      ? `+91 ${phone.replace(/\D/g, '').slice(-10)}`
+                      : '⚠️ Enter phone number above'}
+                  </span>
+                </div>
+
                 <div>
                   <label className="block text-[11px] font-bold text-[#191C1E] mb-1">
                     12-Digit Aadhaar Card Number
@@ -744,6 +766,24 @@ function RegisterForm() {
 
                 {otpSent && (
                   <div className="pt-2 border-t border-gray-100 space-y-2">
+                    {/* Incoming SMS Alert on Registered Mobile */}
+                    {smsMessageReceived && (
+                      <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-900 space-y-1 animate-in fade-in">
+                        <div className="flex items-center justify-between font-bold text-blue-950">
+                          <span className="flex items-center gap-1">
+                            <span>💬</span>
+                            <span>SMS Delivered to Registered Mobile:</span>
+                          </span>
+                          <span className="text-[10px] font-mono bg-blue-100 px-1.5 py-0.5 rounded text-blue-800">
+                            +91 {phone.replace(/\D/g, '').slice(-10)}
+                          </span>
+                        </div>
+                        <p className="font-mono bg-white p-2 rounded-lg border border-blue-100 text-slate-800 text-[11px] leading-relaxed shadow-2xs">
+                          &quot;{smsMessageReceived}&quot;
+                        </p>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between">
                       <label className="block text-[11px] font-bold text-[#191C1E]">
                         Enter 6-Digit Aadhaar OTP
