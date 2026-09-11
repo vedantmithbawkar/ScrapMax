@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { I18nProvider } from "@/i18n/context";
-import VoiceAssistantWidget from "@/components/common/VoiceAssistantWidget";
+import AIAssistant from "@/components/ai/AIAssistant";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -28,7 +28,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-[#F7F9FA] text-[#191C1E] font-sans">
         <I18nProvider>
           {children}
-          <VoiceAssistantWidget />
+          <AIAssistant />
         </I18nProvider>
       </body>
     </html>
