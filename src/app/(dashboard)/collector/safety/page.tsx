@@ -366,57 +366,182 @@ export default function CollectorSafetyPage() {
   const [activeTab, setActiveTab] = useState<string>('batteries');
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [currentSpeakingId, setCurrentSpeakingId] = useState<string | null>(null);
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
 
   const selectedTopic = SAFETY_TOPICS.find((t) => t.id === activeTab) || SAFETY_TOPICS[0];
 
-  // Voice narration using Web Speech API
+  // Preload and cache browser voices
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    const populateVoices = () => {
+      window.speechSynthesis.getVoices();
+    };
+
+    populateVoices();
+    window.speechSynthesis.onvoiceschanged = populateVoices;
+
+    return () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  // Chrome speech keep-alive heartbeat
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isPlayingAudio && typeof window !== 'undefined' && window.speechSynthesis) {
+      interval = setInterval(() => {
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      }, 5000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isPlayingAudio]);
+
+  // Voice narration using Web Speech API with fallback for Marathi & Indian languages
   const handleToggleSpeech = (topic: HazardTopic) => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      alert('Your browser does not support audio speech narration. Please try in Google Chrome or Microsoft Edge.');
+      return;
+    }
 
     if (isPlayingAudio && currentSpeakingId === topic.id) {
       window.speechSynthesis.cancel();
       setIsPlayingAudio(false);
       setCurrentSpeakingId(null);
+      setVoiceNotice(null);
       return;
     }
 
     window.speechSynthesis.cancel();
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+
     const textToSpeak = topic.speechText[lang];
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    const voices = window.speechSynthesis.getVoices();
 
-    if (lang === 'hi') {
-      utterance.lang = 'hi-IN';
+    // Strategy to guarantee speech even if OS lacks native Marathi TTS voice
+    let assignedVoice: SpeechSynthesisVoice | null = null;
+    let voiceLang = 'en-IN';
+
+    if (lang === 'mr') {
+      // 1. First priority: native Marathi voice (mr-IN, mr)
+      const nativeMr = voices.find((v) => {
+        const l = (v.lang || '').toLowerCase().replace('_', '-');
+        const n = (v.name || '').toLowerCase();
+        return l.startsWith('mr') || n.includes('marathi');
+      });
+
+      if (nativeMr) {
+        assignedVoice = nativeMr;
+        voiceLang = nativeMr.lang;
+        setVoiceNotice('मराठी आवाज (Native Marathi Voice)');
+      } else {
+        // 2. High quality fallback: Hindi Devanagari voice (Google हिन्दी, Kalpana, Hemant, etc.)
+        // Since Marathi uses identical Devanagari script, Hindi TTS pronounces Marathi cleanly without failing
+        const hindiVoice = voices.find((v) => {
+          const l = (v.lang || '').toLowerCase().replace('_', '-');
+          const n = (v.name || '').toLowerCase();
+          return l.startsWith('hi') || n.includes('hindi') || n.includes('kalpana') || n.includes('hemant');
+        });
+
+        if (hindiVoice) {
+          assignedVoice = hindiVoice;
+          voiceLang = hindiVoice.lang || 'hi-IN';
+          setVoiceNotice('देवनागरी ऑडिओ (Devanagari Voice)');
+        } else {
+          // 3. Indian locale fallback
+          const indianVoice = voices.find((v) => (v.lang || '').toLowerCase().includes('in'));
+          if (indianVoice) {
+            assignedVoice = indianVoice;
+            voiceLang = indianVoice.lang;
+          } else {
+            voiceLang = 'hi-IN';
+          }
+          setVoiceNotice('ऑडिओ सुरू (Audio Playing)');
+        }
+      }
+      utterance.rate = 0.88; // Comfortable pace for safety alerts
+    } else if (lang === 'hi') {
+      const hindiVoice = voices.find((v) => {
+        const l = (v.lang || '').toLowerCase().replace('_', '-');
+        const n = (v.name || '').toLowerCase();
+        return l.startsWith('hi') || n.includes('hindi') || n.includes('kalpana') || n.includes('hemant');
+      });
+      if (hindiVoice) {
+        assignedVoice = hindiVoice;
+        voiceLang = hindiVoice.lang;
+      } else {
+        voiceLang = 'hi-IN';
+      }
       utterance.rate = 0.9;
-    } else if (lang === 'mr') {
-      utterance.lang = 'mr-IN';
-      utterance.rate = 0.9;
+      setVoiceNotice('हिंदी आवाज (Hindi Voice)');
     } else {
-      utterance.lang = 'en-IN';
+      const enVoice = voices.find((v) => {
+        const l = (v.lang || '').toLowerCase().replace('_', '-');
+        return l.startsWith('en-in') || l.startsWith('en');
+      });
+      if (enVoice) {
+        assignedVoice = enVoice;
+        voiceLang = enVoice.lang;
+      } else {
+        voiceLang = 'en-IN';
+      }
       utterance.rate = 0.95;
+      setVoiceNotice('English Audio');
     }
+
+    if (assignedVoice) {
+      utterance.voice = assignedVoice;
+    }
+    utterance.lang = voiceLang;
 
     utterance.onend = () => {
       setIsPlayingAudio(false);
       setCurrentSpeakingId(null);
+      setVoiceNotice(null);
     };
 
-    utterance.onerror = () => {
+    utterance.onerror = (err) => {
+      console.warn('Speech synthesis notice:', err);
+      // If language was rejected, fallback to default voice with generic Indian locale
+      if (lang === 'mr' && voiceLang !== 'hi-IN') {
+        const fallbackUtterance = new SpeechSynthesisUtterance(textToSpeak);
+        fallbackUtterance.lang = 'hi-IN';
+        fallbackUtterance.rate = 0.88;
+        fallbackUtterance.onend = () => {
+          setIsPlayingAudio(false);
+          setCurrentSpeakingId(null);
+          setVoiceNotice(null);
+        };
+        fallbackUtterance.onerror = () => {
+          setIsPlayingAudio(false);
+          setCurrentSpeakingId(null);
+          setVoiceNotice(null);
+        };
+        window.speechSynthesis.speak(fallbackUtterance);
+        return;
+      }
       setIsPlayingAudio(false);
       setCurrentSpeakingId(null);
+      setVoiceNotice(null);
     };
 
     setCurrentSpeakingId(topic.id);
     setIsPlayingAudio(true);
-    window.speechSynthesis.speak(utterance);
-  };
 
-  useEffect(() => {
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
+    window.speechSynthesis.speak(utterance);
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+  };
 
   const handlePrint = () => {
     if (typeof window !== 'undefined') {
@@ -587,32 +712,39 @@ export default function CollectorSafetyPage() {
               </div>
             </div>
 
-            {/* Listen in Hindi/Marathi Audio Button */}
-            <button
-              type="button"
-              onClick={() => handleToggleSpeech(selectedTopic)}
-              className={`px-4 py-2.5 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-2 shadow-xs shrink-0 touch-feedback ${
-                isPlayingAudio && currentSpeakingId === selectedTopic.id
-                  ? 'bg-amber-600 text-white animate-pulse'
-                  : 'bg-[#136B3B] hover:bg-[#0F5730] text-white'
-              }`}
-            >
-              {isPlayingAudio && currentSpeakingId === selectedTopic.id ? (
-                <>
-                  <VolumeX className="w-4 h-4" />
-                  <span>
-                    {lang === 'hi' ? 'ऑडियो रोकें (Stop)' : lang === 'mr' ? 'ऑडिओ थांबवा (Stop)' : 'Stop Audio'}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Volume2 className="w-4 h-4" />
-                  <span>
-                    {lang === 'hi' ? '🔊 आवाज में सुनें (Listen)' : lang === 'mr' ? '🔊 आवाजात ऐका (Listen)' : '🔊 Listen Audio'}
-                  </span>
-                </>
+            {/* Listen in Hindi/Marathi Audio Button & Status */}
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleToggleSpeech(selectedTopic)}
+                className={`px-4 py-2.5 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-2 shadow-xs shrink-0 touch-feedback ${
+                  isPlayingAudio && currentSpeakingId === selectedTopic.id
+                    ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-md animate-pulse'
+                    : 'bg-[#136B3B] hover:bg-[#0F5730] text-white'
+                }`}
+              >
+                {isPlayingAudio && currentSpeakingId === selectedTopic.id ? (
+                  <>
+                    <VolumeX className="w-4 h-4" />
+                    <span>
+                      {lang === 'hi' ? 'ऑडियो रोकें (Stop)' : lang === 'mr' ? 'ऑडिओ थांबवा (Stop)' : 'Stop Audio'}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="w-4 h-4" />
+                    <span>
+                      {lang === 'hi' ? '🔊 आवाज में सुनें (Listen)' : lang === 'mr' ? '🔊 आवाजात ऐका (Listen)' : '🔊 Listen Audio'}
+                    </span>
+                  </>
+                )}
+              </button>
+              {isPlayingAudio && currentSpeakingId === selectedTopic.id && voiceNotice && (
+                <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300">
+                  🔊 {voiceNotice}
+                </span>
               )}
-            </button>
+            </div>
           </div>
 
           {/* Dangers & Health Impact Grid */}
