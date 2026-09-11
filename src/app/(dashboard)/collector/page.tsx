@@ -18,6 +18,11 @@ import {
   Loader2,
   Crosshair,
   ShieldCheck,
+  AlertTriangle,
+  ShieldAlert,
+  ArrowRight,
+  Flame,
+  Volume2,
 } from 'lucide-react';
 import PersonalDashboard from '@/components/dashboard/PersonalDashboard';
 import {
@@ -402,13 +407,23 @@ export default function CollectorDashboard() {
             </div>
           </div>
 
-          <Link
-            href="/collector/map"
-            className="z-10 flex items-center gap-2 px-5 py-3 bg-white text-[#136B3B] font-bold rounded-full text-xs shadow-xs hover:bg-gray-50 transition"
-          >
-            <MapPin className="w-4 h-4" />
-            <span>Open Map Route</span>
-          </Link>
+          <div className="z-10 flex flex-wrap items-center gap-2.5">
+            <Link
+              href="/collector/safety"
+              className="flex items-center gap-1.5 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full text-xs shadow-xs transition"
+            >
+              <ShieldAlert className="w-4 h-4 text-white animate-pulse" />
+              <span>Safety Guide (कामगार सुरक्षा)</span>
+            </Link>
+
+            <Link
+              href="/collector/map"
+              className="flex items-center gap-2 px-5 py-3 bg-white text-[#136B3B] font-bold rounded-full text-xs shadow-xs hover:bg-gray-50 transition"
+            >
+              <MapPin className="w-4 h-4" />
+              <span>Open Map Route</span>
+            </Link>
+          </div>
           <div className="absolute -right-8 -bottom-10 w-44 h-44 rounded-full bg-white/10 pointer-events-none" />
         </div>
 
@@ -449,6 +464,81 @@ export default function CollectorDashboard() {
             </div>
           </div>
           <div className="absolute -right-8 -bottom-10 w-44 h-44 rounded-full bg-white/5 pointer-events-none" />
+        </div>
+
+        {/* WORKER SAFETY & HAZARDOUS MATERIAL GUIDANCE ADVISORY */}
+        <div className="p-5 sm:p-6 bg-white rounded-3xl border border-red-200 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-red-100 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-bold text-[#191C1E]">
+                    E-Waste Worker Health & Safety Protocols
+                  </h2>
+                  <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-700">
+                    Hazard Alert
+                  </span>
+                </div>
+                <p className="text-xs text-[#526056]">
+                  कामगार आरोग्य व सुरक्षा मार्गदर्शिका — Batteries, CRTs, Wires & Acid Leaching Rules
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href="/collector/safety"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-full shadow-xs transition shrink-0"
+            >
+              <Volume2 className="w-3.5 h-3.5" />
+              <span>View Full Guide & Audio (सुरक्षा नियम)</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div className="p-3 bg-red-50/70 border border-red-200 rounded-2xl space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-red-800">
+                <span className="text-base">🔋</span>
+                <span>Batteries / लिथियम</span>
+              </div>
+              <p className="text-gray-700 leading-snug">
+                कभी हथौड़े से मत तोड़ें। आग में 1200°C का विस्फोट होता है। सिरों पर टेप लगाएं और साबुत पैक बेचें।
+              </p>
+            </div>
+
+            <div className="p-3 bg-red-50/70 border border-red-200 rounded-2xl space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-red-800">
+                <span className="text-base">📺</span>
+                <span>CRT Screens / टीवी</span>
+              </div>
+              <p className="text-gray-700 leading-snug">
+                कांच हथौड़े से कभी मत फोड़ें। इसमें 2-3kg जहरीला सीसा (Lead) और वैक्यूम ग्लास धमाके का खतरा होता है।
+              </p>
+            </div>
+
+            <div className="p-3 bg-red-50/70 border border-red-200 rounded-2xl space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-red-800">
+                <span className="text-base">🔥</span>
+                <span>Wire Burning / तार जलाना</span>
+              </div>
+              <p className="text-gray-700 leading-snug">
+                तार कभी मत जलाएं! जहरीला डाइऑक्सिन फेफड़े गला देता है। मशीन से छीलें और ₹130/kg ज्यादा कमाएं।
+              </p>
+            </div>
+
+            <div className="p-3 bg-red-50/70 border border-red-200 rounded-2xl space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-red-800">
+                <span className="text-base">🧪</span>
+                <span>PCBs & Acid / तेजाब</span>
+              </div>
+              <p className="text-gray-700 leading-snug">
+                तेजाब में बोर्ड न उबालें। दुर्लभ धातुएं नष्ट होती हैं। साबुत बोर्ड ऑथराइज्ड रीसाइक्लर को बेचें।
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Personal Recycling Dashboard for Collector */}
