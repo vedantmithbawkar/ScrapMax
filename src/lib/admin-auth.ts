@@ -8,12 +8,12 @@ export interface AdminSession {
   loggedInAt: number;
 }
 
-// Admin credentials are loaded exclusively from server-side environment variables.
-// NEVER hardcode credentials in source code.
+// Admin credentials loaded from NEXT_PUBLIC_ env vars (required for client-side access).
+// Passwords should still be treated as sensitive — avoid logging or exposing them.
 const ADMIN_PRIMARY_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@scrapmax.gov.in';
-const ADMIN_PRIMARY_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const ADMIN_PRIMARY_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || '';
 const ADMIN_SECONDARY_EMAIL = process.env.NEXT_PUBLIC_ADMIN_SECONDARY_EMAIL || '';
-const ADMIN_SECONDARY_PASSWORD = process.env.ADMIN_SECONDARY_PASSWORD || '';
+const ADMIN_SECONDARY_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_SECONDARY_PASSWORD || '';
 
 const ADMIN_STORAGE_KEY = 'scrapmax_admin_session';
 
