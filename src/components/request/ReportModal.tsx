@@ -1,71 +1,96 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, Flag, CheckCircle2, Loader2, ChevronRight } from 'lucide-react';
-import { ReportCategory, REPORT_CATEGORIES, Report } from '@/types';
+import React, { useState, useEffect } from 'react';
+import { X, Flag, CheckCircle2, Loader2, ChevronRight, Link as LinkIcon } from 'lucide-react';
+import { TransactionReportCategory, TRANSACTION_REPORT_CATEGORIES } from '@/types';
+import { createTransactionReport } from '@/lib/reports-service';
+import { createClient } from '@/lib/supabase/client';
 
 interface ReportModalProps {
   requestId: string;
   requestAddress?: string;
+  collectorId?: string | null;
   onClose: () => void;
 }
 
-type Phase = 'select' | 'describe' | 'submitting' | 'success';
+type Phase = 'select' | 'describe' | 'submitting' | 'success' | 'error';
 
-export default function ReportModal({ requestId, requestAddress, onClose }: ReportModalProps) {
+export default function ReportModal({
+  requestId,
+  requestAddress,
+  collectorId,
+  onClose,
+}: ReportModalProps) {
   const [phase, setPhase] = useState<Phase>('select');
-  const [selected, setSelected] = useState<ReportCategory | null>(null);
+  const [selected, setSelected] = useState<TransactionReportCategory | null>(null);
   const [description, setDescription] = useState('');
+  const [evidenceUrl, setEvidenceUrl] = useState('');
+  const [reportNumber, setReportNumber] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const categories = Object.entries(REPORT_CATEGORIES) as [
-    ReportCategory,
+  const categories = Object.entries(TRANSACTION_REPORT_CATEGORIES) as [
+    TransactionReportCategory,
     { label: string; icon: string; description: string },
   ][];
 
-  function handleCategorySelect(cat: ReportCategory) {
+  useEffect(() => {
+    createClient()
+      .auth.getUser()
+      .then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
+
+  function handleCategorySelect(cat: TransactionReportCategory) {
     setSelected(cat);
-    setTimeout(() => setPhase('describe'), 150);
+    setTimeout(() => setPhase('describe'), 120);
   }
 
   async function handleSubmit() {
     if (!selected) return;
     setPhase('submitting');
 
-    const report: Report = {
-      id: `rpt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      request_id: requestId,
-      category: selected,
-      description: description.trim() || undefined,
-      status: 'open',
-      created_at: new Date().toISOString(),
-    };
-
-    try {
-      const key = 'scrapmax_reports';
-      const existing: Report[] = JSON.parse(localStorage.getItem(key) || '[]');
-      existing.unshift(report);
-      localStorage.setItem(key, JSON.stringify(existing));
-    } catch {
-      // silently ignore
+    if (!userId) {
+      // Unauthenticated — offline fallback with generated number
+      const num = `RPT-${new Date().getFullYear()}-${Math.floor(Math.random() * 999999).toString().padStart(6, '0')}`;
+      setReportNumber(num);
+      await new Promise((r) => setTimeout(r, 800));
+      setPhase('success');
+      setTimeout(onClose, 3000);
+      return;
     }
 
-    await new Promise((r) => setTimeout(r, 900));
+    const { report, error } = await createTransactionReport({
+      reporterId: userId,
+      category: selected,
+      description: description.trim() || undefined,
+      pickupId: requestId,
+      collectorId: collectorId ?? null,
+      evidenceUrls: evidenceUrl.trim() ? [evidenceUrl.trim()] : [],
+    });
+
+    if (error || !report) {
+      setErrorMsg(error ?? 'Something went wrong. Please try again.');
+      setPhase('error');
+      return;
+    }
+
+    setReportNumber(report.report_number);
     setPhase('success');
-    setTimeout(onClose, 2200);
+    setTimeout(onClose, 3500);
   }
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Report a problem"
+      aria-label="Report a pickup problem"
       className="fixed inset-0 z-50 flex items-end justify-center"
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       <div
-        className="relative w-full max-w-lg bg-white rounded-t-3xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-lg bg-white rounded-t-3xl shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         style={{ maxHeight: '92dvh', overflowY: 'auto' }}
       >
@@ -74,7 +99,7 @@ export default function ReportModal({ requestId, requestAddress, onClose }: Repo
           <div className="w-10 h-1 rounded-full bg-gray-200" />
         </div>
 
-        {/* ─── SELECT / DESCRIBE PHASES ─── */}
+        {/* ─── SELECT / DESCRIBE ─── */}
         {(phase === 'select' || phase === 'describe') && (
           <>
             {/* Header */}
@@ -85,7 +110,7 @@ export default function ReportModal({ requestId, requestAddress, onClose }: Repo
                 </div>
                 <div>
                   <h2 className="text-[17px] font-bold text-[#191C1E] leading-tight">
-                    Report a problem
+                    Report pickup problem
                   </h2>
                   {requestAddress && (
                     <p className="text-[11px] text-[#6B7280] font-medium truncate max-w-[220px]">
@@ -97,18 +122,18 @@ export default function ReportModal({ requestId, requestAddress, onClose }: Repo
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="Close report modal"
+                aria-label="Close"
                 className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* ── Category Grid ── */}
+            {/* Category Grid */}
             {phase === 'select' && (
-              <div className="px-5 py-5 space-y-4">
+              <div className="px-5 py-5 space-y-3">
                 <p className="text-[13px] font-semibold text-[#526056]">What went wrong?</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2.5">
                   {categories.map(([key, cat]) => (
                     <button
                       key={key}
@@ -122,7 +147,7 @@ export default function ReportModal({ requestId, requestAddress, onClose }: Repo
                       }`}
                     >
                       <span className="text-2xl leading-none">{cat.icon}</span>
-                      <span className="text-[13px] font-bold text-[#191C1E] leading-snug">
+                      <span className="text-[12px] font-bold text-[#191C1E] leading-snug">
                         {cat.label}
                       </span>
                     </button>
@@ -131,10 +156,10 @@ export default function ReportModal({ requestId, requestAddress, onClose }: Repo
               </div>
             )}
 
-            {/* ── Describe Phase ── */}
+            {/* Describe Phase */}
             {phase === 'describe' && selected && (
-              <div className="px-5 py-5 space-y-5">
-                {/* Back + selected chip */}
+              <div className="px-5 py-5 space-y-4">
+                {/* Back + chip */}
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -144,28 +169,27 @@ export default function ReportModal({ requestId, requestAddress, onClose }: Repo
                     ← Back
                   </button>
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#EAF5EE] border border-[#A6D5B8]">
-                    <span className="text-base leading-none">{REPORT_CATEGORIES[selected].icon}</span>
+                    <span className="text-base leading-none">
+                      {TRANSACTION_REPORT_CATEGORIES[selected].icon}
+                    </span>
                     <span className="text-[12px] font-bold text-[#136B3B]">
-                      {REPORT_CATEGORIES[selected].label}
+                      {TRANSACTION_REPORT_CATEGORIES[selected].label}
                     </span>
                   </div>
                 </div>
 
-                {/* Description textarea */}
-                <div className="space-y-2">
-                  <label
-                    htmlFor="report-description"
-                    className="text-[13px] font-semibold text-[#526056]"
-                  >
-                    Tell us more{' '}
+                {/* Description */}
+                <div className="space-y-1.5">
+                  <label htmlFor="txn-report-desc" className="text-[13px] font-semibold text-[#526056]">
+                    Describe the issue{' '}
                     <span className="font-normal text-[#9CA3AF]">(optional)</span>
                   </label>
                   <textarea
-                    id="report-description"
+                    id="txn-report-desc"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder={REPORT_CATEGORIES[selected].description}
-                    rows={4}
+                    placeholder={TRANSACTION_REPORT_CATEGORIES[selected].description}
+                    rows={3}
                     maxLength={500}
                     className="w-full resize-none rounded-2xl border border-gray-200 bg-[#F7F9FA] px-4 py-3 text-[14px] text-[#191C1E] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#136B3B]/30 focus:border-[#136B3B] transition"
                   />
@@ -174,18 +198,46 @@ export default function ReportModal({ requestId, requestAddress, onClose }: Repo
                   </p>
                 </div>
 
+                {/* Evidence URL */}
+                <div className="space-y-1.5">
+                  <label htmlFor="txn-evidence-url" className="text-[13px] font-semibold text-[#526056]">
+                    Evidence link{' '}
+                    <span className="font-normal text-[#9CA3AF]">(optional — paste photo link)</span>
+                  </label>
+                  <div className="flex items-center gap-2 bg-[#F7F9FA] border border-gray-200 rounded-2xl px-4 py-2.5 focus-within:ring-2 focus-within:ring-[#136B3B]/30 focus-within:border-[#136B3B] transition">
+                    <LinkIcon className="w-4 h-4 text-[#9CA3AF] flex-shrink-0" />
+                    <input
+                      id="txn-evidence-url"
+                      type="url"
+                      value={evidenceUrl}
+                      onChange={(e) => setEvidenceUrl(e.target.value)}
+                      placeholder="https://..."
+                      className="flex-1 bg-transparent text-[14px] text-[#191C1E] placeholder:text-[#9CA3AF] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
                 {/* Privacy note */}
                 <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl">
                   <span className="text-base leading-none mt-0.5">🔒</span>
                   <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
-                    Your report is private. We use it only to improve service quality.
+                    Your report is private. We use it only to investigate and improve service quality.
                   </p>
                 </div>
 
-                {/* Submit button */}
+                {/* Auto-link note */}
+                <div className="flex items-start gap-2 px-3 py-2.5 bg-blue-50 border border-blue-200 rounded-xl">
+                  <span className="text-base leading-none mt-0.5">🔗</span>
+                  <p className="text-[11px] text-blue-800 font-medium leading-relaxed">
+                    This report will be automatically linked to the pickup request{' '}
+                    <span className="font-bold">#{requestId.slice(0, 8)}</span>.
+                  </p>
+                </div>
+
+                {/* Submit */}
                 <button
                   type="button"
-                  id="report-submit-btn"
+                  id="txn-report-submit-btn"
                   onClick={handleSubmit}
                   className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#136B3B] hover:bg-[#0F5730] active:scale-[0.98] text-white font-bold text-[15px] transition-all shadow-sm"
                 >
@@ -202,27 +254,37 @@ export default function ReportModal({ requestId, requestAddress, onClose }: Repo
           <div className="flex flex-col items-center justify-center gap-4 py-16 px-6">
             <Loader2 className="w-10 h-10 text-[#136B3B] animate-spin" />
             <p className="text-[15px] font-bold text-[#191C1E]">Submitting your report…</p>
-            <p className="text-[13px] text-[#6B7280] text-center">We take every report seriously.</p>
+            <p className="text-[13px] text-[#6B7280] text-center">
+              We take every report seriously.
+            </p>
           </div>
         )}
 
         {/* ─── SUCCESS ─── */}
         {phase === 'success' && (
           <div className="flex flex-col items-center justify-center gap-5 py-14 px-6 text-center">
-            <div className="w-20 h-20 rounded-full bg-[#EAF5EE] flex items-center justify-center animate-in zoom-in duration-300">
+            <div className="w-20 h-20 rounded-full bg-[#EAF5EE] flex items-center justify-center">
               <CheckCircle2 className="w-10 h-10 text-[#136B3B]" />
             </div>
             <div className="space-y-1.5">
               <h3 className="text-[20px] font-extrabold text-[#191C1E]">Report submitted</h3>
-              <p className="text-[14px] text-[#526056] leading-relaxed max-w-xs">
-                Thank you for letting us know. We&apos;ll review this and get back to you.
+              {reportNumber && (
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#EAF5EE] rounded-full border border-[#A6D5B8] mt-1">
+                  <span className="text-[13px] font-black text-[#136B3B] tracking-wide">
+                    {reportNumber}
+                  </span>
+                </div>
+              )}
+              <p className="text-[13px] text-[#526056] leading-relaxed max-w-xs pt-1">
+                We&apos;ll review this and get back to you. You can track it in{' '}
+                <span className="font-bold text-[#136B3B]">My Reports</span>.
               </p>
             </div>
             {selected && (
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#F7F9FA] border border-gray-200">
-                <span className="text-xl">{REPORT_CATEGORIES[selected].icon}</span>
+                <span className="text-xl">{TRANSACTION_REPORT_CATEGORIES[selected].icon}</span>
                 <span className="text-[13px] font-bold text-[#526056]">
-                  {REPORT_CATEGORIES[selected].label}
+                  {TRANSACTION_REPORT_CATEGORIES[selected].label}
                 </span>
               </div>
             )}
@@ -230,7 +292,26 @@ export default function ReportModal({ requestId, requestAddress, onClose }: Repo
           </div>
         )}
 
-        {/* Safe area bottom spacer */}
+        {/* ─── ERROR ─── */}
+        {phase === 'error' && (
+          <div className="flex flex-col items-center justify-center gap-5 py-14 px-6 text-center">
+            <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center">
+              <span className="text-4xl">⚠️</span>
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-[18px] font-extrabold text-[#191C1E]">Submission failed</h3>
+              <p className="text-[13px] text-[#6B7280] leading-relaxed max-w-xs">{errorMsg}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPhase('describe')}
+              className="px-6 py-3 rounded-2xl bg-[#136B3B] text-white font-bold text-[14px]"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
         <div style={{ height: 'env(safe-area-inset-bottom, 12px)' }} />
       </div>
     </div>

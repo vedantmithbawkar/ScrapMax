@@ -7,7 +7,7 @@ import Navbar from '@/components/common/Navbar';
 import BottomNav from '@/components/common/BottomNav';
 import { createClient } from '@/lib/supabase/client';
 import { UserProfile } from '@/types';
-import { ArrowLeft, User, MapPin, Settings, ChevronRight, LogOut } from 'lucide-react';
+import { ArrowLeft, User, MapPin, Settings, ChevronRight, LogOut, ClipboardList, AlertTriangle } from 'lucide-react';
 import PersonalDashboard from '@/components/dashboard/PersonalDashboard';
 import { useTranslation } from '@/lib/i18n';
 
@@ -162,6 +162,40 @@ export default function UserProfilePage() {
                 <span className="text-[16px] font-bold text-[#191C1E]">{t('settings')}</span>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#136B3B] stroke-[2.5] transition-colors" />
+            </Link>
+
+            {/* 4. My Reports */}
+            <Link
+              href="/household/my-reports"
+              className="flex items-center justify-between bg-white px-5 py-4 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] border border-gray-100 hover:border-emerald-200 hover:bg-[#F8FAF9] active:scale-[0.99] transition touch-feedback group"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#136B3B] group-hover:scale-105 transition-transform">
+                  <ClipboardList className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <span className="text-[16px] font-bold text-[#191C1E]">My Reports</span>
+                  <p className="text-[11px] text-[#6B7280] font-medium">Track your submitted reports</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#136B3B] stroke-[2.5] transition-colors" />
+            </Link>
+
+            {/* 5. Report a Problem */}
+            <Link
+              href="/household/report"
+              className="flex items-center justify-between bg-red-50 px-5 py-4 rounded-2xl border border-red-100 hover:border-red-200 transition touch-feedback group"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center text-red-600 group-hover:scale-105 transition-transform">
+                  <AlertTriangle className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <span className="text-[16px] font-bold text-red-700">🆘 Report a Problem</span>
+                  <p className="text-[11px] text-red-500 font-medium">Report an issue with the ScrapMax platform</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-red-400 stroke-[2.5]" />
             </Link>
 
           </section>
