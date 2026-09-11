@@ -23,7 +23,6 @@ import {
   calculateDistanceMeters,
   getCollectorSavedLocation,
   setCollectorSavedLocation,
-  DEFAULT_COLLECTOR_HUBS,
   CollectorSavedLocation,
   acceptPickupInTracking,
 } from '@/lib/tracking-service';
@@ -40,7 +39,6 @@ export default function CollectorDashboard() {
   const [filterTab, setFilterTab] = useState<'available' | 'my_pickups'>('available');
   const [collectorLoc, setCollectorLoc] = useState<CollectorSavedLocation>(() => getCollectorSavedLocation());
   const [radiusFilter, setRadiusFilter] = useState<'5' | '10' | '25' | 'all'>('10');
-  const [showHubPicker, setShowHubPicker] = useState<boolean>(false);
   const [isDetectingGps, setIsDetectingGps] = useState<boolean>(false);
 
   useEffect(() => {
@@ -106,7 +104,7 @@ export default function CollectorDashboard() {
             }
           } catch {}
           setCollectorSavedLocation(coords, areaName);
-          setCollectorLoc({ pos: coords, hubName: areaName, updatedAt: new Date().toISOString() });
+          setCollectorLoc({ pos: coords, locationName: areaName, hubName: areaName, updatedAt: new Date().toISOString() });
         },
         (err) => {
           console.warn('Auto GPS notice:', err.message);
@@ -138,23 +136,16 @@ export default function CollectorDashboard() {
           }
         } catch {}
         setCollectorSavedLocation(coords, areaName);
-        setCollectorLoc({ pos: coords, hubName: areaName, updatedAt: new Date().toISOString() });
+        setCollectorLoc({ pos: coords, locationName: areaName, hubName: areaName, updatedAt: new Date().toISOString() });
         setIsDetectingGps(false);
-        setShowHubPicker(false);
       },
       (err) => {
         console.warn('GPS error:', err);
-        alert('Could not lock GPS location. Please select one of the operating hubs.');
+        alert('Could not detect live GPS. Please allow location access in your browser settings.');
         setIsDetectingGps(false);
       },
       { enableHighAccuracy: true, timeout: 8000 }
     );
-  };
-
-  const handleSelectHub = (hub: { name: string; pos: [number, number] }) => {
-    setCollectorSavedLocation(hub.pos, hub.name);
-    setCollectorLoc({ pos: hub.pos, hubName: hub.name, updatedAt: new Date().toISOString() });
-    setShowHubPicker(false);
   };
 
   const handleStatusUpdate = async (requestId: string, newStatus: PickupRequest['status']) => {
@@ -205,7 +196,7 @@ export default function CollectorDashboard() {
     // Trigger live smart notifications & sync with collector location
     if (newStatus === 'accepted') {
       triggerCollectorAcceptedNotification(finalCollectorName);
-      acceptPickupInTracking(requestId, collectorObj, collectorLoc.pos, collectorLoc.hubName);
+      acceptPickupInTracking(requestId, collectorObj, collectorLoc.pos, collectorLoc.locationName || collectorLoc.hubName);
     } else if (newStatus === 'in_progress') {
       triggerCollectorNearNotification(500);
     } else if (newStatus === 'completed') {
@@ -347,19 +338,28 @@ export default function CollectorDashboard() {
         {/* Personal Recycling Dashboard for Collector */}
         <PersonalDashboard role="collector" />
 
-        {/* Collector Operating Location & Hub Selector */}
+        {/* Collector Live GPS Status */}
         <div className="bg-white p-4 rounded-3xl border border-gray-200 shadow-xs space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#136B3B] flex items-center justify-center shrink-0 border border-emerald-200">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative w-10 h-10 rounded-2xl bg-emerald-50 text-[#136B3B] flex items-center justify-center shrink-0 border border-emerald-200">
                 <Compass className="w-5 h-5" />
+                <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-bold text-[#526056] uppercase tracking-wider">
-                  Your Current Operating Base / Hub
-                </p>
-                <h4 className="text-sm font-extrabold text-[#191C1E] truncate">
-                  {collectorLoc.hubName}
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] font-bold text-[#526056] uppercase tracking-wider">
+                    Collector Live GPS
+                  </p>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8]">
+                    Live Tracking On
+                  </span>
+                </div>
+                <h4 className="text-sm font-extrabold text-[#191C1E] truncate mt-0.5">
+                  {collectorLoc.locationName || collectorLoc.hubName || 'Live GPS Active'}
                 </h4>
               </div>
             </div>
@@ -369,53 +369,17 @@ export default function CollectorDashboard() {
                 type="button"
                 onClick={handleDetectGps}
                 disabled={isDetectingGps}
-                className="px-3 py-2 rounded-xl bg-[#F4FAF6] hover:bg-[#E6F4EA] text-[#136B3B] text-xs font-bold transition flex items-center gap-1.5 border border-[#A6D5B8]"
+                className="px-3.5 py-2 rounded-xl bg-[#F4FAF6] hover:bg-[#E6F4EA] text-[#136B3B] text-xs font-bold transition flex items-center gap-1.5 border border-[#A6D5B8] shadow-2xs touch-feedback"
               >
                 {isDetectingGps ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
                   <Crosshair className="w-3.5 h-3.5" />
                 )}
-                <span>{isDetectingGps ? 'Locking GPS...' : 'Use My GPS'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowHubPicker(!showHubPicker)}
-                className="px-3 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-bold transition flex items-center gap-1 border border-gray-200"
-              >
-                <span>Change Hub</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showHubPicker ? 'rotate-180' : ''}`} />
+                <span>{isDetectingGps ? 'Locating...' : 'Refresh Live GPS'}</span>
               </button>
             </div>
           </div>
-
-          {/* Quick Hub Dropdown */}
-          {showHubPicker && (
-            <div className="pt-2 border-t border-gray-100 space-y-2 animate-in fade-in">
-              <p className="text-xs font-bold text-[#191C1E]">Select an Operating Area Hub:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                {DEFAULT_COLLECTOR_HUBS.map((hub, idx) => {
-                  const isCurrent = collectorLoc.hubName === hub.name;
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleSelectHub(hub)}
-                      className={`p-2.5 rounded-xl border text-left text-xs font-bold transition flex items-center justify-between ${
-                        isCurrent
-                          ? 'bg-[#E6F4EA] border-[#136B3B] text-[#136B3B]'
-                          : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700'
-                      }`}
-                    >
-                      <span className="truncate">{hub.name}</span>
-                      {isCurrent && <Check className="w-3.5 h-3.5 text-[#136B3B] shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Tab Filters */}
@@ -476,7 +440,7 @@ export default function CollectorDashboard() {
           <div className="text-center py-16 bg-white border border-dashed border-gray-200 rounded-3xl text-[#6B7280] text-sm space-y-2">
             <p className="font-bold text-[#191C1E]">No pickup requests found within {radiusFilter === 'all' ? 'this region' : `${radiusFilter} km`}.</p>
             <p className="text-xs text-gray-500 max-w-sm mx-auto">
-              Try expanding your radius filter to &quot;All Region&quot; or update your operating base to see more jobs.
+              Try expanding your radius filter to &quot;All Region&quot; or refresh your Live GPS to see more nearby jobs.
             </p>
           </div>
         ) : (

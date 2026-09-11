@@ -287,7 +287,7 @@ export default function CollectorProfilePage() {
                 <MapPin className="w-3.5 h-3.5 text-[#136B3B]" />
                 Operational Zone
               </span>
-              <span className="font-bold text-[#191C1E]">Bangalore Central & East Hub</span>
+              <span className="font-bold text-[#191C1E]">Local Area: Central & East Zone</span>
             </div>
 
             <div className="flex items-center justify-between text-xs py-1">
