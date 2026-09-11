@@ -26,13 +26,13 @@ export default function PersonalInfoPage() {
 
   // Profile Form Fields initialized lazily
   const [fullName, setFullName] = useState<string>(() => {
-    return getCachedPersonalInfo()?.fullName || 'Sahil Household';
+    return getCachedPersonalInfo()?.fullName || '';
   });
   const [phone, setPhone] = useState<string>(() => {
-    return getCachedPersonalInfo()?.phone || '+91 9876543210';
+    return getCachedPersonalInfo()?.phone || '+91 98201 54321';
   });
   const [email, setEmail] = useState<string>(() => {
-    return getCachedPersonalInfo()?.email || 'household@aicle.demo';
+    return getCachedPersonalInfo()?.email || '';
   });
   const [age, setAge] = useState<string>(() => {
     return getCachedPersonalInfo()?.age || '28';
@@ -204,7 +204,7 @@ export default function PersonalInfoPage() {
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="e.g. Sahil Doe"
+              placeholder="Enter your full name"
               className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-sm font-medium text-[#191C1E] focus:outline-none focus:border-[#136B3B] transition"
             />
           </div>

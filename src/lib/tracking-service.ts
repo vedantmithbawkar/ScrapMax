@@ -8,6 +8,8 @@ import {
 export interface LiveTrackingState {
   requestId: string;
   collectorPos: [number, number];
+  collectorOriginPos?: [number, number];
+  collectorOriginAddress?: string;
   householdPos: [number, number];
   routeCoordinates: [number, number][];
   distanceMeters: number;
@@ -24,6 +26,52 @@ export interface LiveTrackingState {
   householdLandmark?: string;
   pickupPin: string;
   payment?: any;
+}
+
+export interface CollectorSavedLocation {
+  pos: [number, number];
+  hubName: string;
+  updatedAt: string;
+}
+
+export const DEFAULT_COLLECTOR_HUBS: { name: string; pos: [number, number] }[] = [
+  { name: 'Dadar Station Hub, Mumbai', pos: [19.0178, 72.8478] },
+  { name: 'Bandra West Linking Rd, Mumbai', pos: [19.0596, 72.8295] },
+  { name: 'Andheri East MIDC, Mumbai', pos: [19.1136, 72.8697] },
+  { name: 'Powai Hiranandani, Mumbai', pos: [19.1197, 72.9051] },
+  { name: 'Indiranagar 100ft Rd, Bangalore', pos: [12.9784, 77.6408] },
+  { name: 'Connaught Place Hub, Delhi', pos: [28.6315, 77.2167] },
+];
+
+export function getCollectorSavedLocation(): CollectorSavedLocation {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('scrapmax_collector_location');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+  }
+  return {
+    pos: [19.0178, 72.8478],
+    hubName: 'Dadar Central Hub, Mumbai',
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export function setCollectorSavedLocation(pos: [number, number], hubName: string): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(
+        'scrapmax_collector_location',
+        JSON.stringify({ pos, hubName, updatedAt: new Date().toISOString() })
+      );
+      // Dispatch event so active pages refresh
+      window.dispatchEvent(
+        new CustomEvent('scrapmax:collector_location_change', {
+          detail: { pos, hubName },
+        })
+      );
+    } catch {}
+  }
 }
 
 const STORAGE_PREFIX = 'scrapmax_tracking_';
@@ -167,6 +215,8 @@ export async function initializeTrackingState(params: {
   requestId: string;
   householdPos: [number, number];
   collectorPos?: [number, number];
+  collectorOriginPos?: [number, number];
+  collectorOriginAddress?: string;
   householdName?: string;
   householdPhone?: string;
   householdAddress?: string;
@@ -177,16 +227,26 @@ export async function initializeTrackingState(params: {
   const existing = getTrackingState(params.requestId);
   if (existing) return existing;
 
-  // Default collector starting position ~1.8km away if not provided
-  const collectorPos: [number, number] = params.collectorPos || [
-    params.householdPos[0] + 0.012,
-    params.householdPos[1] - 0.014,
-  ];
+  const savedLoc = getCollectorSavedLocation();
 
-  const routeCoordinates = await fetchDrivingRoute(collectorPos, params.householdPos);
+  // Starting collector position: use provided or saved hub
+  const startCollectorPos: [number, number] =
+    params.collectorPos ||
+    params.collectorOriginPos ||
+    savedLoc.pos || [
+      params.householdPos[0] + 0.012,
+      params.householdPos[1] - 0.014,
+    ];
+
+  const originAddress =
+    params.collectorOriginAddress ||
+    savedLoc.hubName ||
+    'Collector Operating Hub';
+
+  const routeCoordinates = await fetchDrivingRoute(startCollectorPos, params.householdPos);
   const distanceMeters = calculateDistanceMeters(
-    collectorPos[0],
-    collectorPos[1],
+    startCollectorPos[0],
+    startCollectorPos[1],
     params.householdPos[0],
     params.householdPos[1]
   );
@@ -205,7 +265,9 @@ export async function initializeTrackingState(params: {
 
   const newState: LiveTrackingState = {
     requestId: params.requestId,
-    collectorPos,
+    collectorPos: startCollectorPos,
+    collectorOriginPos: params.collectorOriginPos || startCollectorPos,
+    collectorOriginAddress: originAddress,
     householdPos: params.householdPos,
     routeCoordinates,
     distanceMeters,
@@ -214,12 +276,12 @@ export async function initializeTrackingState(params: {
     hasArrived: distanceMeters <= 40,
     status: 'accepted',
     lastUpdated: new Date().toISOString(),
-    collectorName: params.collectorName || 'Ramesh Kumar (Verified Kabadiwala)',
+    collectorName: params.collectorName || 'Verified Scrap Collector',
     collectorPhone: params.collectorPhone || '+91 98201 45892',
-    householdName: params.householdName || 'Aarav Sharma',
+    householdName: params.householdName || 'Household Customer',
     householdPhone: params.householdPhone || '+91 98201 54321',
     householdAddress: params.householdAddress || 'Main Market Road, Near City Center',
-    householdLandmark: params.householdLandmark || 'Opposite Green Park Gate #2',
+    householdLandmark: params.householdLandmark || '',
     pickupPin,
   };
 
@@ -249,35 +311,44 @@ export function getPickupOtp(requestId: string): string {
  */
 export function acceptPickupInTracking(
   requestId: string,
-  collectorObj?: { full_name?: string; phone?: string }
+  collectorObj?: { full_name?: string; phone?: string },
+  collectorPos?: [number, number],
+  collectorHubName?: string
 ): LiveTrackingState {
   const existing = getTrackingState(requestId);
-  const collectorName = collectorObj?.full_name || 'Ramesh Kumar (Verified Kabadiwala)';
+  const collectorName = collectorObj?.full_name || 'Verified Scrap Collector';
   const collectorPhone = collectorObj?.phone || '+91 98201 45892';
+  const savedLoc = getCollectorSavedLocation();
+  const startPos = collectorPos || existing?.collectorPos || savedLoc.pos;
+  const hubName = collectorHubName || existing?.collectorOriginAddress || savedLoc.hubName;
 
   let updated: LiveTrackingState;
   if (existing) {
     updated = {
       ...existing,
       status: 'accepted',
+      collectorPos: startPos,
+      collectorOriginPos: existing.collectorOriginPos || startPos,
+      collectorOriginAddress: hubName,
       collectorName,
       collectorPhone,
       lastUpdated: new Date().toISOString(),
     };
   } else {
     const householdPos: [number, number] = [19.076, 72.8777];
-    const collectorPos: [number, number] = [19.076 + 0.012, 72.8777 - 0.014];
     const distanceMeters = calculateDistanceMeters(
-      collectorPos[0],
-      collectorPos[1],
+      startPos[0],
+      startPos[1],
       householdPos[0],
       householdPos[1]
     );
     updated = {
       requestId,
-      collectorPos,
+      collectorPos: startPos,
+      collectorOriginPos: startPos,
+      collectorOriginAddress: hubName,
       householdPos,
-      routeCoordinates: generateCurvedRoute(collectorPos, householdPos),
+      routeCoordinates: generateCurvedRoute(startPos, householdPos),
       distanceMeters,
       etaMinutes: estimateEtaMinutes(distanceMeters),
       isNearDoorstep: false,
@@ -286,9 +357,9 @@ export function acceptPickupInTracking(
       lastUpdated: new Date().toISOString(),
       collectorName,
       collectorPhone,
-      householdName: 'Aarav Sharma',
+      householdName: 'Household Customer',
       householdPhone: '+91 98201 54321',
-      householdAddress: 'Flat 402, Green Heights, Main Market Road',
+      householdAddress: 'Customer Doorstep Address',
       pickupPin: getPickupOtp(requestId),
     };
   }
@@ -508,6 +579,48 @@ export function markArrivedAtDoorstep(requestId: string): LiveTrackingState | nu
 
   saveTrackingState(updated);
   triggerCollectorNearNotification(0);
+  return updated;
+}
+
+/**
+ * Updates the collector's live real GPS position, recalculates distance and ETA to household,
+ * and broadcasts the new state to the household in real time.
+ */
+export function updateCollectorLivePosition(
+  requestId: string,
+  collectorCoords: [number, number]
+): LiveTrackingState | null {
+  const current = getTrackingState(requestId);
+  if (!current) return null;
+
+  const distanceMeters = calculateDistanceMeters(
+    collectorCoords[0],
+    collectorCoords[1],
+    current.householdPos[0],
+    current.householdPos[1]
+  );
+  const etaMinutes = estimateEtaMinutes(distanceMeters);
+  const isNearDoorstep = distanceMeters <= 300;
+  const hasArrived = distanceMeters <= 50;
+
+  const updated: LiveTrackingState = {
+    ...current,
+    collectorPos: collectorCoords,
+    distanceMeters,
+    etaMinutes,
+    isNearDoorstep,
+    hasArrived,
+    status: hasArrived ? 'in_progress' : current.status,
+    lastUpdated: new Date().toISOString(),
+  };
+
+  saveTrackingState(updated);
+
+  // Trigger proximity notification if entering doorstep zone
+  if (isNearDoorstep && !current.isNearDoorstep) {
+    triggerCollectorNearNotification(distanceMeters);
+  }
+
   return updated;
 }
 

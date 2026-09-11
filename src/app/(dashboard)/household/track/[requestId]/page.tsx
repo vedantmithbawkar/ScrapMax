@@ -45,7 +45,7 @@ const DEMO_REQUEST: PickupRequest = {
   collector_id: 'collector-c201',
   collector: {
     id: 'collector-c201',
-    full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+    full_name: 'Verified Scrap Collector',
     phone: '+91 98201 45892',
     role: 'collector',
     rating: 4.9,
@@ -135,7 +135,7 @@ export default function TrackPickupPage() {
           if (!localMatch.collector) {
             localMatch.collector = {
               id: localMatch.collector_id || 'collector-c201',
-              full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+              full_name: 'Verified Scrap Collector',
               phone: '+91 98201 45892',
               role: 'collector',
               rating: 4.9,
@@ -164,7 +164,7 @@ export default function TrackPickupPage() {
           } else {
             req.collector = {
               id: req.collector_id,
-              full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+              full_name: 'Verified Scrap Collector',
               phone: '+91 98201 45892',
               role: 'collector',
               rating: 4.9,
@@ -191,8 +191,8 @@ export default function TrackPickupPage() {
       const state = await initializeTrackingState({
         requestId,
         householdPos: [lat, lng],
-        householdName: 'Aarav Sharma',
-        householdPhone: '+91 98201 54321',
+        householdName: request.household?.full_name || 'Household Customer',
+        householdPhone: request.household?.phone || '+91 98201 54321',
         householdAddress: request.address,
         collectorName: request.collector?.full_name,
         collectorPhone: request.collector?.phone,
@@ -215,8 +215,8 @@ export default function TrackPickupPage() {
             status: state.status,
             collector: {
               id: 'collector-c201',
-              full_name: state.collectorName || 'Ramesh Kumar (Verified Kabadiwala)',
-              phone: state.collectorPhone || '+91 98201 45892',
+              full_name: state.collectorName || request.collector?.full_name || 'Verified Scrap Collector',
+              phone: state.collectorPhone || request.collector?.phone || '+91 98201 45892',
               role: 'collector',
               rating: 4.9,
               completed_pickups: 126,
@@ -244,8 +244,8 @@ export default function TrackPickupPage() {
 
   const handleSimulateAccept = () => {
     const updated = acceptPickupInTracking(requestId, {
-      full_name: 'Ramesh Kumar (Verified Kabadiwala)',
-      phone: '+91 98201 45892',
+      full_name: request.collector?.full_name || 'Verified Scrap Collector',
+      phone: request.collector?.phone || '+91 98201 45892',
     });
     if (updated) {
       setTrackingState(updated);
@@ -372,7 +372,7 @@ export default function TrackPickupPage() {
               </div>
             )}
 
-            {/* 2. BLINKIT-STYLE LIVE DELIVERY TRACKING BANNER (When Accepted/In-Progress) */}
+            {/* 2. LIVE DOORSTEP DELIVERY TRACKING BANNER (When Accepted/In-Progress) */}
             {request.status !== 'pending' && (
               <div className="bg-white rounded-3xl p-5 border border-emerald-100 shadow-sm space-y-3 relative overflow-hidden">
                 <div className="flex items-start justify-between gap-3">
@@ -507,7 +507,7 @@ export default function TrackPickupPage() {
                       {trackingState?.hasArrived ? 'Collector is right outside your door!' : 'Collector is near your doorstep!'}
                     </h4>
                     <p className="text-xs text-amber-900 mt-0.5">
-                      {request.collector?.full_name || 'Ramesh Kumar'} has reached your location. Please keep recyclables handy.
+                      {request.collector?.full_name || 'Assigned Collector'} has reached your location. Please keep recyclables handy.
                     </p>
                   </div>
                 </div>
@@ -527,6 +527,8 @@ export default function TrackPickupPage() {
                 zoom={14}
                 requests={[request]}
                 collectorPos={request.status !== 'pending' ? trackingState?.collectorPos : null}
+                originPos={request.status !== 'pending' ? trackingState?.collectorOriginPos : undefined}
+                originLabel={trackingState?.collectorOriginAddress || 'Collector Starting Hub'}
                 routeCoordinates={request.status !== 'pending' ? (trackingState?.routeCoordinates || []) : []}
                 destinationPos={[request.latitude || 19.076, request.longitude || 72.8777]}
                 destinationLabel="Your Doorstep"
@@ -535,6 +537,31 @@ export default function TrackPickupPage() {
                 className="h-full w-full"
               />
             </div>
+
+            {/* Collector Dispatch Origin Information */}
+            {request.status !== 'pending' && (trackingState?.collectorOriginAddress || trackingState?.collectorOriginPos) && (
+              <div className="flex items-center gap-2.5 bg-indigo-50/70 border border-indigo-100 rounded-2xl p-3.5 shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                  <span className="text-base">🏢</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-900">
+                      Dispatched From Operating Hub
+                    </p>
+                    <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+                      Origin Point
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm font-bold text-gray-800 truncate">
+                    {trackingState?.collectorOriginAddress || 'Local Regional Collector Hub'}
+                  </p>
+                  <p className="text-[11px] text-indigo-700/80 font-medium">
+                    Route started towards your doorstep from this hub
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Address */}
             <div className="flex items-center gap-2.5 bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm">
@@ -569,12 +596,12 @@ export default function TrackPickupPage() {
                 <div className="flex items-center justify-between gap-3 pt-0.5">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative w-12 h-12 rounded-2xl bg-[#E6F4EA] border border-[#A6D5B8] flex items-center justify-center text-xl font-black text-[#136B3B] shrink-0 shadow-2xs">
-                      {(request.collector?.full_name || 'Ramesh Kumar').charAt(0)}
+                      {(request.collector?.full_name || 'Collector').charAt(0)}
                       <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-extrabold text-sm text-[#191C1E] truncate">
-                        {request.collector?.full_name || 'Ramesh Kumar (Verified Kabadiwala)'}
+                        {request.collector?.full_name || 'Verified Scrap Collector'}
                       </h3>
                       <p className="text-xs font-mono font-bold text-[#136B3B] mt-0.5 flex items-center gap-1">
                         <Phone className="w-3 h-3 text-[#136B3B]" />
@@ -724,11 +751,11 @@ export default function TrackPickupPage() {
             {/* Collector info strip */}
             <div className="flex items-center gap-3 bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm mb-3">
               <div className="w-10 h-10 rounded-full bg-[#EAF5EE] flex items-center justify-center text-xl flex-shrink-0 font-bold text-[#136B3B]">
-                {(request.collector?.full_name || 'Ramesh Kumar').charAt(0)}
+                {(request.collector?.full_name || 'Collector').charAt(0)}
               </div>
               <div>
                 <p className="text-sm font-bold text-[#191C1E]">
-                  {request.collector?.full_name || 'Ramesh Kumar (Verified Kabadiwala)'}
+                  {request.collector?.full_name || 'Verified Scrap Collector'}
                 </p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />

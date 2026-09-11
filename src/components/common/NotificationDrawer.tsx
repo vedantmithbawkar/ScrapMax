@@ -206,7 +206,7 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
             <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
-                onClick={() => triggerCollectorAcceptedNotification('Ramesh Scrap Mart')}
+                onClick={() => triggerCollectorAcceptedNotification('Verified Scrap Collector')}
                 className="p-2 text-left bg-white hover:bg-emerald-50/70 border border-gray-200 rounded-xl transition group text-xs flex items-center gap-2"
               >
                 <Truck className="w-3.5 h-3.5 text-[#136B3B] group-hover:scale-110 transition" />

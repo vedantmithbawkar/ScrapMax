@@ -15,7 +15,7 @@ const DEMO_REQUESTS: PickupRequest[] = [
     collector_id: 'collector-c201',
     collector: {
       id: 'collector-c201',
-      full_name: 'Ramesh Kumar (Verified Kabadiwala)',
+      full_name: 'Verified Scrap Collector',
       phone: '+91 98201 45892',
       role: 'collector',
       rating: 4.9,
@@ -87,7 +87,7 @@ export default function HouseholdTrackListPage() {
               const primaryItem = req.waste_items?.[0];
               const meta = primaryItem ? WASTE_CATEGORY_LABELS[primaryItem.category] : null;
               const statusInfo = STATUS_LABELS[req.status];
-              const collectorName = req.collector?.full_name || 'Ramesh Kumar (Kabadiwala)';
+              const collectorName = req.collector?.full_name || 'Assigned Collector';
               const collectorPhone = req.collector?.phone || '+91 98201 45892';
               return (
                 <div key={req.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">

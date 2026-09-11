@@ -21,7 +21,7 @@ interface ChatSummary {
 const DEFAULT_CHATS: ChatSummary[] = [
   {
     requestId: 'req-map-001',
-    householdName: 'Household — Ramesh Kumar Pickup',
+    householdName: 'Household — Doorstep Scrap Pickup',
     address: 'Main Market Road, Near City Center',
     status: 'accepted',
     lastMessage: 'Perfect. I am about 15 minutes away. See you soon! 🚛',

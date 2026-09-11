@@ -41,6 +41,8 @@ import {
   completeTrackingPayment,
   formatDistance,
   fetchDrivingRoute,
+  getCollectorSavedLocation,
+  updateCollectorLivePosition,
   LiveTrackingState,
 } from '@/lib/tracking-service';
 import {
@@ -56,7 +58,7 @@ const MOCK_MAP_REQUESTS: PickupRequest[] = [
     household_id: 'user-h101',
     household: {
       id: 'user-h101',
-      full_name: 'Aarav Sharma (Flat 402, Green Heights)',
+      full_name: 'Customer (Flat 402, Green Heights)',
       phone: '+91 98201 54321',
       role: 'household',
     },
@@ -151,7 +153,12 @@ function CollectorMapContent() {
 
   const [requests, setRequests] = useState<PickupRequest[]>(MOCK_MAP_REQUESTS);
   const [selectedReq, setSelectedReq] = useState<PickupRequest | null>(null);
-  const [collectorPos, setCollectorPos] = useState<[number, number] | null>(null);
+  const [collectorPos, setCollectorPos] = useState<[number, number] | null>(() => {
+    if (typeof window !== 'undefined') {
+      return getCollectorSavedLocation().pos;
+    }
+    return null;
+  });
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [isWatchingGps, setIsWatchingGps] = useState<boolean>(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'accepted'>('all');
@@ -234,15 +241,18 @@ function CollectorMapContent() {
     let isMounted = true;
 
     async function initRoute() {
+      const savedHub = getCollectorSavedLocation();
       const householdPos: [number, number] = [selectedReq!.latitude, selectedReq!.longitude];
       const startCollectorPos: [number, number] =
-        collectorPos || [householdPos[0] + 0.012, householdPos[1] - 0.014];
+        collectorPos || savedHub.pos || [householdPos[0] + 0.012, householdPos[1] - 0.014];
 
       const state = await initializeTrackingState({
         requestId: selectedReq!.id,
         householdPos,
         collectorPos: startCollectorPos,
-        householdName: selectedReq!.household?.full_name || 'Aarav Sharma',
+        collectorOriginPos: savedHub.pos,
+        collectorOriginAddress: savedHub.hubName,
+        householdName: selectedReq!.household?.full_name || 'Household Customer',
         householdPhone: selectedReq!.household?.phone || '+91 98201 54321',
         householdAddress: selectedReq!.address,
         householdLandmark: selectedReq!.notes || 'Opposite Green Park Gate #2',
@@ -274,7 +284,35 @@ function CollectorMapContent() {
     };
   }, [selectedReq?.id]);
 
-  // Handle continuous live GPS watch
+  // Continuously stream live GPS coordinates to household when on navigation screen
+  useEffect(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        setCollectorPos(coords);
+        setIsWatchingGps(true);
+
+        if (selectedReq) {
+          const updated = updateCollectorLivePosition(selectedReq.id, coords);
+          if (updated) {
+            setTrackingState(updated);
+          }
+        }
+      },
+      (err) => {
+        console.warn('Live GPS background watch note:', err.message);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [selectedReq?.id]);
+
+  // Handle continuous live GPS watch toggle
   const toggleGpsWatch = () => {
     if (!navigator.geolocation) {
       alert('Geolocation is not supported by your browser.');
@@ -296,13 +334,9 @@ function CollectorMapContent() {
         setIsWatchingGps(true);
 
         if (selectedReq) {
-          const current = getTrackingState(selectedReq.id);
-          if (current) {
-            const dist = Math.round(
-              pos.coords.accuracy || 10
-            );
-            // Re-fetch or update state with real GPS
-            setTrackingState((prev) => (prev ? { ...prev, collectorPos: coords } : prev));
+          const updated = updateCollectorLivePosition(selectedReq.id, coords);
+          if (updated) {
+            setTrackingState(updated);
           }
         }
       },
@@ -376,17 +410,47 @@ function CollectorMapContent() {
       data: { user },
     } = await supabase.auth.getUser();
 
+    // Dynamically retrieve collector details from auth metadata, profiles, or cache
+    let collectorFullName = user?.user_metadata?.full_name;
+    let collectorPhoneNum = user?.user_metadata?.phone;
+
+    if (user && (!collectorFullName || !collectorPhoneNum)) {
+      try {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('full_name, phone')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (prof?.full_name) collectorFullName = prof.full_name;
+        if (prof?.phone) collectorPhoneNum = prof.phone;
+      } catch {}
+    }
+
+    if (!collectorFullName && typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('aicle_personal_info');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.fullName) collectorFullName = parsed.fullName;
+          if (parsed.phone) collectorPhoneNum = parsed.phone;
+        }
+      } catch {}
+    }
+
+    const finalCollectorName = collectorFullName || (user?.email ? user.email.split('@')[0] : 'Verified Scrap Collector');
+    const finalCollectorPhone = collectorPhoneNum || '+91 98201 45892';
+
     const collectorObj = {
       id: user?.id || 'collector-c201',
-      full_name: 'Ramesh Kumar (Verified Kabadiwala)',
-      phone: '+91 98201 45892',
+      full_name: finalCollectorName,
+      phone: finalCollectorPhone,
       role: 'collector' as const,
       rating: 4.9,
       completed_pickups: 126,
     };
 
     if (newStatus === 'accepted') {
-      triggerCollectorAcceptedNotification('Ramesh Kumar (Verified Kabadiwala)');
+      triggerCollectorAcceptedNotification(finalCollectorName);
       showToast('✅ Pickup Accepted! Live route navigation generated.');
     } else if (newStatus === 'in_progress') {
       triggerCollectorNearNotification(500);
@@ -519,7 +583,7 @@ function CollectorMapContent() {
             <div>
               <h1 className="text-lg sm:text-xl font-extrabold text-[#191C1E] flex items-center gap-2">
                 <Navigation className="w-5 h-5 text-[#136B3B]" />
-                <span>Blinkit-Style Pickup Navigation</span>
+                <span>ScrapMax Live Pickup Navigation</span>
               </h1>
               <p className="text-xs text-[#6B7280]">
                 Live doorstep routing, customer contact details, and distance tracking
@@ -629,6 +693,8 @@ function CollectorMapContent() {
               zoom={14}
               requests={displayedRequests}
               collectorPos={collectorPos}
+              originPos={trackingState?.collectorOriginPos}
+              originLabel={trackingState?.collectorOriginAddress || 'Collector Hub'}
               routeCoordinates={routeCoords}
               destinationPos={selectedReq ? [selectedReq.latitude, selectedReq.longitude] : null}
               destinationLabel={selectedReq?.household?.full_name ? `${selectedReq.household.full_name}'s Home` : 'Customer Doorstep'}
@@ -639,7 +705,7 @@ function CollectorMapContent() {
             />
           </div>
 
-          {/* Right Column: Blinkit Customer & Navigation Details Panel */}
+          {/* Right Column: Customer & Navigation Details Panel */}
           <div className="lg:col-span-5 flex flex-col space-y-4">
             {selectedReq ? (
               <div className="space-y-4">
@@ -660,11 +726,11 @@ function CollectorMapContent() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#136B3B] border border-emerald-200 flex items-center justify-center text-xl font-black shrink-0">
-                        {(selectedReq.household?.full_name || 'Aarav').charAt(0)}
+                        {(selectedReq.household?.full_name || 'Customer').charAt(0)}
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-extrabold text-sm text-[#191C1E] truncate">
-                          {selectedReq.household?.full_name || 'Aarav Sharma'}
+                          {selectedReq.household?.full_name || 'Household Customer'}
                         </h3>
                         <p className="text-xs font-mono font-bold text-[#136B3B] mt-0.5 flex items-center gap-1">
                           <Phone className="w-3 h-3" />

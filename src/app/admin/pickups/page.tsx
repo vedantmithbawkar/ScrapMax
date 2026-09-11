@@ -54,7 +54,7 @@ const DEMO_PICKUPS: PickupRequest[] = [
       method: 'upi',
       txId: 'TXN-984210',
       timestamp: new Date().toISOString(),
-      paidBy: 'Ramesh Kumar (Collector)',
+      paidBy: 'Verified Collector',
       receivedBy: 'Sahil Household',
     },
     created_at: new Date(Date.now() - 3600000).toISOString(),

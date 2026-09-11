@@ -11,6 +11,7 @@ import RatingModal from './RatingModal';
 interface RequestCardProps {
   request: PickupRequest;
   userRole: 'household' | 'collector';
+  collectorDistanceKm?: number;
   onStatusUpdate?: (requestId: string, newStatus: PickupRequest['status']) => void;
   onCompletePayment?: (requestId: string, payment: PaymentDetails) => Promise<void> | void;
 }
@@ -40,6 +41,7 @@ function formatPickupDate(dateStr: string) {
 export default function RequestCard({
   request,
   userRole,
+  collectorDistanceKm,
   onStatusUpdate,
   onCompletePayment,
 }: RequestCardProps) {
@@ -97,8 +99,13 @@ export default function RequestCard({
                 {primaryCatInfo ? primaryCatInfo.label.split('&')[0].trim() : 'Recyclables'}
                 {request.waste_items && request.waste_items.length > 1 && ` +${request.waste_items.length - 1} more`}
               </h3>
-              <p className="text-[13px] font-medium text-[#6B7280] mt-0.5">
-                {request.total_estimated_weight_kg || 5} kg · {formatPickupDate(request.scheduled_date)}
+              <p className="text-[13px] font-medium text-[#6B7280] mt-0.5 flex items-center gap-1.5 flex-wrap">
+                <span>{request.total_estimated_weight_kg || 5} kg · {formatPickupDate(request.scheduled_date)}</span>
+                {userRole === 'collector' && collectorDistanceKm !== undefined && (
+                  <span className="text-[10.5px] font-bold text-[#136B3B] bg-[#E6F4EA] border border-[#A6D5B8] px-2 py-0.2 rounded-full">
+                    📍 {collectorDistanceKm} km away
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -155,7 +162,7 @@ export default function RequestCard({
               <span className="text-base shrink-0">🚛</span>
               <div className="min-w-0">
                 <span className="font-bold text-[#191C1E] truncate block">
-                  {request.collector?.full_name || 'Ramesh Kumar (Verified Kabadiwala)'}
+                  {request.collector?.full_name || 'Verified Scrap Collector'}
                 </span>
                 <span className="text-[11px] text-[#136B3B] font-mono font-bold block truncate">
                   {request.collector?.phone || '+91 98201 45892'}
@@ -178,7 +185,7 @@ export default function RequestCard({
               <span className="text-base shrink-0">🏠</span>
               <div className="min-w-0">
                 <span className="font-bold text-[#191C1E] truncate block">
-                  {request.household?.full_name || 'Aarav Sharma (Customer)'}
+                  {request.household?.full_name || 'Household Customer'}
                 </span>
                 <span className="text-[11px] text-blue-700 font-mono font-bold block truncate">
                   {request.household?.phone || '+91 98201 54321'}

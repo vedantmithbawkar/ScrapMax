@@ -89,7 +89,7 @@ const DEMO_HOUSEHOLD_REQUESTS: PickupRequest[] = [
 export default function HouseholdDashboard() {
   const { t } = useTranslation();
   const [requests, setRequests] = useState<PickupRequest[]>(DEMO_HOUSEHOLD_REQUESTS);
-  const [userName, setUserName] = useState<string>('Sahil');
+  const [userName, setUserName] = useState<string>('Friend');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [paymentNotifications, setPaymentNotifications] = useState<Array<{
     id: string;
@@ -156,7 +156,20 @@ export default function HouseholdDashboard() {
         setIsAuthenticated(true);
         if (user.user_metadata?.full_name) {
           setUserName(user.user_metadata.full_name.split(' ')[0]);
+        } else if (user.email) {
+          setUserName(user.email.split('@')[0]);
         }
+
+        try {
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (prof?.full_name) {
+            setUserName(prof.full_name.split(' ')[0]);
+          }
+        } catch {}
 
         const { data } = await supabase
           .from('pickup_requests')

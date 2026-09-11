@@ -58,7 +58,7 @@ export default function Navbar() {
         } else {
           setProfile({
             id: user.id,
-            full_name: user.user_metadata?.full_name || 'Sahil',
+            full_name: user.user_metadata?.full_name || (user.email ? user.email.split('@')[0] : 'User'),
             role: (user.user_metadata?.role as 'household' | 'collector') || 'household',
           });
         }

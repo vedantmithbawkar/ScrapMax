@@ -8,8 +8,25 @@ import LocationPicker from '@/components/map/LocationPicker';
 import WasteItemForm from '@/components/request/WasteItemForm';
 import { createClient } from '@/lib/supabase/client';
 import { compressImage, dataURLtoBlob } from '@/lib/image-utils';
-import { WasteItem, WasteCategory } from '@/types';
-import { ArrowLeft, CheckCircle, MapPin, Camera, X, Plus, Loader2, Sparkles, Bot, AlertTriangle } from 'lucide-react';
+import { WasteItem, WasteCategory, SavedAddress } from '@/types';
+import {
+  ArrowLeft,
+  CheckCircle,
+  MapPin,
+  Camera,
+  X,
+  Plus,
+  Loader2,
+  Sparkles,
+  Bot,
+  AlertTriangle,
+  Home,
+  Briefcase,
+  Navigation,
+  Check,
+  Phone,
+  User,
+} from 'lucide-react';
 import { reverseGeocodeCoords } from '@/lib/recycling-store-service';
 
 export default function RequestPickupPage() {
@@ -23,27 +40,150 @@ export default function RequestPickupPage() {
   const [latitude, setLatitude] = useState<number>(19.0760);
   const [longitude, setLongitude] = useState<number>(72.8777);
 
-  // Auto-detect GPS on initial load across India
+  // Saved Addresses & Structured Doorstep Address State
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [flatBuilding, setFlatBuilding] = useState<string>('');
+  const [areaStreet, setAreaStreet] = useState<string>('');
+  const [landmark, setLandmark] = useState<string>('');
+  const [city, setCity] = useState<string>('Mumbai');
+  const [stateName, setStateName] = useState<string>('Maharashtra');
+  const [pincode, setPincode] = useState<string>('');
+  const [contactPhone, setContactPhone] = useState<string>('+91 98201 54321');
+  const [contactName, setContactName] = useState<string>('');
+  const [saveAsNewAddress, setSaveAsNewAddress] = useState<boolean>(false);
+  const [isDetectingGps, setIsDetectingGps] = useState<boolean>(false);
+
+  // Load user's saved addresses from localStorage or auto-detect GPS fallback
   useEffect(() => {
-    if (typeof window !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          setLatitude(lat);
-          setLongitude(lng);
-          try {
-            const locName = await reverseGeocodeCoords(lat, lng);
-            if (locName) setAddress(locName);
-          } catch {}
-        },
-        () => {
-          // GPS denied or timed out; user can type or search any address
-        },
-        { timeout: 6000 }
-      );
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('aicle_saved_addresses');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSavedAddresses(parsed);
+            const def = parsed.find((a: SavedAddress) => a.is_default) || parsed[0];
+            if (def) {
+              setSelectedAddressId(def.id);
+              setFlatBuilding(def.flat_building || '');
+              setAreaStreet(def.area_street || '');
+              setLandmark(def.landmark || '');
+              setCity(def.city || 'Mumbai');
+              setStateName(def.state || 'Maharashtra');
+              setPincode(def.pincode || '');
+              if (def.phone) setContactPhone(def.phone);
+              if (def.latitude && def.longitude) {
+                setLatitude(def.latitude);
+                setLongitude(def.longitude);
+              }
+              const comp = `${def.flat_building}, ${def.area_street}${def.landmark ? `, Near ${def.landmark}` : ''}, ${def.city} - ${def.pincode}`;
+              setAddress(comp);
+              return;
+            }
+          }
+        }
+      } catch {}
+
+      // Load logged-in user's name & phone if available
+      try {
+        const cached = localStorage.getItem('aicle_personal_info');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.fullName) setContactName(parsed.fullName);
+          if (parsed.phone) setContactPhone(parsed.phone);
+        }
+      } catch {}
+
+      try {
+        const supabase = createClient();
+        supabase.auth.getUser().then(({ data: { user } }) => {
+          if (user) {
+            if (user.user_metadata?.full_name) setContactName(user.user_metadata.full_name);
+            if (user.user_metadata?.phone) setContactPhone(user.user_metadata.phone);
+            supabase.from('profiles').select('full_name, phone').eq('id', user.id).maybeSingle().then(({ data: prof }) => {
+              if (prof?.full_name) setContactName(prof.full_name);
+              if (prof?.phone) setContactPhone(prof.phone);
+            });
+          }
+        });
+      } catch {}
     }
   }, []);
+
+  const handleSelectSavedAddress = (addr: SavedAddress) => {
+    setSelectedAddressId(addr.id);
+    setFlatBuilding(addr.flat_building || '');
+    setAreaStreet(addr.area_street || '');
+    setLandmark(addr.landmark || '');
+    setCity(addr.city || 'Mumbai');
+    setStateName(addr.state || 'Maharashtra');
+    setPincode(addr.pincode || '');
+    if (addr.phone) setContactPhone(addr.phone);
+    if (addr.latitude && addr.longitude) {
+      setLatitude(addr.latitude);
+      setLongitude(addr.longitude);
+    }
+    const comp = `${addr.flat_building}, ${addr.area_street}${addr.landmark ? `, Near ${addr.landmark}` : ''}, ${addr.city} - ${addr.pincode}`;
+    setAddress(comp);
+  };
+
+  const handleCustomAddressMode = () => {
+    setSelectedAddressId('custom');
+    setFlatBuilding('');
+    setAreaStreet('');
+    setLandmark('');
+    setPincode('');
+    setAddress('');
+  };
+
+  const handleDetectLiveGps = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your device.');
+      return;
+    }
+    setIsDetectingGps(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setLatitude(lat);
+        setLongitude(lng);
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
+          );
+          const data = await res.json();
+          if (data && data.address) {
+            const addrObj = data.address;
+            const road = addrObj.road || addrObj.suburb || addrObj.neighbourhood || 'Current Location Area';
+            const c = addrObj.city || addrObj.town || addrObj.county || 'Mumbai';
+            const s = addrObj.state || 'Maharashtra';
+            const p = addrObj.postcode || '';
+            setAreaStreet(road);
+            setCity(c);
+            setStateName(s);
+            if (p) setPincode(p);
+            setSelectedAddressId('custom');
+            const comp = `${flatBuilding ? `${flatBuilding}, ` : ''}${road}, ${c} - ${p}`;
+            setAddress(comp);
+          }
+        } catch {
+          const fallback = `Near Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+          setAreaStreet(fallback);
+          setAddress(fallback);
+        } finally {
+          setIsDetectingGps(false);
+        }
+      },
+      (err) => {
+        console.warn('GPS error:', err);
+        alert('Could not retrieve GPS coordinates. Please enter manually.');
+        setIsDetectingGps(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
   const [preferredTime, setPreferredTime] = useState<'Today' | 'Tomorrow' | 'Weekend'>('Today');
   const [notes, setNotes] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -211,6 +351,42 @@ export default function RequestPickupPage() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
+    // Compile standardized doorstep address
+    const compiledFullAddress =
+      flatBuilding.trim() || areaStreet.trim()
+        ? `${flatBuilding.trim() ? `${flatBuilding.trim()}, ` : ''}${areaStreet.trim()}${landmark.trim() ? `, Near ${landmark.trim()}` : ''}, ${city.trim() || 'Mumbai'} - ${pincode.trim() || ''}`
+        : address.trim();
+
+    const householdObj = {
+      id: user ? user.id : 'guest-user',
+      full_name: contactName.trim() || (user ? user.user_metadata?.full_name : null) || 'Household Customer',
+      phone: contactPhone.trim() || (user ? user.user_metadata?.phone : null) || '+91 98201 54321',
+      role: 'household' as const,
+    };
+
+    // Save address to user's saved addresses if checked
+    if (saveAsNewAddress && flatBuilding.trim() && areaStreet.trim()) {
+      const newSaved: SavedAddress = {
+        id: 'addr-' + Date.now(),
+        label: 'Home',
+        flat_building: flatBuilding.trim(),
+        area_street: areaStreet.trim(),
+        landmark: landmark.trim() || undefined,
+        city: city.trim() || 'Mumbai',
+        state: stateName.trim() || 'Maharashtra',
+        pincode: pincode.trim() || '400001',
+        phone: contactPhone.trim(),
+        latitude,
+        longitude,
+        is_default: false,
+      };
+      try {
+        const updated = [...savedAddresses, newSaved];
+        setSavedAddresses(updated);
+        localStorage.setItem('aicle_saved_addresses', JSON.stringify(updated));
+      } catch {}
+    }
+
     // Calculate scheduled date based on preferred time selection
     const targetDate = new Date();
     if (preferredTime === 'Tomorrow') {
@@ -232,8 +408,9 @@ export default function RequestPickupPage() {
       const localReq = {
         id: demoReqId,
         household_id: 'guest-user',
+        household: householdObj,
         status: 'pending' as const,
-        address,
+        address: compiledFullAddress,
         latitude,
         longitude,
         scheduled_date: scheduledDateStr,
@@ -325,7 +502,7 @@ export default function RequestPickupPage() {
     const insertPayload = {
       household_id: user.id,
       status: 'pending',
-      address,
+      address: compiledFullAddress,
       latitude,
       longitude,
       scheduled_date: scheduledDateStr,
@@ -362,8 +539,9 @@ export default function RequestPickupPage() {
         const localFallback = {
           id: localReqId,
           household_id: user.id,
+          household: householdObj,
           status: 'pending' as const,
-          address,
+          address: compiledFullAddress,
           latitude,
           longitude,
           scheduled_date: scheduledDateStr,
@@ -756,28 +934,247 @@ export default function RequestPickupPage() {
             )}
           </section>
 
-          {/* Section 3: Pickup Address Input & Map */}
-          <section data-purpose="pickup-address-input" className="space-y-2.5">
-            <label className="block text-base font-bold text-[#191C1E] tracking-tight" htmlFor="address-input">
-              Pickup address
-            </label>
-            <div className="flex items-center border border-gray-300 rounded-2xl px-3.5 py-3 bg-white focus-within:border-[#136B3B] transition">
-              <MapPin className="w-4 h-4 text-[#136B3B] flex-shrink-0 mr-2.5" />
-              <input
-                id="address-input"
-                type="text"
-                required
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Pickup address or location name"
-                className="w-full text-sm text-[#191C1E] placeholder-gray-400 bg-transparent border-none p-0 focus:outline-none"
-              />
+          {/* Section 3: Doorstep Pickup Address, Saved Addresses & Map */}
+          <section data-purpose="pickup-address-input" className="space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-extrabold text-[#191C1E] tracking-tight">
+                  Step 3: Doorstep Pickup Address &amp; Contact
+                </h2>
+                <p className="text-xs text-[#526056] mt-0.5">
+                  Select a saved address or enter full doorstep details for accurate navigation.
+                </p>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                Doorstep Pickup
+              </span>
             </div>
-            <p className="text-[11px] text-[#6B7280] font-normal px-1 leading-relaxed">
-              Drag map marker below for GPS pin-point accuracy, or edit address above.
-            </p>
 
-            <div className="pt-1">
+            {/* Saved Addresses Chips (If available) */}
+            {savedAddresses.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-bold text-[#191C1E]">Select from Saved Addresses</p>
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                  {savedAddresses.map((addr) => {
+                    const isSelected = selectedAddressId === addr.id;
+                    const IconComp = addr.label === 'Home' ? Home : addr.label === 'Work' ? Briefcase : MapPin;
+                    return (
+                      <button
+                        key={addr.id}
+                        type="button"
+                        onClick={() => handleSelectSavedAddress(addr)}
+                        className={`px-3.5 py-2 rounded-2xl border text-left flex-shrink-0 transition flex items-center gap-2.5 ${
+                          isSelected
+                            ? 'bg-[#E6F4EA] border-[#136B3B] text-[#136B3B] ring-2 ring-[#136B3B]/20 font-bold'
+                            : 'bg-white border-gray-200 hover:border-gray-300 text-gray-700'
+                        }`}
+                      >
+                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
+                          isSelected ? 'bg-[#136B3B] text-white' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          <IconComp className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="text-xs">
+                          <p className="font-extrabold leading-tight">{addr.label}</p>
+                          <p className="text-[10px] text-[#526056] truncate max-w-[140px]">
+                            {addr.flat_building || addr.area_street}
+                          </p>
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#136B3B] stroke-[3]" />}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    onClick={handleCustomAddressMode}
+                    className={`px-3 py-2 rounded-2xl border text-xs font-bold flex-shrink-0 transition flex items-center gap-1.5 ${
+                      selectedAddressId === 'custom'
+                        ? 'bg-[#E6F4EA] border-[#136B3B] text-[#136B3B] ring-2 ring-[#136B3B]/20'
+                        : 'bg-white border-dashed border-gray-300 hover:border-gray-400 text-gray-600'
+                    }`}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Enter Custom Address</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* GPS Auto-fill Action Button */}
+            <button
+              type="button"
+              onClick={handleDetectLiveGps}
+              disabled={isDetectingGps}
+              className="w-full py-2.5 px-4 bg-[#F4FAF6] hover:bg-[#E6F4EA] text-[#136B3B] rounded-2xl text-xs font-bold flex items-center justify-center gap-2 border border-[#A6D5B8] transition touch-feedback shadow-2xs"
+            >
+              {isDetectingGps ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Locking high-accuracy GPS coordinates...</span>
+                </>
+              ) : (
+                <>
+                  <Navigation className="w-4 h-4 text-[#136B3B]" />
+                  <span>Auto-detect via Live GPS (Pin-point Location)</span>
+                </>
+              )}
+            </button>
+
+            {/* Structured Doorstep Address Card */}
+            <div className="bg-white p-4 sm:p-5 rounded-3xl border border-gray-200 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-1 border-b border-gray-100">
+                <span className="text-xs font-bold text-[#191C1E] flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-[#136B3B]" />
+                  <span>Doorstep Breakdown (Collector Guidance)</span>
+                </span>
+                {selectedAddressId && selectedAddressId !== 'custom' && (
+                  <span className="text-[10.5px] font-bold text-[#136B3B] bg-[#E6F4EA] px-2 py-0.5 rounded-full">
+                    Using Saved Address
+                  </span>
+                )}
+              </div>
+
+              {/* Flat / Building */}
+              <div>
+                <label className="block text-xs font-bold text-[#191C1E] mb-1">
+                  House / Flat / Floor / Building Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={flatBuilding}
+                  onChange={(e) => {
+                    setFlatBuilding(e.target.value);
+                    setSelectedAddressId('custom');
+                  }}
+                  placeholder="e.g. Flat 402, Green Valley Apartments, 4th Floor"
+                  className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs font-semibold text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] focus:bg-white transition"
+                />
+              </div>
+
+              {/* Street / Colony */}
+              <div>
+                <label className="block text-xs font-bold text-[#191C1E] mb-1">
+                  Street / Area / Colony / Road *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={areaStreet}
+                  onChange={(e) => {
+                    setAreaStreet(e.target.value);
+                    setSelectedAddressId('custom');
+                  }}
+                  placeholder="e.g. 100ft Road, Main Commercial Street"
+                  className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs font-semibold text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] focus:bg-white transition"
+                />
+              </div>
+
+              {/* Landmark */}
+              <div>
+                <label className="block text-xs font-bold text-[#191C1E] mb-1">
+                  Nearby Landmark (Helps collector find your gate)
+                </label>
+                <input
+                  type="text"
+                  value={landmark}
+                  onChange={(e) => {
+                    setLandmark(e.target.value);
+                    setSelectedAddressId('custom');
+                  }}
+                  placeholder="e.g. Near Metro Station Gate #2 / Opposite State Bank"
+                  className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs font-semibold text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] focus:bg-white transition"
+                />
+              </div>
+
+              {/* City & Pincode Grid */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">City *</label>
+                  <input
+                    type="text"
+                    required
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Mumbai / Bangalore"
+                    className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs font-semibold text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] focus:bg-white transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Pincode</label>
+                  <input
+                    type="text"
+                    value={pincode}
+                    onChange={(e) => setPincode(e.target.value)}
+                    placeholder="400001"
+                    className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs font-semibold text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] focus:bg-white transition"
+                  />
+                </div>
+              </div>
+
+              {/* Contact Phone & Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">
+                    Contact Phone Number (For Collector Call) *
+                  </label>
+                  <div className="flex items-center bg-[#F8FAF9] border border-gray-200 rounded-xl px-3 py-2 focus-within:border-[#136B3B] focus-within:bg-white transition">
+                    <Phone className="w-3.5 h-3.5 text-[#136B3B] mr-2 shrink-0" />
+                    <input
+                      type="tel"
+                      required
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      placeholder="+91 98201 54321"
+                      className="w-full bg-transparent text-xs font-mono font-bold text-[#191C1E] placeholder-gray-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">
+                    Contact Person Name (Optional)
+                  </label>
+                  <div className="flex items-center bg-[#F8FAF9] border border-gray-200 rounded-xl px-3 py-2 focus-within:border-[#136B3B] focus-within:bg-white transition">
+                    <User className="w-3.5 h-3.5 text-gray-500 mr-2 shrink-0" />
+                    <input
+                      type="text"
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      placeholder="Enter Full Name"
+                      className="w-full bg-transparent text-xs font-semibold text-[#191C1E] placeholder-gray-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Address Checkbox */}
+              {selectedAddressId === 'custom' && (
+                <label className="flex items-center gap-2 pt-1 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={saveAsNewAddress}
+                    onChange={(e) => setSaveAsNewAddress(e.target.checked)}
+                    className="w-4 h-4 accent-[#136B3B] rounded"
+                  />
+                  <span className="text-xs font-bold text-[#191C1E]">
+                    Save this address to my Saved Addresses for future pickups
+                  </span>
+                </label>
+              )}
+            </div>
+
+            {/* Interactive Location Map Pinpoint */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-bold text-[#191C1E]">
+                  Map Pinpoint (Drag or tap to adjust exact gate position)
+                </span>
+                <span className="text-[11px] font-mono text-gray-500">
+                  Lat: {latitude.toFixed(4)}, Lng: {longitude.toFixed(4)}
+                </span>
+              </div>
               <LocationPicker
                 onLocationSelect={handleLocationSelect}
                 defaultLat={latitude}
