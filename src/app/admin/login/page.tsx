@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/common/Navbar';
-import { Shield, Lock, Mail, KeyRound, AlertTriangle, CheckCircle2, ArrowRight, Eye, EyeOff, Sparkles } from 'lucide-react';
-import { loginAdmin, OFFICIAL_ADMIN_CREDENTIALS } from '@/lib/admin-auth';
+import { Shield, Lock, Mail, KeyRound, AlertTriangle, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { loginAdmin } from '@/lib/admin-auth';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -14,17 +14,6 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  const handleFillCredentials = (type: 'gov' | 'demo') => {
-    if (type === 'gov') {
-      setIdentifier(OFFICIAL_ADMIN_CREDENTIALS.email);
-      setPassword(OFFICIAL_ADMIN_CREDENTIALS.password);
-    } else {
-      setIdentifier(OFFICIAL_ADMIN_CREDENTIALS.secondaryEmail);
-      setPassword(OFFICIAL_ADMIN_CREDENTIALS.secondaryPassword);
-    }
-    setErrorMsg(null);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,41 +141,8 @@ export default function AdminLoginPage() {
               </button>
             </form>
 
-            {/* Quick Demo Credentials Fill (Evaluation Helper) */}
-            <div className="mt-6 pt-5 border-t border-gray-100">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider text-center mb-2.5">
-                Official Admin Credentials
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleFillCredentials('gov')}
-                  className="px-2.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-900 text-left transition"
-                >
-                  <div className="text-[10px] font-black uppercase text-purple-700 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-purple-600" />
-                    <span>Gov Portal ID</span>
-                  </div>
-                  <div className="text-[11px] font-mono font-bold truncate mt-0.5">admin@scrapmax.gov.in</div>
-                  <div className="text-[10px] text-gray-500 font-mono">Admin@ScrapMax2026</div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleFillCredentials('demo')}
-                  className="px-2.5 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-900 text-left transition"
-                >
-                  <div className="text-[10px] font-black uppercase text-gray-600">
-                    Standard ID
-                  </div>
-                  <div className="text-[11px] font-mono font-bold truncate mt-0.5">admin@scrapmax.com</div>
-                  <div className="text-[10px] text-gray-500 font-mono">admin123</div>
-                </button>
-              </div>
-            </div>
-
             {/* Security Notice */}
-            <div className="mt-5 text-center">
+            <div className="mt-6 pt-5 border-t border-gray-100 text-center">
               <p className="text-[11px] text-[#6B7280]">
                 Are you a citizen or collector?{' '}
                 <Link href="/login" className="font-bold text-[#136B3B] hover:underline">
