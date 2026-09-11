@@ -253,6 +253,45 @@ export default function CollectorDashboard() {
           <div className="absolute -right-8 -bottom-10 w-44 h-44 rounded-full bg-white/10 pointer-events-none" />
         </div>
 
+        {/* RECYCLER MARKETPLACE INTEGRATION BANNER */}
+        <div className="p-5 sm:p-6 bg-gradient-to-br from-[#136B3B] to-[#0A3D20] text-white rounded-3xl shadow-sm space-y-3 relative overflow-hidden">
+          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-300 bg-white/10 px-2.5 py-0.5 rounded-full">
+                Two-Sided Recycling Market
+              </span>
+              <h2 className="text-lg sm:text-xl font-bold">
+                Have Bulk Recyclables? Sell Directly to Recyclers
+              </h2>
+              <p className="text-xs text-[#A6D5B8] max-w-xl">
+                Match your collected circuit boards, copper wire, aluminium, and batteries to verified facilities at locked rates per KG.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/collector/find-buyers"
+                className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black rounded-full shadow-sm transition touch-feedback flex items-center gap-1.5"
+              >
+                <span>Find Buyers (Match Scrap)</span>
+              </Link>
+              <Link
+                href="/collector/demand-board"
+                className="px-4 py-2.5 bg-white/15 hover:bg-white/20 text-white text-xs font-bold rounded-full transition touch-feedback"
+              >
+                Demand Board
+              </Link>
+              <Link
+                href="/collector/offers"
+                className="px-3.5 py-2.5 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold rounded-full transition touch-feedback"
+              >
+                My Offers
+              </Link>
+            </div>
+          </div>
+          <div className="absolute -right-8 -bottom-10 w-44 h-44 rounded-full bg-white/5 pointer-events-none" />
+        </div>
+
         {/* Personal Recycling Dashboard for Collector */}
         <PersonalDashboard role="collector" />
 

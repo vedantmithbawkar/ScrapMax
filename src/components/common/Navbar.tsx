@@ -3,9 +3,26 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Recycle, LogOut, MapPin, Truck, History, PlusCircle, Bell, Store } from 'lucide-react';
+import {
+  Recycle,
+  LogOut,
+  MapPin,
+  Truck,
+  History,
+  PlusCircle,
+  Bell,
+  Store,
+  Factory,
+  ShieldCheck,
+  Search,
+  CheckCircle2,
+  Clock,
+  Sparkles,
+  BarChart3,
+  Layers,
+} from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { UserProfile } from '@/types';
+import { UserProfile, UserRole } from '@/types';
 import NotificationDrawer from '@/components/common/NotificationDrawer';
 import {
   getUnreadNotificationsCount,
@@ -43,6 +60,26 @@ export default function Navbar() {
 
   useEffect(() => {
     async function loadUser() {
+      // 1. Check demo user fallback from localStorage
+      if (typeof window !== 'undefined') {
+        try {
+          const rawDemo = localStorage.getItem('scrapmax_demo_user');
+          if (rawDemo) {
+            const demo = JSON.parse(rawDemo);
+            if (demo && demo.role) {
+              setProfile({
+                id: 'demo-user-id',
+                full_name: demo.full_name || 'Demo User',
+                role: demo.role as UserRole,
+                email: demo.email,
+              });
+              return;
+            }
+          }
+        } catch {}
+      }
+
+      // 2. Query active Supabase session
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -57,7 +94,7 @@ export default function Navbar() {
           setProfile({
             id: user.id,
             full_name: user.user_metadata?.full_name || 'Sahil',
-            role: (user.user_metadata?.role as 'household' | 'collector') || 'household',
+            role: (user.user_metadata?.role as UserRole) || 'household',
           });
         }
       }
@@ -66,6 +103,9 @@ export default function Navbar() {
   }, [pathname]);
 
   const handleLogout = async () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('scrapmax_demo_user');
+    }
     const supabase = createClient();
     await supabase.auth.signOut();
     setProfile(null);
@@ -84,45 +124,180 @@ export default function Navbar() {
                 <Recycle className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div className="flex flex-col">
-                <span className="font-extrabold text-lg tracking-tight text-[#136B3B] leading-none">Sampah Jujur</span>
-                <span className="text-[10px] font-semibold text-[#6B7280] tracking-wider uppercase mt-0.5">Circular Recycling</span>
+                <span className="font-extrabold text-lg tracking-tight text-[#136B3B] leading-none">SCRAPMAX</span>
+                <span className="text-[10px] font-semibold text-[#6B7280] tracking-wider uppercase mt-0.5">Circular Scrap Marketplace</span>
               </div>
             </Link>
 
             {dbConnected === true && (
               <span
                 title="Connected to live Supabase PostgreSQL database"
-                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8]"
+                className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8]"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-[#136B3B] animate-pulse"></span>
-                <span>Supabase DB Live</span>
+                <span>Supabase Live</span>
               </span>
             )}
           </div>
 
-          {/* Dynamic Navigation Links */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          {/* Dynamic Navigation Links based on Role */}
+          <div className="flex items-center gap-1.5 sm:gap-3">
             
-            {/* Store Map Link (Accessible to all) */}
+            {/* Public Directory & Stores Links */}
+            <Link
+              href="/directory"
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                pathname === '/directory'
+                  ? 'bg-[#EAE6F8] text-[#191C1E]'
+                  : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+              }`}
+            >
+              <Factory className="w-4 h-4 text-[#136B3B]" />
+              <span className="hidden md:inline">Recyclers</span>
+            </Link>
+
             <Link
               href="/stores"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                 pathname === '/stores'
                   ? 'bg-[#EAE6F8] text-[#191C1E]'
                   : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
               }`}
             >
               <Store className="w-4 h-4 text-[#136B3B]" />
-              <span className="hidden sm:inline">Store Map</span>
+              <span className="hidden md:inline">Scrap Dealers</span>
             </Link>
 
             {profile ? (
               <>
-                {profile.role === 'household' ? (
+                {/* RECYCLER ROLE NAVIGATION */}
+                {profile.role === 'recycler' && (
+                  <>
+                    <Link
+                      href="/recycler"
+                      className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                        pathname === '/recycler'
+                          ? 'bg-[#EAE6F8] text-[#191C1E]'
+                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                      }`}
+                    >
+                      <Layers className="w-4 h-4 text-[#136B3B]" />
+                      <span>Dashboard</span>
+                    </Link>
+
+                    <Link
+                      href="/recycler/requirements"
+                      className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                        pathname.startsWith('/recycler/requirements')
+                          ? 'bg-[#EAE6F8] text-[#191C1E]'
+                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                      }`}
+                    >
+                      <span>Demands</span>
+                    </Link>
+
+                    <Link
+                      href="/recycler/offers"
+                      className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                        pathname === '/recycler/offers'
+                          ? 'bg-[#EAE6F8] text-[#191C1E]'
+                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                      }`}
+                    >
+                      <span>Incoming Scrap</span>
+                    </Link>
+
+                    <Link
+                      href="/recycler/traceability"
+                      className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                        pathname === '/recycler/traceability'
+                          ? 'bg-[#EAE6F8] text-[#191C1E]'
+                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                      }`}
+                    >
+                      <span>Traceability</span>
+                    </Link>
+
+                    <Link
+                      href="/recycler/requirements/new"
+                      className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#136B3B] hover:bg-[#0F5730] text-white shadow-xs transition"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      <span>+ Need Scrap</span>
+                    </Link>
+                  </>
+                )}
+
+                {/* COLLECTOR ROLE NAVIGATION */}
+                {profile.role === 'collector' && (
+                  <>
+                    <Link
+                      href="/collector"
+                      className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                        pathname === '/collector'
+                          ? 'bg-[#EAE6F8] text-[#191C1E]'
+                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                      }`}
+                    >
+                      <Truck className="w-4 h-4 text-[#136B3B]" />
+                      <span>Pickups</span>
+                    </Link>
+
+                    <Link
+                      href="/collector/find-buyers"
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-xs transition animate-pulse`}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Find Buyers</span>
+                    </Link>
+
+                    <Link
+                      href="/collector/demand-board"
+                      className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                        pathname === '/collector/demand-board'
+                          ? 'bg-[#EAE6F8] text-[#191C1E]'
+                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                      }`}
+                    >
+                      <span>Demand Board</span>
+                    </Link>
+
+                    <Link
+                      href="/collector/offers"
+                      className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                        pathname === '/collector/offers'
+                          ? 'bg-[#EAE6F8] text-[#191C1E]'
+                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                      }`}
+                    >
+                      <span>My Offers</span>
+                    </Link>
+                  </>
+                )}
+
+                {/* ADMIN ROLE NAVIGATION */}
+                {profile.role === 'admin' && (
+                  <>
+                    <Link
+                      href="/admin"
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                        pathname.startsWith('/admin')
+                          ? 'bg-purple-100 text-purple-900 border border-purple-200'
+                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
+                      }`}
+                    >
+                      <ShieldCheck className="w-4 h-4 text-purple-700" />
+                      <span>Recycler Verification</span>
+                    </Link>
+                  </>
+                )}
+
+                {/* CITIZEN / HOUSEHOLD ROLE NAVIGATION */}
+                {profile.role === 'household' && (
                   <>
                     <Link
                       href="/household"
-                      className={`hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
+                      className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                         pathname === '/household'
                           ? 'bg-[#EAE6F8] text-[#191C1E]'
                           : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
@@ -132,64 +307,43 @@ export default function Navbar() {
                       <span>Dashboard</span>
                     </Link>
                     <Link
-                      href="/household/history"
-                      className={`hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
-                        pathname === '/household/history'
-                          ? 'bg-[#EAE6F8] text-[#191C1E]'
-                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
-                      }`}
-                    >
-                      <History className="w-4 h-4" />
-                      <span>Activity</span>
-                    </Link>
-                    <Link
                       href="/household/request-pickup"
-                      className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-[#136B3B] hover:bg-[#0F5730] text-white shadow-sm transition"
+                      className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-[#136B3B] hover:bg-[#0F5730] text-white shadow-xs transition"
                     >
                       <PlusCircle className="w-4 h-4" />
                       <span>Request Pickup</span>
                     </Link>
                   </>
-                ) : (
-                  <>
-                    <Link
-                      href="/collector"
-                      className={`hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
-                        pathname === '/collector'
-                          ? 'bg-[#EAE6F8] text-[#191C1E]'
-                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
-                      }`}
-                    >
-                      <Truck className="w-4 h-4" />
-                      <span>Available Pickups</span>
-                    </Link>
-                    <Link
-                      href="/collector/map"
-                      className={`hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
-                        pathname === '/collector/map'
-                          ? 'bg-[#EAE6F8] text-[#191C1E]'
-                          : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
-                      }`}
-                    >
-                      <MapPin className="w-4 h-4" />
-                      <span>Map Route</span>
-                    </Link>
-                  </>
                 )}
 
-                {/* Profile Info Badge */}
+                {/* Profile Badge & Verification Status */}
                 <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-[#E5E7EB]">
                   <Link
-                    href="/household/profile"
+                    href={
+                      profile.role === 'recycler'
+                        ? '/recycler/profile'
+                        : profile.role === 'admin'
+                        ? '/admin'
+                        : '/household/profile'
+                    }
                     className="flex items-center gap-2 py-1 px-1.5 rounded-xl hover:bg-[#F2F4F6] transition"
                   >
-                    <div className="w-8 h-8 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#136B3B] font-bold text-sm select-none">
-                      {profile.full_name?.charAt(0) || 'S'}
+                    <div className="w-8 h-8 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#136B3B] font-bold text-xs select-none">
+                      {profile.role === 'recycler' ? '♻️' : profile.role === 'admin' ? '🛡️' : profile.role === 'collector' ? '🚛' : '🏠'}
                     </div>
-                    <div className="text-left hidden md:block">
-                      <p className="text-xs font-bold text-[#191C1E] leading-tight">{profile.full_name}</p>
-                      <span className="text-[10px] uppercase font-bold text-[#136B3B]">
-                        {profile.role}
+                    <div className="text-left hidden lg:block">
+                      <p className="text-xs font-bold text-[#191C1E] leading-tight truncate max-w-[130px]">
+                        {profile.full_name}
+                      </p>
+                      <span className="text-[10px] uppercase font-bold text-[#136B3B] flex items-center gap-1">
+                        {profile.role === 'recycler' ? (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span>Verified Recycler</span>
+                          </>
+                        ) : (
+                          profile.role
+                        )}
                       </span>
                     </div>
                   </Link>
@@ -213,9 +367,9 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/register"
-                  className="px-3.5 py-1.5 text-xs font-bold text-white bg-[#136B3B] hover:bg-[#0F5730] rounded-full shadow-sm transition"
+                  className="px-3.5 py-1.5 text-xs font-bold text-white bg-[#136B3B] hover:bg-[#0F5730] rounded-full shadow-xs transition"
                 >
-                  Get Started
+                  Join Market
                 </Link>
               </div>
             )}
@@ -246,4 +400,3 @@ export default function Navbar() {
     </>
   );
 }
-

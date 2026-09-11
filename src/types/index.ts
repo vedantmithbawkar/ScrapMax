@@ -1,4 +1,4 @@
-export type UserRole = 'household' | 'collector';
+export type UserRole = 'household' | 'collector' | 'recycler' | 'admin';
 
 export type PickupStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
 
@@ -206,4 +206,243 @@ export interface UserRatingsSummary {
   total_reviews: number;
   reviews: RatingReview[];
 }
+
+// ========================================================
+// RECYCLER ECOSYSTEM & COLLECTOR MARKETPLACE TYPES
+// ========================================================
+
+export type RecyclerBusinessType = 'Recycler' | 'Dismantler' | 'Refurbisher' | 'Processor';
+
+export type RecyclerVerificationStatus = 'pending' | 'verified' | 'rejected' | 'suspended';
+
+export type RecyclerVerificationSource = 'official_listing' | 'scrapmax_partner' | 'demo_data';
+
+export type RecyclerMaterial =
+  | 'PCB'
+  | 'Copper Cable'
+  | 'Aluminium'
+  | 'Ferrous Metal'
+  | 'Non-ferrous Metal'
+  | 'Batteries'
+  | 'LCD'
+  | 'CRT'
+  | 'Motors'
+  | 'Magnets'
+  | 'Mixed Plastics'
+  | 'Mixed E-Waste'
+  | 'Other';
+
+export const RECYCLER_MATERIALS_LIST: RecyclerMaterial[] = [
+  'PCB',
+  'Copper Cable',
+  'Aluminium',
+  'Ferrous Metal',
+  'Non-ferrous Metal',
+  'Batteries',
+  'LCD',
+  'CRT',
+  'Motors',
+  'Magnets',
+  'Mixed Plastics',
+  'Mixed E-Waste',
+  'Other',
+];
+
+export const RECYCLER_MATERIAL_DETAILS: Record<
+  RecyclerMaterial,
+  { label: string; icon: string; typicalPriceRange: string; defaultUnit: string }
+> = {
+  PCB: { label: 'PCB Circuit Boards', icon: '💻', typicalPriceRange: '₹120 – ₹180 / KG', defaultUnit: 'KG' },
+  'Copper Cable': { label: 'Copper Cable & Wire', icon: '🔌', typicalPriceRange: '₹550 – ₹680 / KG', defaultUnit: 'KG' },
+  Aluminium: { label: 'Aluminium Scrap', icon: '⚙️', typicalPriceRange: '₹140 – ₹210 / KG', defaultUnit: 'KG' },
+  'Ferrous Metal': { label: 'Ferrous Metal (Iron/Steel)', icon: '🔩', typicalPriceRange: '₹30 – ₹45 / KG', defaultUnit: 'KG' },
+  'Non-ferrous Metal': { label: 'Non-ferrous Metal (Brass/Zinc)', icon: '🪙', typicalPriceRange: '₹320 – ₹480 / KG', defaultUnit: 'KG' },
+  Batteries: { label: 'Lithium & Lead Batteries', icon: '🔋', typicalPriceRange: '₹90 – ₹220 / KG', defaultUnit: 'KG' },
+  LCD: { label: 'LCD Screens & Panels', icon: '🖥️', typicalPriceRange: '₹80 – ₹150 / KG', defaultUnit: 'KG' },
+  CRT: { label: 'CRT Glass & Monitors', icon: '📺', typicalPriceRange: '₹15 – ₹30 / KG', defaultUnit: 'KG' },
+  Motors: { label: 'Electric Motors & Alternators', icon: '🔄', typicalPriceRange: '₹75 – ₹130 / KG', defaultUnit: 'KG' },
+  Magnets: { label: 'Neodymium & Ceramic Magnets', icon: '🧲', typicalPriceRange: '₹200 – ₹450 / KG', defaultUnit: 'KG' },
+  'Mixed Plastics': { label: 'Industrial Mixed Plastics', icon: '🧱', typicalPriceRange: '₹18 – ₹32 / KG', defaultUnit: 'KG' },
+  'Mixed E-Waste': { label: 'Assorted Electronic Waste', icon: '📟', typicalPriceRange: '₹45 – ₹95 / KG', defaultUnit: 'KG' },
+  Other: { label: 'Other Recyclable Material', icon: '📦', typicalPriceRange: 'Market Negotiable', defaultUnit: 'KG' },
+};
+
+export interface RecyclerProfile {
+  id: string; // references auth.users / profiles.id
+  company_name: string;
+  business_type: RecyclerBusinessType;
+  authorized_person_name: string;
+  designation?: string;
+  business_email: string;
+  business_phone: string;
+  registered_address: string;
+  facility_address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  gstin?: string;
+  pan?: string;
+  cin?: string;
+  registration_number?: string;
+  spcb?: string;
+  cpcb_epr_id?: string;
+  verification_status: RecyclerVerificationStatus;
+  verification_source: RecyclerVerificationSource;
+  verification_notes?: string;
+  verified_at?: string;
+  created_at?: string;
+  updated_at?: string;
+  // Capability list
+  materials?: RecyclerMaterialCapability[];
+  // Aggregate stats
+  active_requirements_count?: number;
+  completed_transactions_count?: number;
+  total_material_purchased_kg?: number;
+}
+
+export interface RecyclerMaterialCapability {
+  id?: string;
+  recycler_id: string;
+  material: RecyclerMaterial;
+  accepted: boolean;
+  minimum_quantity_kg?: number;
+  maximum_capacity_kg?: number;
+}
+
+export type RequirementStatus = 'Draft' | 'Active' | 'Paused' | 'Fulfilled' | 'Expired' | 'Cancelled';
+
+export type CollectionMethod = 'Recycler Pickup' | 'Collector Delivery' | 'Both';
+
+export interface RecyclerRequirement {
+  id: string;
+  recycler_id: string;
+  material: RecyclerMaterial;
+  quantity_required_kg: number;
+  quantity_fulfilled_kg: number;
+  quantity_committed_kg: number;
+  offered_price_per_kg: number;
+  minimum_lot_kg: number;
+  collection_method: CollectionMethod;
+  city: string;
+  area?: string;
+  pincode?: string;
+  latitude?: number;
+  longitude?: number;
+  quality_requirements?: string;
+  status: RequirementStatus;
+  expires_at: string;
+  created_at: string;
+  updated_at?: string;
+  // Joined or calculated fields
+  recycler?: RecyclerProfile;
+  remaining_quantity_kg?: number;
+  fulfillment_percentage?: number;
+  suppliers_count?: number;
+  is_demo?: boolean;
+}
+
+export type OfferStatus = 'pending' | 'accepted' | 'rejected' | 'counter_offered' | 'cancelled';
+
+export interface CollectorOffer {
+  id: string;
+  requirement_id: string;
+  collector_id: string;
+  quantity_offered_kg: number;
+  offered_price_per_kg: number;
+  estimated_value: number;
+  status: OfferStatus;
+  counter_price_per_kg?: number;
+  counter_quantity_kg?: number;
+  counter_notes?: string;
+  rejection_reason?: string;
+  message?: string;
+  created_at: string;
+  updated_at?: string;
+  // Joined
+  requirement?: RecyclerRequirement;
+  collector?: UserProfile;
+}
+
+export type RecyclerPickupStatus =
+  | 'Scheduled'
+  | 'Collector Ready'
+  | 'Driver Assigned'
+  | 'Out for Pickup'
+  | 'Arrived'
+  | 'Collected'
+  | 'Completed'
+  | 'Cancelled';
+
+export type RecyclerPaymentMethod = 'UPI' | 'CASH' | 'BANK_TRANSFER' | 'OTHER';
+
+export type RecyclerPaymentStatus = 'Pending' | 'Processing' | 'Paid' | 'Failed';
+
+export interface RecyclerTransaction {
+  id: string;
+  requirement_id: string;
+  offer_id?: string;
+  collector_id: string;
+  recycler_id: string;
+  material: RecyclerMaterial;
+  agreed_quantity_kg: number;
+  agreed_price_per_kg: number;
+  actual_weight_kg?: number;
+  final_amount?: number;
+  pickup_date?: string;
+  pickup_time?: string;
+  pickup_method: string;
+  pickup_address?: string;
+  pickup_status: RecyclerPickupStatus;
+  payment_method: RecyclerPaymentMethod;
+  payment_status: RecyclerPaymentStatus;
+  collector_handover_confirmed: boolean;
+  recycler_receipt_confirmed: boolean;
+  status: 'in_progress' | 'completed' | 'cancelled';
+  traceability_code?: string;
+  traceability_data?: TraceabilityRecord;
+  created_at: string;
+  updated_at?: string;
+  // Joined
+  collector?: UserProfile;
+  recycler?: RecyclerProfile;
+  requirement?: RecyclerRequirement;
+}
+
+export interface TraceabilityStep {
+  step: number;
+  title: string;
+  description: string;
+  timestamp: string;
+  actor: string;
+  status: 'completed' | 'current' | 'pending';
+  meta?: Record<string, unknown>;
+}
+
+export interface TraceabilityRecord {
+  transaction_id: string;
+  traceability_code: string;
+  material: RecyclerMaterial;
+  confirmed_weight_kg: number;
+  origin_collector: {
+    name: string;
+    city: string;
+  };
+  destination_facility: {
+    name: string;
+    city: string;
+    registration_number?: string;
+  };
+  steps: TraceabilityStep[];
+  emissions_prevented_co2_kg?: number;
+  circular_recycling_batch?: string;
+}
+
+export interface MatchingScoreResult {
+  score: number; // 0 to 100
+  requirement: RecyclerRequirement;
+  estimatedValue: number;
+  reasons: string[];
+  isBestMatch?: boolean;
+}
+
 

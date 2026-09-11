@@ -5,8 +5,22 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/common/Navbar';
 import { createClient } from '@/lib/supabase/client';
-import { UserRole } from '@/types';
-import { Recycle, User, Phone, Lock, Mail, Truck, ArrowRight } from 'lucide-react';
+import { UserRole, RecyclerBusinessType } from '@/types';
+import { upsertRecyclerProfile } from '@/lib/recycler-service';
+import {
+  Recycle,
+  User,
+  Phone,
+  Lock,
+  Mail,
+  Truck,
+  ArrowRight,
+  Factory,
+  Building2,
+  FileCheck2,
+  MapPin,
+  CheckCircle2,
+} from 'lucide-react';
 
 function RegisterForm() {
   const router = useRouter();
@@ -14,12 +28,37 @@ function RegisterForm() {
 
   const roleParam = searchParams.get('role');
   const [role, setRole] = useState<UserRole>(
-    roleParam === 'collector' ? 'collector' : 'household'
+    roleParam === 'collector' ? 'collector' : roleParam === 'recycler' ? 'recycler' : 'household'
   );
+
+  // Common account fields (Section A)
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Recycler Company fields (Section B)
+  const [companyName, setCompanyName] = useState('');
+  const [businessType, setBusinessType] = useState<RecyclerBusinessType>('Recycler');
+  const [authorizedPerson, setAuthorizedPerson] = useState('');
+  const [designation, setDesignation] = useState('Authorized Representative');
+  const [businessEmail, setBusinessEmail] = useState('');
+  const [businessPhone, setBusinessPhone] = useState('');
+  const [registeredAddress, setRegisteredAddress] = useState('');
+  const [facilityAddress, setFacilityAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [pincode, setPincode] = useState('');
+
+  // Recycler Compliance fields (Section C)
+  const [gstin, setGstin] = useState('');
+  const [pan, setPan] = useState('');
+  const [cin, setCin] = useState('');
+  const [regNumber, setRegNumber] = useState('');
+  const [spcb, setSpcb] = useState('Maharashtra Pollution Control Board');
+  const [cpcbEprId, setCpcbEprId] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -30,23 +69,32 @@ function RegisterForm() {
     setErrorMsg('');
     setSuccessMsg('');
 
+    if (password !== confirmPassword && confirmPassword.length > 0) {
+      setErrorMsg('Passwords do not match.');
+      setLoading(false);
+      return;
+    }
+
     const supabase = createClient();
+    const primaryName = role === 'recycler' ? (companyName || fullName) : fullName;
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          full_name: fullName,
+          full_name: primaryName,
           role,
-          phone,
+          phone: role === 'recycler' ? businessPhone || phone : phone,
         },
       },
     });
 
     if (error) {
+      // If Supabase free-tier email limit is hit or network issue, fallback gracefully for local testing
       if (error.message.includes('rate limit')) {
         setErrorMsg(
-          '⚠️ Supabase Email Rate Limit Exceeded: Supabase free tier limits verification emails to ~3/hour. To fix this instantly: open your Supabase Dashboard > Authentication > Providers > Email, turn OFF "Confirm email", and click Save. Then you can register and sign in immediately with any email!'
+          'Supabase email verification rate limit reached. To sign up instantly: open Supabase Dashboard > Authentication > Providers > Email, turn OFF "Confirm email", and save.'
         );
       } else {
         setErrorMsg(error.message);
@@ -55,68 +103,112 @@ function RegisterForm() {
       return;
     }
 
-    if (data?.user) {
+    const userId = data?.user?.id || `usr-${Date.now()}`;
+
+    // Update profile in profiles table
+    try {
+      await supabase.from('profiles').upsert({
+        id: userId,
+        full_name: primaryName,
+        phone: role === 'recycler' ? businessPhone || phone : phone,
+        role,
+      });
+    } catch {}
+
+    // If registering as recycler, store full facility profile
+    if (role === 'recycler') {
       try {
-        await supabase.from('profiles').upsert({
-          id: data.user.id,
-          full_name: fullName,
-          phone,
-          role,
+        await upsertRecyclerProfile({
+          id: userId,
+          company_name: companyName || primaryName,
+          business_type: businessType,
+          authorized_person_name: authorizedPerson || primaryName,
+          designation,
+          business_email: businessEmail || email,
+          business_phone: businessPhone || phone,
+          registered_address: registeredAddress || 'Not specified',
+          facility_address: facilityAddress || registeredAddress || 'Not specified',
+          city: city || 'Mumbai',
+          state: state || 'Maharashtra',
+          pincode: pincode || '400001',
+          gstin: gstin || undefined,
+          pan: pan || undefined,
+          cin: cin || undefined,
+          registration_number: regNumber || undefined,
+          spcb: spcb || undefined,
+          cpcb_epr_id: cpcbEprId || undefined,
+          verification_status: 'pending',
+          verification_source: 'scrapmax_partner',
         });
       } catch (err) {
-        console.warn('Profile upsert notice:', err);
+        console.warn('Recycler profile registration warning:', err);
       }
     }
 
     if (data?.session) {
-      if (role === 'collector') {
+      if (role === 'recycler') {
+        router.push('/recycler');
+      } else if (role === 'collector') {
         router.push('/collector');
       } else {
         router.push('/household');
       }
     } else {
       setSuccessMsg(
-        'Account created in Supabase! If "Confirm email" is enabled in your Supabase project, please check your inbox to verify your email, or disable "Confirm email" in Supabase Dashboard (Auth > Providers > Email) to sign in immediately.'
+        'Account created successfully in Supabase! If "Confirm email" is enabled in Supabase, check your inbox, or disable email confirmation in Supabase Dashboard to log in immediately.'
       );
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md bg-white border border-gray-100 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-      <div className="text-center space-y-2">
+    <div className={`w-full ${role === 'recycler' ? 'max-w-2xl' : 'max-w-md'} bg-white border border-gray-100 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 transition-all`}>
+      <div className="text-center space-y-1">
         <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">Create Your Account</h2>
-        <p className="text-xs text-[#6B7280]">Join AiCLE circular waste recycling platform</p>
+        <p className="text-xs text-[#6B7280]">Join ScrapMax two-sided circular recycling marketplace</p>
       </div>
 
-      {/* Role Choice Selector */}
+      {/* Role Selection Switcher */}
       <div>
         <label className="block text-xs font-bold text-[#191C1E] mb-2">Select Your Role</label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           <button
             type="button"
             onClick={() => setRole('household')}
-            className={`p-3.5 rounded-2xl border flex flex-col items-center gap-1.5 transition touch-feedback ${
+            className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition touch-feedback ${
               role === 'household'
                 ? 'border-[#136B3B] bg-[#E6F4EA] text-[#136B3B] font-bold shadow-xs'
                 : 'border-gray-200 bg-[#F8FAF9] text-[#526056] hover:bg-gray-100'
             }`}
           >
-            <Recycle className="w-6 h-6 stroke-[2.2]" />
-            <span className="text-xs">🏠 Household</span>
+            <Recycle className="w-5 h-5 stroke-[2.2]" />
+            <span className="text-[11px]">🏠 Citizen</span>
           </button>
 
           <button
             type="button"
             onClick={() => setRole('collector')}
-            className={`p-3.5 rounded-2xl border flex flex-col items-center gap-1.5 transition touch-feedback ${
+            className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition touch-feedback ${
               role === 'collector'
                 ? 'border-[#136B3B] bg-[#E6F4EA] text-[#136B3B] font-bold shadow-xs'
                 : 'border-gray-200 bg-[#F8FAF9] text-[#526056] hover:bg-gray-100'
             }`}
           >
-            <Truck className="w-6 h-6 stroke-[2.2]" />
-            <span className="text-xs">🚛 Collector</span>
+            <Truck className="w-5 h-5 stroke-[2.2]" />
+            <span className="text-[11px]">🚛 Collector</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setRole('recycler')}
+            className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition touch-feedback ${
+              role === 'recycler'
+                ? 'border-[#136B3B] bg-[#E6F4EA] text-[#136B3B] font-bold shadow-xs'
+                : 'border-gray-200 bg-[#F8FAF9] text-[#526056] hover:bg-gray-100'
+            }`}
+          >
+            <Factory className="w-5 h-5 stroke-[2.2]" />
+            <span className="text-[11px]">♻️ Recycler</span>
           </button>
         </div>
       </div>
@@ -131,7 +223,7 @@ function RegisterForm() {
         <div className="p-4 bg-[#E6F4EA] border border-[#A6D5B8] text-[#136B3B] rounded-2xl text-xs leading-relaxed space-y-2 font-medium">
           <p>{successMsg}</p>
           <p>
-            Already verified?{' '}
+            Ready to log in?{' '}
             <Link href="/login" className="underline font-bold text-[#136B3B]">
               Sign In Here
             </Link>
@@ -139,89 +231,321 @@ function RegisterForm() {
         </div>
       )}
 
-      <form onSubmit={handleRegister} className="space-y-4">
-        <div>
-          <label className="block text-xs font-bold text-[#191C1E] mb-1.5">Full Name</label>
-          <div className="relative">
+      <form onSubmit={handleRegister} className="space-y-6">
+        {/* ========================================================
+            SECTION A — Account Information
+            ======================================================== */}
+        <div className="space-y-3.5">
+          <div className="flex items-center gap-2 pb-1.5 border-b border-gray-100 text-xs font-bold text-[#191C1E]">
+            <User className="w-4 h-4 text-[#136B3B]" />
+            <span>SECTION A — Account Information</span>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-[#191C1E] mb-1">
+              {role === 'recycler' ? 'Account Admin Name' : 'Full Name'}
+            </label>
             <input
               type="text"
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="Sahil Doe"
-              className="w-full pl-10 pr-4 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-sm text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] transition"
+              placeholder="e.g. Vikram Joshi"
+              className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
             />
-            <User className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[#191C1E] mb-1">Email Address</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
+                className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#191C1E] mb-1">Contact Phone</label>
+              <input
+                type="tel"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+91 98765 43210"
+                className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[#191C1E] mb-1">Password</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#191C1E] mb-1">Confirm Password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+              />
+            </div>
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs font-bold text-[#191C1E] mb-1.5">Email Address</label>
-          <div className="relative">
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@example.com"
-              className="w-full pl-10 pr-4 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-sm text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] transition"
-            />
-            <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
-          </div>
-        </div>
+        {/* ========================================================
+            RECYCLER-SPECIFIC: SECTION B & C
+            ======================================================== */}
+        {role === 'recycler' && (
+          <>
+            {/* SECTION B — Company Information */}
+            <div className="space-y-3.5 pt-2">
+              <div className="flex items-center gap-2 pb-1.5 border-b border-gray-100 text-xs font-bold text-[#191C1E]">
+                <Building2 className="w-4 h-4 text-[#136B3B]" />
+                <span>SECTION B — Company &amp; Facility Information</span>
+              </div>
 
-        <div>
-          <label className="block text-xs font-bold text-[#191C1E] mb-1.5">Phone Number</label>
-          <div className="relative">
-            <input
-              type="tel"
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91 9876543210"
-              className="w-full pl-10 pr-4 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-sm text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] transition"
-            />
-            <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
-          </div>
-        </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Company / Facility Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Green India E-Waste Solutions"
+                    className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                  />
+                </div>
 
-        <div>
-          <label className="block text-xs font-bold text-[#191C1E] mb-1.5">Password</label>
-          <div className="relative">
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full pl-10 pr-4 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-sm text-[#191C1E] placeholder-gray-400 focus:outline-none focus:border-[#136B3B] transition"
-            />
-            <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
-          </div>
-        </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Business Type</label>
+                  <select
+                    value={businessType}
+                    onChange={(e) => setBusinessType(e.target.value as RecyclerBusinessType)}
+                    className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                  >
+                    <option value="Recycler">Recycler</option>
+                    <option value="Dismantler">Dismantler</option>
+                    <option value="Refurbisher">Refurbisher</option>
+                    <option value="Processor">Processor</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Authorized Person Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={authorizedPerson}
+                    onChange={(e) => setAuthorizedPerson(e.target.value)}
+                    placeholder="Vikram Joshi"
+                    className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Designation</label>
+                  <input
+                    type="text"
+                    value={designation}
+                    onChange={(e) => setDesignation(e.target.value)}
+                    placeholder="Managing Director / Plant Manager"
+                    className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Business Email</label>
+                  <input
+                    type="email"
+                    value={businessEmail}
+                    onChange={(e) => setBusinessEmail(e.target.value)}
+                    placeholder="procurement@greenindia.demo"
+                    className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Business Phone</label>
+                  <input
+                    type="tel"
+                    value={businessPhone}
+                    onChange={(e) => setBusinessPhone(e.target.value)}
+                    placeholder="+91 22 2847 1100"
+                    className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#191C1E] mb-1">Registered Address</label>
+                <input
+                  type="text"
+                  required
+                  value={registeredAddress}
+                  onChange={(e) => setRegisteredAddress(e.target.value)}
+                  placeholder="Plot 42, Road 16, Industrial Area"
+                  className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#191C1E] mb-1">Recycling Facility / Yard Address</label>
+                <input
+                  type="text"
+                  required
+                  value={facilityAddress}
+                  onChange={(e) => setFacilityAddress(e.target.value)}
+                  placeholder="Facility Yard Gate 2, MIDC Industrial Area"
+                  className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">City</label>
+                  <input
+                    type="text"
+                    required
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Mumbai / Thane"
+                    className="w-full px-3 py-2 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">State</label>
+                  <input
+                    type="text"
+                    required
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    placeholder="Maharashtra"
+                    className="w-full px-3 py-2 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">PIN Code</label>
+                  <input
+                    type="text"
+                    required
+                    value={pincode}
+                    onChange={(e) => setPincode(e.target.value)}
+                    placeholder="400604"
+                    className="w-full px-3 py-2 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION C — Compliance Information */}
+            <div className="space-y-3.5 pt-2">
+              <div className="flex items-center gap-2 pb-1.5 border-b border-gray-100 text-xs font-bold text-[#191C1E]">
+                <FileCheck2 className="w-4 h-4 text-[#136B3B]" />
+                <span>SECTION C — Compliance &amp; Regulatory Verification</span>
+              </div>
+
+              <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 leading-relaxed">
+                ℹ️ <strong>Note:</strong> Verification status will be set to <strong>Pending</strong> upon registration. ScrapMax admin reviews SPCB/EPR details prior to marketplace verification badge approval. Sensitive personal identity documents (such as Aadhaar) are never requested.
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">GSTIN</label>
+                  <input
+                    type="text"
+                    value={gstin}
+                    onChange={(e) => setGstin(e.target.value)}
+                    placeholder="27AAAAA0000A1Z5"
+                    className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Company PAN</label>
+                  <input
+                    type="text"
+                    value={pan}
+                    onChange={(e) => setPan(e.target.value)}
+                    placeholder="AAAAA0000A"
+                    className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">Recycler Authorization Number</label>
+                  <input
+                    type="text"
+                    value={regNumber}
+                    onChange={(e) => setRegNumber(e.target.value)}
+                    placeholder="MPCB/RO-THANE/E-WASTE/2024/09"
+                    className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#191C1E] mb-1">State Pollution Control Board (SPCB)</label>
+                  <input
+                    type="text"
+                    value={spcb}
+                    onChange={(e) => setSpcb(e.target.value)}
+                    placeholder="Maharashtra Pollution Control Board"
+                    className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#191C1E] mb-1">CPCB / EPR Registration ID (if applicable)</label>
+                <input
+                  type="text"
+                  value={cpcbEprId}
+                  onChange={(e) => setCpcbEprId(e.target.value)}
+                  placeholder="CPCB/EPR-EWASTE/2023/MH-0192"
+                  className="w-full px-3.5 py-2.5 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs text-[#191C1E] focus:outline-none focus:border-[#136B3B]"
+                />
+              </div>
+            </div>
+          </>
+        )}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold rounded-full shadow-sm transition touch-feedback"
+          className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold rounded-full shadow-sm transition touch-feedback text-sm"
         >
-          <span>{loading ? 'Creating account...' : `Register as ${role.toUpperCase()}`}</span>
+          <span>
+            {loading
+              ? 'Creating account...'
+              : role === 'recycler'
+              ? 'Register Recycler Facility'
+              : `Register as ${role === 'collector' ? 'Collector' : 'Citizen'}`}
+          </span>
           <ArrowRight className="w-4 h-4 stroke-[2.5]" />
         </button>
-
-        <div className="relative flex py-1 items-center">
-          <div className="flex-grow border-t border-gray-200"></div>
-          <span className="flex-shrink mx-3 text-gray-400 text-xs uppercase tracking-wider font-semibold">Or</span>
-          <div className="flex-grow border-t border-gray-200"></div>
-        </div>
-
-        <Link
-          href="/household"
-          className="w-full flex items-center justify-center gap-2 py-3 bg-[#F8FAF9] hover:bg-[#EAE6F8] text-[#191C1E] border border-gray-200 font-bold rounded-full text-xs transition touch-feedback"
-        >
-          <span>Explore as Guest (No Account Required)</span>
-          <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
-        </Link>
       </form>
 
       <p className="text-center text-xs text-[#6B7280]">

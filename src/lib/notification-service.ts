@@ -3,9 +3,14 @@ export type NotificationType =
   | 'collector_near'
   | 'pickup_completed'
   | 'payment_received'
-  | 'price_alert';
+  | 'price_alert'
+  | 'new_collector_offer'
+  | 'offer_accepted'
+  | 'offer_rejected'
+  | 'counter_offer'
+  | 'handover_completed';
 
-export type NotificationCategory = 'pickup' | 'payment' | 'market';
+export type NotificationCategory = 'pickup' | 'payment' | 'market' | 'marketplace';
 
 export interface SmartNotification {
   id: string;
@@ -373,5 +378,49 @@ export function triggerPriceAlertNotification(material = 'Plastic', newPrice = 2
     category: 'market',
     actionUrl: '/stores',
     metadata: { material, newPrice },
+  });
+}
+
+export function triggerNewCollectorOfferNotification(collectorName: string, material: string, qtyKg: number) {
+  return pushSmartNotification({
+    title: `New offer for ${material}`,
+    message: `${collectorName} submitted an offer for ${qtyKg} KG ${material}. Review and accept.`,
+    type: 'new_collector_offer',
+    category: 'marketplace',
+    actionUrl: '/recycler/offers',
+    metadata: { collectorName, material, qtyKg },
+  });
+}
+
+export function triggerOfferAcceptedNotification(recyclerName: string, material: string, qtyKg: number) {
+  return pushSmartNotification({
+    title: `Offer accepted by ${recyclerName}`,
+    message: `Your offer for ${qtyKg} KG ${material} has been accepted! Pickup is being scheduled.`,
+    type: 'offer_accepted',
+    category: 'marketplace',
+    actionUrl: '/collector/offers',
+    metadata: { recyclerName, material, qtyKg },
+  });
+}
+
+export function triggerCounterOfferNotification(recyclerName: string, counterPrice: number) {
+  return pushSmartNotification({
+    title: 'Counter offer received',
+    message: `${recyclerName} proposed a counter rate of ₹${counterPrice}/KG. Review and respond.`,
+    type: 'counter_offer',
+    category: 'marketplace',
+    actionUrl: '/collector/offers',
+    metadata: { recyclerName, counterPrice },
+  });
+}
+
+export function triggerRecyclerHandoverNotification(partyName: string, material: string, weightKg: number) {
+  return pushSmartNotification({
+    title: 'Recycling handover confirmed',
+    message: `${partyName} confirmed custody handover of ${weightKg} KG ${material}. Circular traceability record generated.`,
+    type: 'handover_completed',
+    category: 'marketplace',
+    actionUrl: '/recycler/traceability',
+    metadata: { partyName, material, weightKg },
   });
 }

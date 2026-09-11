@@ -232,3 +232,142 @@ BEGIN
       WITH CHECK (bucket_id = 'pickup-photos');
   END IF;
 END $$;
+
+-- ========================================================
+-- 9. SCRAPMAX RECYCLER ECOSYSTEM TABLES
+-- ========================================================
+
+-- Update role constraint
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'profiles_role_check') THEN
+    ALTER TABLE public.profiles DROP CONSTRAINT profiles_role_check;
+  END IF;
+  ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check 
+    CHECK (role IN ('household', 'collector', 'recycler', 'admin'));
+END $$;
+
+-- Recycler Profiles
+CREATE TABLE IF NOT EXISTS public.recycler_profiles (
+  id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
+  company_name TEXT NOT NULL,
+  business_type TEXT NOT NULL CHECK (business_type IN ('Recycler', 'Dismantler', 'Refurbisher', 'Processor')),
+  authorized_person_name TEXT NOT NULL,
+  designation TEXT,
+  business_email TEXT NOT NULL,
+  business_phone TEXT NOT NULL,
+  registered_address TEXT NOT NULL,
+  facility_address TEXT NOT NULL,
+  city TEXT NOT NULL,
+  state TEXT NOT NULL,
+  pincode TEXT NOT NULL,
+  gstin TEXT,
+  pan TEXT,
+  cin TEXT,
+  registration_number TEXT,
+  spcb TEXT,
+  cpcb_epr_id TEXT,
+  verification_status TEXT NOT NULL DEFAULT 'pending' CHECK (verification_status IN ('pending', 'verified', 'rejected', 'suspended')),
+  verification_source TEXT NOT NULL DEFAULT 'scrapmax_partner' CHECK (verification_source IN ('official_listing', 'scrapmax_partner', 'demo_data')),
+  verification_notes TEXT,
+  verified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Recycler Material Capabilities
+CREATE TABLE IF NOT EXISTS public.recycler_materials (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recycler_id UUID NOT NULL REFERENCES public.recycler_profiles(id) ON DELETE CASCADE,
+  material TEXT NOT NULL,
+  accepted BOOLEAN NOT NULL DEFAULT true,
+  minimum_quantity_kg DECIMAL(10, 2) DEFAULT 0,
+  maximum_capacity_kg DECIMAL(10, 2),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT unique_recycler_material UNIQUE (recycler_id, material)
+);
+
+-- Recycler Demands
+CREATE TABLE IF NOT EXISTS public.recycler_requirements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recycler_id UUID NOT NULL REFERENCES public.recycler_profiles(id) ON DELETE CASCADE,
+  material TEXT NOT NULL,
+  quantity_required_kg DECIMAL(10, 2) NOT NULL CHECK (quantity_required_kg > 0),
+  quantity_fulfilled_kg DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (quantity_fulfilled_kg >= 0),
+  quantity_committed_kg DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (quantity_committed_kg >= 0),
+  offered_price_per_kg DECIMAL(10, 2) NOT NULL CHECK (offered_price_per_kg > 0),
+  minimum_lot_kg DECIMAL(10, 2) NOT NULL DEFAULT 1 CHECK (minimum_lot_kg > 0),
+  collection_method TEXT NOT NULL DEFAULT 'Both' CHECK (collection_method IN ('Recycler Pickup', 'Collector Delivery', 'Both')),
+  city TEXT NOT NULL,
+  area TEXT,
+  pincode TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  quality_requirements TEXT,
+  status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Draft', 'Active', 'Paused', 'Fulfilled', 'Expired', 'Cancelled')),
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Collector Offers
+CREATE TABLE IF NOT EXISTS public.collector_offers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  requirement_id UUID NOT NULL REFERENCES public.recycler_requirements(id) ON DELETE CASCADE,
+  collector_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  quantity_offered_kg DECIMAL(10, 2) NOT NULL CHECK (quantity_offered_kg > 0),
+  offered_price_per_kg DECIMAL(10, 2) NOT NULL CHECK (offered_price_per_kg > 0),
+  estimated_value DECIMAL(12, 2) NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected', 'counter_offered', 'cancelled')),
+  counter_price_per_kg DECIMAL(10, 2),
+  counter_quantity_kg DECIMAL(10, 2),
+  counter_notes TEXT,
+  rejection_reason TEXT,
+  message TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Recycler Transactions & Handover
+CREATE TABLE IF NOT EXISTS public.recycler_transactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  requirement_id UUID NOT NULL REFERENCES public.recycler_requirements(id) ON DELETE RESTRICT,
+  offer_id UUID REFERENCES public.collector_offers(id) ON DELETE SET NULL,
+  collector_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT,
+  recycler_id UUID NOT NULL REFERENCES public.recycler_profiles(id) ON DELETE RESTRICT,
+  material TEXT NOT NULL,
+  agreed_quantity_kg DECIMAL(10, 2) NOT NULL CHECK (agreed_quantity_kg > 0),
+  agreed_price_per_kg DECIMAL(10, 2) NOT NULL CHECK (agreed_price_per_kg > 0),
+  actual_weight_kg DECIMAL(10, 2),
+  final_amount DECIMAL(12, 2),
+  pickup_date DATE,
+  pickup_time TEXT,
+  pickup_method TEXT NOT NULL DEFAULT 'Recycler Pickup',
+  pickup_address TEXT,
+  pickup_status TEXT NOT NULL DEFAULT 'Scheduled' CHECK (pickup_status IN ('Scheduled', 'Collector Ready', 'Driver Assigned', 'Out for Pickup', 'Arrived', 'Collected', 'Completed', 'Cancelled')),
+  payment_method TEXT DEFAULT 'UPI' CHECK (payment_method IN ('UPI', 'CASH', 'BANK_TRANSFER', 'OTHER')),
+  payment_status TEXT NOT NULL DEFAULT 'Pending' CHECK (payment_status IN ('Pending', 'Processing', 'Paid', 'Failed')),
+  collector_handover_confirmed BOOLEAN NOT NULL DEFAULT false,
+  recycler_receipt_confirmed BOOLEAN NOT NULL DEFAULT false,
+  status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed', 'cancelled')),
+  traceability_code TEXT UNIQUE,
+  traceability_data JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Recycler Notifications
+CREATE TABLE IF NOT EXISTS public.recycler_notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  related_requirement_id UUID REFERENCES public.recycler_requirements(id) ON DELETE SET NULL,
+  related_offer_id UUID REFERENCES public.collector_offers(id) ON DELETE SET NULL,
+  related_transaction_id UUID REFERENCES public.recycler_transactions(id) ON DELETE SET NULL,
+  read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+

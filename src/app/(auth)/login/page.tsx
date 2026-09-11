@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/common/Navbar';
 import { createClient } from '@/lib/supabase/client';
-import { Recycle, Lock, Mail, ArrowRight, Sparkles, AlertCircle, Info } from 'lucide-react';
+import { UserRole } from '@/types';
+import { Recycle, Lock, Mail, ArrowRight, Sparkles, AlertCircle, Info, ShieldCheck, Factory, Truck } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,9 +15,22 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const [autoLoggingRole, setAutoLoggingRole] = useState<'household' | 'collector' | null>(null);
+  const [autoLoggingRole, setAutoLoggingRole] = useState<UserRole | null>(null);
 
-  const loginWithCredentials = async (loginEmail: string, loginPass: string, roleHint?: 'household' | 'collector') => {
+  const routeForRole = (role: UserRole) => {
+    switch (role) {
+      case 'recycler':
+        return '/recycler';
+      case 'admin':
+        return '/admin';
+      case 'collector':
+        return '/collector';
+      default:
+        return '/household';
+    }
+  };
+
+  const loginWithCredentials = async (loginEmail: string, loginPass: string, roleHint?: UserRole) => {
     setEmail(loginEmail);
     setPassword(loginPass);
     if (roleHint) setAutoLoggingRole(roleHint);
@@ -30,9 +44,30 @@ export default function LoginPage() {
     });
 
     if (error) {
+      // If Supabase credentials fail for demo accounts, allow instant 1-click exploration
+      if (roleHint) {
+        localStorage.setItem(
+          'scrapmax_demo_user',
+          JSON.stringify({
+            email: loginEmail,
+            role: roleHint,
+            full_name:
+              roleHint === 'recycler'
+                ? 'Vikram Joshi (Green India E-Waste)'
+                : roleHint === 'admin'
+                ? 'ScrapMax Compliance Administrator'
+                : roleHint === 'collector'
+                ? 'Ramesh Kumar (Verified Kabadiwala)'
+                : 'Sahil Citizen',
+          })
+        );
+        router.push(routeForRole(roleHint));
+        return;
+      }
+
       if (error.message.includes('Invalid login credentials')) {
         setErrorMsg(
-          'Invalid login credentials. Demo account is not yet in your Supabase database. Please run the SQL seed script in Supabase SQL Editor, or create the account on the Register page.'
+          'Invalid login credentials. Demo account is not yet in your Supabase database. Please create an account on the Register page or use the 1-click demo buttons below.'
         );
       } else {
         setErrorMsg(error.message);
@@ -46,12 +81,8 @@ export default function LoginPage() {
         .eq('id', data.user.id)
         .single();
 
-      const finalRole = profile?.role || roleHint || 'household';
-      if (finalRole === 'collector') {
-        router.push('/collector');
-      } else {
-        router.push('/household');
-      }
+      const finalRole = (profile?.role as UserRole) || roleHint || 'household';
+      router.push(routeForRole(finalRole));
     }
   };
 
@@ -60,8 +91,15 @@ export default function LoginPage() {
     await loginWithCredentials(email, password);
   };
 
-  const handleDemoClick = (role: 'household' | 'collector') => {
-    const demoEmail = role === 'household' ? 'household@aicle.demo' : 'collector@aicle.demo';
+  const handleDemoClick = (role: UserRole) => {
+    const demoEmail =
+      role === 'recycler'
+        ? 'recycler@scrapmax.demo'
+        : role === 'admin'
+        ? 'admin@scrapmax.demo'
+        : role === 'collector'
+        ? 'collector@scrapmax.demo'
+        : 'household@scrapmax.demo';
     const demoPass = 'demo123456';
     loginWithCredentials(demoEmail, demoPass, role);
   };
@@ -77,15 +115,15 @@ export default function LoginPage() {
             <div className="inline-flex p-3 bg-[#E6F4EA] border border-[#A6D5B8] rounded-2xl text-[#136B3B] mb-1">
               <Recycle className="w-8 h-8 stroke-[2.2]" />
             </div>
-            <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">Welcome Back</h2>
-            <p className="text-xs text-[#6B7280]">Sign in to manage waste pickups and view Supabase data</p>
+            <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">Welcome to ScrapMax</h2>
+            <p className="text-xs text-[#6B7280]">Sign in to the circular scrap &amp; recycling marketplace</p>
           </div>
 
-          {/* Quick Demo Buttons */}
+          {/* Quick Demo 4-Role Buttons */}
           <div className="p-3.5 bg-[#F8FAF9] border border-gray-200 rounded-2xl space-y-2">
             <div className="flex items-center gap-1.5 text-xs text-[#526056] font-bold">
               <Sparkles className="w-3.5 h-3.5 text-[#136B3B]" />
-              <span>Quick Demo 1-Click Login:</span>
+              <span>1-Click Demo Login by Role:</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -95,16 +133,37 @@ export default function LoginPage() {
                 className="px-3 py-2.5 bg-white hover:bg-emerald-50 text-xs font-bold text-[#136B3B] rounded-xl border border-gray-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-60"
               >
                 <span>🏠</span>
-                <span>{autoLoggingRole === 'household' ? 'Logging in...' : 'Household'}</span>
+                <span>{autoLoggingRole === 'household' ? 'Logging in...' : 'Citizen'}</span>
               </button>
+
               <button
                 type="button"
                 disabled={loading}
                 onClick={() => handleDemoClick('collector')}
                 className="px-3 py-2.5 bg-white hover:bg-slate-50 text-xs font-bold text-[#191C1E] rounded-xl border border-gray-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-60"
               >
-                <span>🚛</span>
+                <Truck className="w-3.5 h-3.5 text-[#136B3B]" />
                 <span>{autoLoggingRole === 'collector' ? 'Logging in...' : 'Collector'}</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => handleDemoClick('recycler')}
+                className="px-3 py-2.5 bg-white hover:bg-amber-50 text-xs font-bold text-amber-900 rounded-xl border border-amber-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-60"
+              >
+                <Factory className="w-3.5 h-3.5 text-amber-700" />
+                <span>{autoLoggingRole === 'recycler' ? 'Logging in...' : 'Recycler'}</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => handleDemoClick('admin')}
+                className="px-3 py-2.5 bg-white hover:bg-purple-50 text-xs font-bold text-purple-900 rounded-xl border border-purple-200 transition touch-feedback shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-60"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-700" />
+                <span>{autoLoggingRole === 'admin' ? 'Logging in...' : 'Admin'}</span>
               </button>
             </div>
           </div>
@@ -118,19 +177,6 @@ export default function LoginPage() {
               </div>
             </div>
           )}
-
-          {/* Supabase Email Rate Limit or Email Confirm Guide */}
-          <div className="p-3.5 bg-[#EAF5EE] border border-[#A6D5B8] rounded-2xl text-xs text-[#136B3B] space-y-2">
-            <div className="flex items-start gap-2">
-              <Info className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#136B3B]" />
-              <div className="space-y-1">
-                <p className="font-bold">Supabase Setup Tip:</p>
-                <p className="text-[11.5px] leading-relaxed text-[#2B6B47]">
-                  To register and log in without needing email verification: in your <strong>Supabase Dashboard &gt; Authentication &gt; Providers &gt; Email</strong>, toggle <strong>OFF</strong> &quot;Confirm email&quot; and save.
-                </p>
-              </div>
-            </div>
-          </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
@@ -171,72 +217,13 @@ export default function LoginPage() {
               <span>{loading ? 'Signing in...' : 'Sign In'}</span>
               <ArrowRight className="w-4 h-4 stroke-[2.5]" />
             </button>
-
-            <div className="relative flex py-1 items-center">
-              <div className="flex-grow border-t border-gray-200"></div>
-              <span className="flex-shrink mx-3 text-gray-400 text-xs uppercase tracking-wider font-semibold">Or</span>
-              <div className="flex-grow border-t border-gray-200"></div>
-            </div>
-
-            <Link
-              href="/household"
-              className="w-full flex items-center justify-center gap-2 py-3 bg-[#F8FAF9] hover:bg-[#EAE6F8] text-[#191C1E] border border-gray-200 font-bold rounded-full text-xs transition touch-feedback"
-            >
-              <span>Explore as Guest (No Login Required)</span>
-              <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
-            </Link>
           </form>
 
-          <p className="text-center text-xs text-[#6B7280]">
+          <div className="pt-2 text-center text-xs text-[#6B7280]">
             Don&apos;t have an account?{' '}
             <Link href="/register" className="text-[#136B3B] font-bold hover:underline">
-              Create one now
+              Register as Citizen, Collector, or Recycler
             </Link>
-          </p>
-
-          {/* Collapsible Supabase Troubleshooting Box */}
-          <div className="pt-2 border-t border-gray-100">
-            <details className="text-xs text-[#526056] space-y-2 cursor-pointer group">
-              <summary className="font-bold text-[#136B3B] flex items-center justify-between group-hover:underline">
-                <span>🔧 Supabase Setup &amp; Fix Guide</span>
-                <span className="text-[11px] text-gray-400">Expand ▼</span>
-              </summary>
-              <div className="pt-2 space-y-2.5 text-[11.5px] leading-relaxed text-[#4A5568] bg-[#F8FAF9] p-3 rounded-xl border border-gray-200">
-                <p>
-                  <strong>Why does login say &quot;Invalid login credentials&quot;?</strong><br />
-                  Demo accounts are not pre-loaded in your Supabase project&apos;s <code className="bg-gray-200 px-1 py-0.5 rounded text-[11px]">auth.users</code> table.
-                </p>
-                <div className="space-y-1.5">
-                  <p className="font-bold text-[#191C1E]">Two 30-second solutions:</p>
-                  <ol className="list-decimal pl-4 space-y-1">
-                    <li>
-                      <strong>Option A (Recommended):</strong> In your{' '}
-                      <a
-                        href="https://supabase.com/dashboard/project/qaoczojfnraivdhbxsab/auth/providers"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[#136B3B] font-bold underline"
-                      >
-                        Supabase Dashboard &gt; Auth Providers &gt; Email
-                      </a>
-                      , turn <strong>OFF &quot;Confirm email&quot;</strong> and save. Then register any account instantly!
-                    </li>
-                    <li>
-                      <strong>Option B (Direct Add):</strong> In{' '}
-                      <a
-                        href="https://supabase.com/dashboard/project/qaoczojfnraivdhbxsab/auth/users"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[#136B3B] font-bold underline"
-                      >
-                        Supabase Dashboard &gt; Users
-                      </a>
-                      , click <em>&quot;Add user&quot;</em> with email <code className="bg-gray-200 px-1 rounded">household@aicle.demo</code> and password <code className="bg-gray-200 px-1 rounded">demo123456</code> with <strong>&quot;Auto Confirm User&quot;</strong> checked.
-                    </li>
-                  </ol>
-                </div>
-              </div>
-            </details>
           </div>
 
         </div>
