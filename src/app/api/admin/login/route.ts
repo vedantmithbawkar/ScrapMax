@@ -14,30 +14,32 @@ export async function POST(request: Request) {
       );
     }
 
+    const cleanEnv = (val?: string) => (val || '').trim().replace(/^["']|["']$/g, '');
+
     // 1. Check Server Environment Variables (runtime on Vercel / Node server)
-    const adminEmail = (
+    const adminEmail = cleanEnv(
       process.env.ADMIN_EMAIL ||
       process.env.NEXT_PUBLIC_ADMIN_EMAIL ||
       'admin@scrapmax.gov.in'
-    ).trim().toLowerCase();
+    ).toLowerCase();
 
-    const adminPassword = (
+    const adminPassword = cleanEnv(
       process.env.ADMIN_PASSWORD ||
       process.env.NEXT_PUBLIC_ADMIN_PASSWORD ||
       ''
-    ).trim();
+    );
 
-    const adminSecEmail = (
+    const adminSecEmail = cleanEnv(
       process.env.ADMIN_SECONDARY_EMAIL ||
       process.env.NEXT_PUBLIC_ADMIN_SECONDARY_EMAIL ||
       ''
-    ).trim().toLowerCase();
+    ).toLowerCase();
 
-    const adminSecPassword = (
+    const adminSecPassword = cleanEnv(
       process.env.ADMIN_SECONDARY_PASSWORD ||
       process.env.NEXT_PUBLIC_ADMIN_SECONDARY_PASSWORD ||
       ''
-    ).trim();
+    );
 
     const isPrimary =
       adminPassword.length > 0 &&
