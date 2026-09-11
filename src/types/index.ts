@@ -175,6 +175,7 @@ export type ReportType = 'transaction' | 'platform';
 
 export type ReportStatus =
   | 'open'
+  | 'submitted'
   | 'under_review'
   | 'investigating'
   | 'resolution_proposed'
@@ -278,6 +279,7 @@ export const REPORT_STATUS_CONFIG: Record<
   ReportStatus,
   { label: string; color: string; dot: string }
 > = {
+  submitted:           { label: 'Submitted',           color: 'bg-blue-100 text-blue-700',      dot: 'bg-blue-500' },
   open:                { label: 'Open',                color: 'bg-red-100 text-red-700',        dot: 'bg-red-500' },
   under_review:        { label: 'Under Review',        color: 'bg-amber-100 text-amber-700',    dot: 'bg-amber-500' },
   investigating:       { label: 'Investigating',       color: 'bg-blue-100 text-blue-700',      dot: 'bg-blue-500' },
