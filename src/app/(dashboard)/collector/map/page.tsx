@@ -10,6 +10,7 @@ import HandoverModal from '@/components/request/HandoverModal';
 import ReceiptModal from '@/components/request/ReceiptModal';
 import { PickupRequest } from '@/types';
 import { createClient } from '@/lib/supabase/client';
+import { resolveCollectorName, resolveHouseholdName } from '@/lib/name-resolver';
 import {
   MapPin,
   ArrowLeft,
@@ -252,8 +253,8 @@ function CollectorMapContent() {
         collectorPos: startCollectorPos,
         collectorOriginPos: savedHub.pos,
         collectorOriginAddress: savedHub.hubName,
-        householdName: selectedReq!.household?.full_name || 'Household Customer',
-        householdPhone: selectedReq!.household?.phone || '+91 98201 54321',
+        householdName: resolveHouseholdName(selectedReq!.household?.full_name || selectedReq!.contact_name),
+        householdPhone: selectedReq!.household?.phone || selectedReq!.contact_phone || '+91 98201 54321',
         householdAddress: selectedReq!.address,
         householdLandmark: selectedReq!.notes || 'Opposite Green Park Gate #2',
       });
@@ -428,16 +429,18 @@ function CollectorMapContent() {
 
     if (!collectorFullName && typeof window !== 'undefined') {
       try {
-        const cached = localStorage.getItem('scrapmax_personal_info') || localStorage.getItem('aicle_personal_info');
-        if (cached) {
-          const parsed = JSON.parse(cached);
+        const colCached = localStorage.getItem('scrapmax_collector_profile');
+        if (colCached) {
+          const parsed = JSON.parse(colCached);
           if (parsed.fullName) collectorFullName = parsed.fullName;
           if (parsed.phone) collectorPhoneNum = parsed.phone;
         }
       } catch {}
     }
 
-    const finalCollectorName = collectorFullName || (user?.email ? user.email.split('@')[0] : 'Verified Scrap Collector');
+    const finalCollectorName = resolveCollectorName(
+      collectorFullName || (user?.user_metadata?.full_name) || (user?.email ? user.email.split('@')[0] : null)
+    );
     const finalCollectorPhone = collectorPhoneNum || '+91 98201 45892';
 
     const collectorObj = {
@@ -715,7 +718,7 @@ function CollectorMapContent() {
                   <div className="flex items-center justify-between pb-1 border-b border-gray-100">
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
                       <ShieldCheck className="w-3 h-3" />
-                      <span>Household Customer</span>
+                      <span>Citizen Household</span>
                     </span>
                     <span className="text-xs font-mono font-bold text-gray-500">
                       Req #{selectedReq.id.slice(0, 8)}
@@ -726,15 +729,15 @@ function CollectorMapContent() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#136B3B] border border-emerald-200 flex items-center justify-center text-xl font-black shrink-0">
-                        {(selectedReq.household?.full_name || 'Customer').charAt(0)}
+                        {(resolveHouseholdName(selectedReq.household?.full_name || selectedReq.contact_name)).charAt(0)}
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-extrabold text-sm text-[#191C1E] truncate">
-                          {selectedReq.household?.full_name || 'Household Customer'}
+                          {resolveHouseholdName(selectedReq.household?.full_name || selectedReq.contact_name)}
                         </h3>
                         <p className="text-xs font-mono font-bold text-[#136B3B] mt-0.5 flex items-center gap-1">
                           <Phone className="w-3 h-3" />
-                          <span>{selectedReq.household?.phone || '+91 98201 54321'}</span>
+                          <span>{selectedReq.household?.phone || selectedReq.contact_phone || '+91 98201 54321'}</span>
                         </p>
                       </div>
                     </div>

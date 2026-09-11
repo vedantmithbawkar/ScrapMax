@@ -4,6 +4,7 @@ import {
   triggerPickupCompletedNotification,
   triggerPaymentReceivedNotification,
 } from './notification-service';
+import { resolveCollectorName, resolveHouseholdName } from './name-resolver';
 
 export interface LiveTrackingState {
   requestId: string;
@@ -276,9 +277,9 @@ export async function initializeTrackingState(params: {
     hasArrived: distanceMeters <= 40,
     status: 'accepted',
     lastUpdated: new Date().toISOString(),
-    collectorName: params.collectorName || 'Verified Scrap Collector',
+    collectorName: resolveCollectorName(params.collectorName),
     collectorPhone: params.collectorPhone || '+91 98201 45892',
-    householdName: params.householdName || 'Household Customer',
+    householdName: resolveHouseholdName(params.householdName),
     householdPhone: params.householdPhone || '+91 98201 54321',
     householdAddress: params.householdAddress || 'Main Market Road, Near City Center',
     householdLandmark: params.householdLandmark || '',
@@ -316,7 +317,7 @@ export function acceptPickupInTracking(
   collectorHubName?: string
 ): LiveTrackingState {
   const existing = getTrackingState(requestId);
-  const collectorName = collectorObj?.full_name || 'Verified Scrap Collector';
+  const collectorName = resolveCollectorName(collectorObj?.full_name);
   const collectorPhone = collectorObj?.phone || '+91 98201 45892';
   const savedLoc = getCollectorSavedLocation();
   const startPos = collectorPos || existing?.collectorPos || savedLoc.pos;
@@ -357,7 +358,7 @@ export function acceptPickupInTracking(
       lastUpdated: new Date().toISOString(),
       collectorName,
       collectorPhone,
-      householdName: 'Household Customer',
+      householdName: resolveHouseholdName(),
       householdPhone: '+91 98201 54321',
       householdAddress: 'Customer Doorstep Address',
       pickupPin: getPickupOtp(requestId),

@@ -27,6 +27,7 @@ import {
   CollectorSavedLocation,
   acceptPickupInTracking,
 } from '@/lib/tracking-service';
+import { resolveCollectorName } from '@/lib/name-resolver';
 import {
   triggerCollectorAcceptedNotification,
   triggerCollectorNearNotification,
@@ -248,16 +249,18 @@ export default function CollectorDashboard() {
 
     if (!collectorFullName && typeof window !== 'undefined') {
       try {
-        const cached = localStorage.getItem('scrapmax_personal_info') || localStorage.getItem('aicle_personal_info');
-        if (cached) {
-          const parsed = JSON.parse(cached);
+        const colCached = localStorage.getItem('scrapmax_collector_profile');
+        if (colCached) {
+          const parsed = JSON.parse(colCached);
           if (parsed.fullName) collectorFullName = parsed.fullName;
           if (parsed.phone) collectorPhoneNum = parsed.phone;
         }
       } catch {}
     }
 
-    const finalCollectorName = collectorFullName || (user?.email ? user.email.split('@')[0] : 'Verified Scrap Collector');
+    const finalCollectorName = resolveCollectorName(
+      collectorFullName || (user?.user_metadata?.full_name) || (user?.email ? user.email.split('@')[0] : null)
+    );
     const finalCollectorPhone = collectorPhoneNum || '+91 98201 45892';
 
     const collectorObj = {

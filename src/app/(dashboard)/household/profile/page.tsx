@@ -10,6 +10,7 @@ import { UserProfile } from '@/types';
 import { ArrowLeft, User, MapPin, Settings, ChevronRight, LogOut, ClipboardList, AlertTriangle } from 'lucide-react';
 import PersonalDashboard from '@/components/dashboard/PersonalDashboard';
 import { useTranslation } from '@/lib/i18n';
+import { resolveHouseholdName } from '@/lib/name-resolver';
 
 export default function UserProfilePage() {
   const router = useRouter();
@@ -60,7 +61,7 @@ export default function UserProfilePage() {
 
         setProfile({
           id: user.id,
-          full_name: detectedName || (user.email ? user.email.split('@')[0] : 'Household Customer'),
+          full_name: resolveHouseholdName(detectedName || (user.email ? user.email.split('@')[0] : null)),
           phone: detectedPhone || '+91 98201 54321',
           role: 'household',
         });
@@ -68,7 +69,7 @@ export default function UserProfilePage() {
         // Guest household session
         setProfile({
           id: 'guest-household-id',
-          full_name: cachedName || 'Household Customer',
+          full_name: resolveHouseholdName(cachedName),
           role: 'household',
           phone: cachedPhone || '+91 98201 54321',
         });
@@ -83,7 +84,7 @@ export default function UserProfilePage() {
     router.push('/login');
   };
 
-  const displayName = profile?.full_name || 'Household Customer';
+  const displayName = resolveHouseholdName(profile?.full_name);
   const displayPhone = profile?.phone || '+91 98201 54321';
   const initial = displayName.charAt(0).toUpperCase();
 
@@ -123,7 +124,7 @@ export default function UserProfilePage() {
                 ? 'bg-purple-50 text-purple-700 border border-purple-200'
                 : 'bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8]'
             }`}>
-              {profile?.role === 'collector' ? 'Verified Collector' : profile?.role === 'admin' ? 'System Admin' : 'Household Customer'}
+              {profile?.role === 'collector' ? 'Verified Collector' : profile?.role === 'admin' ? 'System Admin' : 'Citizen Household'}
             </span>
           </section>
 

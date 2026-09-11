@@ -3,6 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { PickupRequest } from '@/types';
 import { X, CheckCircle2, Printer, ShieldCheck, Leaf, QrCode, Banknote, Download, MapPin, Phone, User, Check } from 'lucide-react';
+import { resolveCollectorName, resolveHouseholdName } from '@/lib/name-resolver';
 
 interface ReceiptModalProps {
   request: PickupRequest;
@@ -25,9 +26,9 @@ export default function ReceiptModal({ request, onClose }: ReceiptModalProps) {
   const txId = payment?.transactionId || `TXN-VERIFIED-${request.id.slice(0, 6).toUpperCase()}`;
   const timestamp = payment?.timestamp || request.updated_at || request.created_at;
 
-  const householdName = payment?.receivedBy || request.household?.full_name || 'Household Customer';
-  const householdPhone = request.household?.phone || '+91 98201 54321';
-  const collectorName = payment?.paidBy || request.collector?.full_name || 'Verified Scrap Collector';
+  const householdName = resolveHouseholdName(payment?.receivedBy || request.household?.full_name || request.contact_name);
+  const householdPhone = request.household?.phone || request.contact_phone || '+91 98201 54321';
+  const collectorName = resolveCollectorName(payment?.paidBy || request.collector?.full_name);
   const collectorPhone = request.collector?.phone || '+91 98201 45892';
 
   // Isolated, clean iframe printing (never prints background UI or modal backdrop)
@@ -244,13 +245,19 @@ export default function ReceiptModal({ request, onClose }: ReceiptModalProps) {
 
             {/* Parties - Who paid, Who received with Contact Numbers */}
             <div className="grid grid-cols-2 gap-2">
-              <div className="p-2.5 bg-[#F8FAF9] rounded-xl border border-gray-100 space-y-0.5">
-                <span className="text-[10px] text-[#6B7280] font-medium block">Paid By (Collector)</span>
+              <div className="p-2.5 bg-[#F8FAF9] rounded-xl border border-gray-100 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-[#6B7280] font-medium block">Paid By (Collector)</span>
+                  <span className="text-[9px] font-bold text-[#136B3B] bg-[#E6F4EA] px-1.5 py-0.5 rounded border border-[#A6D5B8]">✓ Verified</span>
+                </div>
                 <span className="text-xs font-bold text-[#191C1E] block truncate">{collectorName}</span>
                 <span className="text-[10.5px] font-mono text-[#136B3B] font-bold block">{collectorPhone}</span>
               </div>
-              <div className="p-2.5 bg-[#EDF7F2] rounded-xl border border-[#A6D5B8] space-y-0.5">
-                <span className="text-[10px] text-[#136B3B] font-medium block">Received By (Household)</span>
+              <div className="p-2.5 bg-[#EDF7F2] rounded-xl border border-[#A6D5B8] space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-[#136B3B] font-medium block">Received By (Household)</span>
+                  <span className="text-[9px] font-bold text-emerald-800 bg-white/80 px-1.5 py-0.5 rounded border border-[#A6D5B8]">Citizen</span>
+                </div>
                 <span className="text-xs font-bold text-[#136B3B] block truncate">{householdName}</span>
                 <span className="text-[10.5px] font-mono text-[#136B3B] font-bold block">{householdPhone}</span>
               </div>

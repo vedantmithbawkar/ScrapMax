@@ -34,6 +34,7 @@ import {
   acceptPickupInTracking,
   LiveTrackingState,
 } from '@/lib/tracking-service';
+import { resolveCollectorName, resolveHouseholdName } from '@/lib/name-resolver';
 
 // Lazy-load map to avoid SSR issues
 const MapContainer = dynamic(() => import('@/components/map/MapContainer'), { ssr: false });
@@ -45,7 +46,7 @@ const DEMO_REQUEST: PickupRequest = {
   collector_id: 'collector-c201',
   collector: {
     id: 'collector-c201',
-    full_name: 'Verified Scrap Collector',
+    full_name: resolveCollectorName(),
     phone: '+91 98201 45892',
     role: 'collector',
     rating: 4.9,
@@ -135,12 +136,14 @@ export default function TrackPickupPage() {
           if (!localMatch.collector) {
             localMatch.collector = {
               id: localMatch.collector_id || 'collector-c201',
-              full_name: 'Verified Scrap Collector',
+              full_name: resolveCollectorName(),
               phone: '+91 98201 45892',
               role: 'collector',
               rating: 4.9,
               completed_pickups: 126,
             };
+          } else {
+            localMatch.collector.full_name = resolveCollectorName(localMatch.collector.full_name);
           }
           setRequest(localMatch);
         }
@@ -160,11 +163,14 @@ export default function TrackPickupPage() {
             .eq('id', req.collector_id)
             .maybeSingle();
           if (colProfile) {
-            req.collector = colProfile;
+            req.collector = {
+              ...colProfile,
+              full_name: resolveCollectorName(colProfile.full_name),
+            };
           } else {
             req.collector = {
               id: req.collector_id,
-              full_name: 'Verified Scrap Collector',
+              full_name: resolveCollectorName(),
               phone: '+91 98201 45892',
               role: 'collector',
               rating: 4.9,
@@ -191,10 +197,10 @@ export default function TrackPickupPage() {
       const state = await initializeTrackingState({
         requestId,
         householdPos: [lat, lng],
-        householdName: request.household?.full_name || 'Household Customer',
-        householdPhone: request.household?.phone || '+91 98201 54321',
+        householdName: resolveHouseholdName(request.household?.full_name || request.contact_name),
+        householdPhone: request.household?.phone || request.contact_phone || '+91 98201 54321',
         householdAddress: request.address,
-        collectorName: request.collector?.full_name,
+        collectorName: resolveCollectorName(request.collector?.full_name),
         collectorPhone: request.collector?.phone,
       });
 
@@ -215,7 +221,7 @@ export default function TrackPickupPage() {
             status: state.status,
             collector: {
               id: 'collector-c201',
-              full_name: state.collectorName || request.collector?.full_name || 'Verified Scrap Collector',
+              full_name: resolveCollectorName(state.collectorName || request.collector?.full_name),
               phone: state.collectorPhone || request.collector?.phone || '+91 98201 45892',
               role: 'collector',
               rating: 4.9,
@@ -244,7 +250,7 @@ export default function TrackPickupPage() {
 
   const handleSimulateAccept = () => {
     const updated = acceptPickupInTracking(requestId, {
-      full_name: request.collector?.full_name || 'Verified Scrap Collector',
+      full_name: resolveCollectorName(request.collector?.full_name),
       phone: request.collector?.phone || '+91 98201 45892',
     });
     if (updated) {
@@ -596,12 +602,12 @@ export default function TrackPickupPage() {
                 <div className="flex items-center justify-between gap-3 pt-0.5">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative w-12 h-12 rounded-2xl bg-[#E6F4EA] border border-[#A6D5B8] flex items-center justify-center text-xl font-black text-[#136B3B] shrink-0 shadow-2xs">
-                      {(request.collector?.full_name || 'Collector').charAt(0)}
+                      {(resolveCollectorName(request.collector?.full_name)).charAt(0)}
                       <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-extrabold text-sm text-[#191C1E] truncate">
-                        {request.collector?.full_name || 'Verified Scrap Collector'}
+                        {resolveCollectorName(request.collector?.full_name)}
                       </h3>
                       <p className="text-xs font-mono font-bold text-[#136B3B] mt-0.5 flex items-center gap-1">
                         <Phone className="w-3 h-3 text-[#136B3B]" />
@@ -751,11 +757,11 @@ export default function TrackPickupPage() {
             {/* Collector info strip */}
             <div className="flex items-center gap-3 bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm mb-3">
               <div className="w-10 h-10 rounded-full bg-[#EAF5EE] flex items-center justify-center text-xl flex-shrink-0 font-bold text-[#136B3B]">
-                {(request.collector?.full_name || 'Collector').charAt(0)}
+                {(resolveCollectorName(request.collector?.full_name)).charAt(0)}
               </div>
               <div>
                 <p className="text-sm font-bold text-[#191C1E]">
-                  {request.collector?.full_name || 'Verified Scrap Collector'}
+                  {resolveCollectorName(request.collector?.full_name)}
                 </p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />

@@ -15,27 +15,40 @@ import {
   LogOut, 
   MessageSquare, 
   Settings, 
-  Calendar
+  Calendar,
+  Edit2,
+  Check,
+  X
 } from 'lucide-react';
+import { resolveCollectorName } from '@/lib/name-resolver';
 
 export default function CollectorProfilePage() {
   const router = useRouter();
-  const [collectorName, setCollectorName] = useState<string>('Verified Scrap Partner');
+  const [collectorName, setCollectorName] = useState<string>('Ramesh Patel');
   const [collectorPhone, setCollectorPhone] = useState<string>('+91 98201 45892');
   const [email, setEmail] = useState<string>('collector@scrapmax.demo');
   const [completedCount, setCompletedCount] = useState<number>(24);
   const [totalWeight, setTotalWeight] = useState<number>(412);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('Ramesh Patel');
+  const [editPhone, setEditPhone] = useState('+91 98201 45892');
 
   useEffect(() => {
     async function loadCollector() {
       // 1. Check local storage
       if (typeof window !== 'undefined') {
         try {
-          const cached = localStorage.getItem('scrapmax_personal_info') || localStorage.getItem('aicle_personal_info');
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            if (parsed.fullName) setCollectorName(parsed.fullName);
-            if (parsed.phone) setCollectorPhone(parsed.phone);
+          const colCached = localStorage.getItem('scrapmax_collector_profile');
+          if (colCached) {
+            const parsed = JSON.parse(colCached);
+            if (parsed.fullName) {
+              setCollectorName(parsed.fullName);
+              setEditName(parsed.fullName);
+            }
+            if (parsed.phone) {
+              setCollectorPhone(parsed.phone);
+              setEditPhone(parsed.phone);
+            }
           }
         } catch {}
       }
@@ -56,8 +69,14 @@ export default function CollectorProfilePage() {
             .maybeSingle();
 
           if (profile) {
-            if (profile.full_name) setCollectorName(profile.full_name);
-            if (profile.phone) setCollectorPhone(profile.phone);
+            if (profile.full_name) {
+              setCollectorName(profile.full_name);
+              setEditName(profile.full_name);
+            }
+            if (profile.phone) {
+              setCollectorPhone(profile.phone);
+              setEditPhone(profile.phone);
+            }
           }
         }
       } catch {}
@@ -113,12 +132,85 @@ export default function CollectorProfilePage() {
             <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center shadow-xs mb-3 select-none text-blue-800 text-4xl font-extrabold">
               {initial}
             </div>
-            <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">{collectorName}</h2>
-            <p className="text-[#6B7280] text-sm font-medium mt-0.5">{collectorPhone}</p>
-            <span className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Verified Collector Partner</span>
-            </span>
+
+            {!isEditing ? (
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">{collectorName}</h2>
+                  <button
+                    onClick={() => {
+                      setEditName(collectorName);
+                      setEditPhone(collectorPhone);
+                      setIsEditing(true);
+                    }}
+                    className="p-1 text-gray-400 hover:text-[#136B3B] transition"
+                    title="Edit Collector Name"
+                    type="button"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-[#6B7280] text-sm font-medium mt-0.5">{collectorPhone}</p>
+                <span className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Verified Collector Partner</span>
+                </span>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const finalN = editName.trim() || 'Ramesh Patel';
+                  const finalP = editPhone.trim() || '+91 98201 45892';
+                  setCollectorName(finalN);
+                  setCollectorPhone(finalP);
+                  try {
+                    localStorage.setItem(
+                      'scrapmax_collector_profile',
+                      JSON.stringify({ fullName: finalN, phone: finalP })
+                    );
+                  } catch {}
+                  setIsEditing(false);
+                }}
+                className="w-full max-w-xs space-y-2 bg-white p-3 rounded-2xl border border-gray-200 shadow-xs"
+              >
+                <div>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase">Partner Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full text-sm font-bold p-1.5 border rounded-lg"
+                    placeholder="Enter Partner Name"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase">Contact Phone</label>
+                  <input
+                    type="text"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    className="w-full text-sm font-mono p-1.5 border rounded-lg"
+                    placeholder="+91 98201 45892"
+                  />
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="submit"
+                    className="flex-1 py-1.5 bg-[#136B3B] text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1"
+                  >
+                    <Check className="w-3.5 h-3.5" /> Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="flex-1 py-1.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-lg flex items-center justify-center gap-1"
+                  >
+                    <X className="w-3.5 h-3.5" /> Cancel
+                  </button>
+                </div>
+              </form>
+            )}
           </section>
 
           {/* Partner Stats */}

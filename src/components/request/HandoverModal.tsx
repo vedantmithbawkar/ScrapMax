@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { PickupRequest, PaymentDetails, PaymentMethod, VerifiedWasteItem, STANDARD_SCRAP_RATES, WASTE_CATEGORY_LABELS, WasteCategory } from '@/types';
 import { X, CheckCircle2, QrCode, Banknote, Scale, ArrowRight, Sparkles, Download, Printer, ShieldCheck, KeyRound, MapPin, Copy, Check } from 'lucide-react';
 import { getPickupOtp } from '@/lib/tracking-service';
+import { resolveCollectorName, resolveHouseholdName } from '@/lib/name-resolver';
 
 interface HandoverModalProps {
   request: PickupRequest;
@@ -83,6 +84,8 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
   const handleConfirmSettlement = async () => {
     setIsProcessing(true);
     const txId = 'TXN-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + Date.now().toString().slice(-4);
+    const finalPaidBy = resolveCollectorName(request.collector?.full_name);
+    const finalReceivedBy = resolveHouseholdName(request.household?.full_name || request.contact_name);
 
     const paymentData: PaymentDetails = {
       transactionId: txId,
@@ -91,12 +94,12 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
       timestamp: new Date().toISOString(),
       items,
       upiVpa: paymentMethod === 'upi' ? householdUpiId : undefined,
-      cashGivenBy: paymentMethod === 'cash' ? 'Collector (Doorstep Cash Settlement)' : undefined,
-      paidBy: request.collector?.full_name || 'Collector',
-      receivedBy: request.household?.full_name || 'Household',
+      cashGivenBy: paymentMethod === 'cash' ? `${finalPaidBy} (Doorstep Cash Settlement)` : undefined,
+      paidBy: finalPaidBy,
+      receivedBy: finalReceivedBy,
       bankCreditNote: paymentMethod === 'upi'
-        ? `₹${totalPayout} will be credited to household's bank account linked to UPI ID: ${householdUpiId}`
-        : `₹${totalPayout} paid in cash at doorstep`,
+        ? `₹${totalPayout} will be credited to ${finalReceivedBy}'s bank account linked to UPI ID: ${householdUpiId}`
+        : `₹${totalPayout} paid in cash at doorstep by ${finalPaidBy}`,
     };
 
     try {
@@ -125,7 +128,7 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
     }
   };
 
-  const householdName = request.household?.full_name || 'Household User';
+  const householdName = resolveHouseholdName(request.household?.full_name || request.contact_name);
   const upiIntentUri = `upi://pay?pa=${encodeURIComponent(householdUpiId)}&pn=${encodeURIComponent(householdName)}&am=${totalPayout}&cu=INR&tn=${encodeURIComponent(`ScrapMax Pickup #${request.id.slice(0, 6)}`)}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiIntentUri)}`;
 
@@ -311,7 +314,7 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
                 Enter Customer Doorstep OTP
               </h3>
               <p className="text-xs text-[#526056] max-w-xs mx-auto leading-relaxed">
-                Ask <strong>{request.household?.full_name || 'the customer'}</strong> for the 4-digit verification PIN displayed on their screen to authorize scrap handover.
+                Ask <strong>{resolveHouseholdName(request.household?.full_name || request.contact_name)}</strong> for the 4-digit verification PIN displayed on their screen to authorize scrap handover.
               </p>
             </div>
 
@@ -645,15 +648,21 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
 
               {/* Parties - Who paid, Who received with Phone Numbers */}
               <div className="grid grid-cols-2 gap-2">
-                <div className="p-2.5 bg-[#F8FAF9] rounded-xl border border-gray-100 space-y-0.5">
-                  <span className="text-[10px] text-[#6B7280] font-medium block">Paid By (Collector)</span>
-                  <span className="text-xs font-bold text-[#191C1E] block truncate">{completedPayment.paidBy || 'Collector'}</span>
+                <div className="p-2.5 bg-[#F8FAF9] rounded-xl border border-gray-100 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-[#6B7280] font-medium block">Paid By (Collector)</span>
+                    <span className="text-[9px] font-bold text-[#136B3B] bg-[#E6F4EA] px-1.5 py-0.5 rounded border border-[#A6D5B8]">✓ Verified</span>
+                  </div>
+                  <span className="text-xs font-bold text-[#191C1E] block truncate">{resolveCollectorName(completedPayment.paidBy)}</span>
                   <span className="text-[10.5px] font-mono text-[#136B3B] font-bold block">{request.collector?.phone || '+91 98201 45892'}</span>
                 </div>
-                <div className="p-2.5 bg-[#EDF7F2] rounded-xl border border-[#A6D5B8] space-y-0.5">
-                  <span className="text-[10px] text-[#136B3B] font-medium block">Received By (Household)</span>
-                  <span className="text-xs font-bold text-[#136B3B] block truncate">{completedPayment.receivedBy || 'Household'}</span>
-                  <span className="text-[10.5px] font-mono text-[#136B3B] font-bold block">{request.household?.phone || '+91 98201 54321'}</span>
+                <div className="p-2.5 bg-[#EDF7F2] rounded-xl border border-[#A6D5B8] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-[#136B3B] font-medium block">Received By (Household)</span>
+                    <span className="text-[9px] font-bold text-emerald-800 bg-white/80 px-1.5 py-0.5 rounded border border-[#A6D5B8]">Citizen</span>
+                  </div>
+                  <span className="text-xs font-bold text-[#136B3B] block truncate">{resolveHouseholdName(completedPayment.receivedBy)}</span>
+                  <span className="text-[10.5px] font-mono text-[#136B3B] font-bold block">{request.household?.phone || request.contact_phone || '+91 98201 54321'}</span>
                 </div>
               </div>
 

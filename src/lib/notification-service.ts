@@ -22,17 +22,19 @@ export interface SmartNotification {
 const STORAGE_KEY = 'scrapmax_smart_notifications';
 
 // Initial default seed notifications demonstrating active user lifecycle
+import { resolveCollectorName } from './name-resolver';
+
 const DEFAULT_NOTIFICATIONS: SmartNotification[] = [
   {
     id: 'notif-seed-1',
     title: 'Collector accepted your request',
-    message: 'Verified Scrap Collector accepted your pickup scheduled for Today at 5:30 PM.',
+    message: 'Ramesh Patel (Verified Collector) accepted your pickup scheduled for Today at 5:30 PM.',
     type: 'collector_accepted',
     category: 'pickup',
     timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 mins ago
     read: false,
     actionUrl: '/household',
-    metadata: { collectorName: 'Verified Scrap Collector', eta: '5:30 PM' },
+    metadata: { collectorName: 'Ramesh Patel', eta: '5:30 PM' },
   },
   {
     id: 'notif-seed-2',
@@ -319,14 +321,15 @@ export function getUnreadNotificationsCount(): number {
    5 PRESET SMART NOTIFICATION SIMULATORS (For live testing and app events)
 ======================================================================= */
 
-export function triggerCollectorAcceptedNotification(collectorName = 'Verified Scrap Collector') {
+export function triggerCollectorAcceptedNotification(collectorName?: string) {
+  const finalName = resolveCollectorName(collectorName);
   return pushSmartNotification({
     title: 'Collector accepted your request',
-    message: `${collectorName} accepted your doorstep scrap pickup. Collector is en route!`,
+    message: `${finalName} (Verified Collector) accepted your doorstep scrap pickup. Collector is en route!`,
     type: 'collector_accepted',
     category: 'pickup',
     actionUrl: '/household',
-    metadata: { collectorName },
+    metadata: { collectorName: finalName },
   });
 }
 

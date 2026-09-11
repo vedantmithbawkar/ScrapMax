@@ -7,6 +7,7 @@ import HandoverModal from './HandoverModal';
 import ReceiptModal from './ReceiptModal';
 import ReportModal from './ReportModal';
 import RatingModal from './RatingModal';
+import { resolveCollectorName, resolveHouseholdName } from '@/lib/name-resolver';
 
 interface RequestCardProps {
   request: PickupRequest;
@@ -158,13 +159,18 @@ export default function RequestCard({
 
         {userRole === 'household' && request.status !== 'pending' && (
           <div className="flex items-center justify-between p-2 sm:p-2.5 bg-[#E6F4EA]/70 border border-[#A6D5B8] rounded-xl text-xs">
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
               <span className="text-base shrink-0">🚛</span>
               <div className="min-w-0">
-                <span className="font-bold text-[#191C1E] truncate block">
-                  {request.collector?.full_name || 'Verified Scrap Collector'}
-                </span>
-                <span className="text-[11px] text-[#136B3B] font-mono font-bold block truncate">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-bold text-[#191C1E] truncate">
+                    {resolveCollectorName(request.collector?.full_name)}
+                  </span>
+                  <span className="text-[10px] font-bold text-[#136B3B] bg-white px-1.5 py-0.5 rounded-full border border-[#A6D5B8] shrink-0">
+                    ✓ Verified Collector
+                  </span>
+                </div>
+                <span className="text-[11px] text-[#136B3B] font-mono font-bold block truncate mt-0.5">
                   {request.collector?.phone || '+91 98201 45892'}
                 </span>
               </div>
@@ -181,26 +187,31 @@ export default function RequestCard({
         {/* Household Contact and Address strip for Collector */}
         {userRole === 'collector' && request.status !== 'pending' && (
           <div className="flex items-center justify-between p-2.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs">
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
               <span className="text-base shrink-0">🏠</span>
               <div className="min-w-0">
-                <span className="font-bold text-[#191C1E] truncate block">
-                  {request.household?.full_name || 'Household Customer'}
-                </span>
-                <span className="text-[11px] text-blue-700 font-mono font-bold block truncate">
-                  {request.household?.phone || '+91 98201 54321'}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-bold text-[#191C1E] truncate">
+                    {resolveHouseholdName(request.household?.full_name || request.contact_name)}
+                  </span>
+                  <span className="text-[10px] font-bold text-blue-700 bg-white px-1.5 py-0.5 rounded-full border border-blue-200 shrink-0">
+                    Citizen Household
+                  </span>
+                </div>
+                <span className="text-[11px] text-blue-700 font-mono font-bold block truncate mt-0.5">
+                  {request.household?.phone || request.contact_phone || '+91 98201 54321'}
                 </span>
               </div>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <a
-                href={`tel:${(request.household?.phone || '+919820154321').replace(/\s+/g, '')}`}
+                href={`tel:${(request.household?.phone || request.contact_phone || '+919820154321').replace(/\s+/g, '')}`}
                 className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg transition shadow-2xs"
               >
                 Call
               </a>
               <a
-                href={`https://wa.me/${(request.household?.phone || '+919820154321').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${request.household?.full_name || 'there'}, I am your ScrapMax collector for pickup #${request.id.slice(0, 8)}.`)}`}
+                href={`https://wa.me/${(request.household?.phone || request.contact_phone || '+919820154321').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${resolveHouseholdName(request.household?.full_name || request.contact_name)}, I am your ScrapMax collector for pickup #${request.id.slice(0, 8)}.`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition shadow-2xs"

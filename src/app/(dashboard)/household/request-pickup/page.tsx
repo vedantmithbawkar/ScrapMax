@@ -8,6 +8,7 @@ import LocationPicker from '@/components/map/LocationPicker';
 import WasteItemForm from '@/components/request/WasteItemForm';
 import { createClient } from '@/lib/supabase/client';
 import { compressImage, dataURLtoBlob } from '@/lib/image-utils';
+import { resolveHouseholdName } from '@/lib/name-resolver';
 import { WasteItem, WasteCategory, SavedAddress } from '@/types';
 import {
   ArrowLeft,
@@ -79,7 +80,6 @@ export default function RequestPickupPage() {
               }
               const comp = `${def.flat_building}, ${def.area_street}${def.landmark ? `, Near ${def.landmark}` : ''}, ${def.city} - ${def.pincode}`;
               setAddress(comp);
-              return;
             }
           }
         }
@@ -357,9 +357,13 @@ export default function RequestPickupPage() {
         ? `${flatBuilding.trim() ? `${flatBuilding.trim()}, ` : ''}${areaStreet.trim()}${landmark.trim() ? `, Near ${landmark.trim()}` : ''}, ${city.trim() || 'Mumbai'} - ${pincode.trim() || ''}`
         : address.trim();
 
+    const resolvedCitizenName = resolveHouseholdName(
+      contactName.trim() || (user ? user.user_metadata?.full_name : null)
+    );
+
     const householdObj = {
       id: user ? user.id : 'guest-user',
-      full_name: contactName.trim() || (user ? user.user_metadata?.full_name : null) || 'Household Customer',
+      full_name: resolvedCitizenName,
       phone: contactPhone.trim() || (user ? user.user_metadata?.phone : null) || '+91 98201 54321',
       role: 'household' as const,
     };

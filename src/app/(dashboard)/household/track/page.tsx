@@ -7,6 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
 import { Navigation, MessageSquare, MapPin, ChevronRight, Package } from 'lucide-react';
+import { resolveCollectorName } from '@/lib/name-resolver';
 
 const DEMO_REQUESTS: PickupRequest[] = [
   {
@@ -15,7 +16,7 @@ const DEMO_REQUESTS: PickupRequest[] = [
     collector_id: 'collector-c201',
     collector: {
       id: 'collector-c201',
-      full_name: 'Verified Scrap Collector',
+      full_name: resolveCollectorName(),
       phone: '+91 98201 45892',
       role: 'collector',
       rating: 4.9,

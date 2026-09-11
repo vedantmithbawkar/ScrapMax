@@ -10,6 +10,7 @@ import { PickupRequest } from '@/types';
 import { ArrowLeft, Star, Receipt } from 'lucide-react';
 import RatingModal from '@/components/request/RatingModal';
 import ReceiptModal from '@/components/request/ReceiptModal';
+import { resolveCollectorName, resolveHouseholdName } from '@/lib/name-resolver';
 
 const DEMO_HISTORY_LOGS = [
   {
@@ -67,7 +68,7 @@ export default function RecyclingHistoryPage() {
     const unitRate = Math.round(totalAmount / weightNum);
 
     // Check user info if stored in local cache
-    let cachedName = 'Household Customer';
+    let cachedName = resolveHouseholdName();
     let cachedPhone = '+91 98201 54321';
     let cachedAddress = 'Flat 402, Green Valley Apts, 100ft Road, Indiranagar, Bangalore - 560038';
 
@@ -112,7 +113,7 @@ export default function RecyclingHistoryPage() {
       },
       collector: {
         id: 'collector-c201',
-        full_name: 'Verified Scrap Partner',
+        full_name: resolveCollectorName(),
         phone: '+91 98201 45892',
         role: 'collector',
       },
