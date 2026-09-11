@@ -8,19 +8,20 @@ export interface AdminSession {
   loggedInAt: number;
 }
 
-export const OFFICIAL_ADMIN_CREDENTIALS = {
-  email: 'admin@scrapmax.gov.in',
-  password: 'Admin@ScrapMax2026',
-  secondaryEmail: 'admin@scrapmax.com',
-  secondaryPassword: 'admin123',
-};
+// Admin credentials are loaded exclusively from server-side environment variables.
+// NEVER hardcode credentials in source code.
+const ADMIN_PRIMARY_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@scrapmax.gov.in';
+const ADMIN_PRIMARY_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const ADMIN_SECONDARY_EMAIL = process.env.NEXT_PUBLIC_ADMIN_SECONDARY_EMAIL || '';
+const ADMIN_SECONDARY_PASSWORD = process.env.ADMIN_SECONDARY_PASSWORD || '';
 
 const ADMIN_STORAGE_KEY = 'scrapmax_admin_session';
 
 export function getAdminSession(): AdminSession | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = sessionStorage.getItem(ADMIN_STORAGE_KEY) || localStorage.getItem(ADMIN_STORAGE_KEY);
+    // Only read from sessionStorage — admin session must not persist across browser closes
+    const raw = sessionStorage.getItem(ADMIN_STORAGE_KEY);
     if (!raw) return null;
     const session = JSON.parse(raw) as AdminSession;
     // Session valid for 4 hours
@@ -28,7 +29,6 @@ export function getAdminSession(): AdminSession | null {
       return session;
     }
     sessionStorage.removeItem(ADMIN_STORAGE_KEY);
-    localStorage.removeItem(ADMIN_STORAGE_KEY);
     return null;
   } catch {
     return null;
@@ -46,25 +46,31 @@ export async function loginAdmin(
   const cleanId = identifier.trim().toLowerCase();
   const cleanPass = pass.trim();
 
-  // 1. Check Dedicated Admin Portal Credentials
+  // 1. Check Dedicated Admin Portal Credentials (loaded from env vars only)
   const isPrimary =
-    (cleanId === OFFICIAL_ADMIN_CREDENTIALS.email || cleanId === 'admin') &&
-    cleanPass === OFFICIAL_ADMIN_CREDENTIALS.password;
+    ADMIN_PRIMARY_PASSWORD.length > 0 &&
+    cleanId === ADMIN_PRIMARY_EMAIL.toLowerCase() &&
+    cleanPass === ADMIN_PRIMARY_PASSWORD;
 
   const isSecondary =
-    (cleanId === OFFICIAL_ADMIN_CREDENTIALS.secondaryEmail || cleanId === 'admin') &&
-    cleanPass === OFFICIAL_ADMIN_CREDENTIALS.secondaryPassword;
+    ADMIN_SECONDARY_PASSWORD.length > 0 &&
+    ADMIN_SECONDARY_EMAIL.length > 0 &&
+    cleanId === ADMIN_SECONDARY_EMAIL.toLowerCase() &&
+    cleanPass === ADMIN_SECONDARY_PASSWORD;
 
   if (isPrimary || isSecondary) {
     const session: AdminSession = {
-      email: cleanId.includes('@') ? cleanId : OFFICIAL_ADMIN_CREDENTIALS.email,
+      email: cleanId,
       role: 'admin',
       name: 'Municipal Admin Officer',
-      token: `admin_token_${Date.now()}`,
+      // Use crypto.randomUUID for secure token if available, otherwise timestamp-based
+      token: typeof crypto !== 'undefined' && crypto.randomUUID
+        ? `admin_${crypto.randomUUID()}`
+        : `admin_token_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       loggedInAt: Date.now(),
     };
+    // Store ONLY in sessionStorage — ends when browser tab/window closes
     sessionStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(session));
-    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(session));
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('scrapmax_admin_auth_change', { detail: { session } }));
     }
@@ -112,7 +118,7 @@ export async function loginAdmin(
     };
 
     sessionStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(session));
-    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(session));
+    // Do NOT persist to localStorage — admin session must end when browser closes
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('scrapmax_admin_auth_change', { detail: { session } }));
     }
@@ -128,7 +134,7 @@ export async function loginAdmin(
 export async function logoutAdmin(): Promise<void> {
   if (typeof window !== 'undefined') {
     sessionStorage.removeItem(ADMIN_STORAGE_KEY);
-    localStorage.removeItem(ADMIN_STORAGE_KEY);
+    localStorage.removeItem(ADMIN_STORAGE_KEY); // cleanup any legacy persisted session
     window.dispatchEvent(new CustomEvent('scrapmax_admin_auth_change', { detail: { session: null } }));
     try {
       const supabase = createClient();

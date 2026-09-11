@@ -167,12 +167,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 3. Return all ratings overview
-    return NextResponse.json({
-      status: 'success',
-      total_reviews: db.length,
-      reviews: db,
-    });
+    // 3. Reject open-ended dump of all ratings — require a specific query
+    return NextResponse.json(
+      { error: 'Please provide user_id or transaction_id query parameter.' },
+      { status: 400 }
+    );
   } catch (err: unknown) {
     const error = err as Error;
     return NextResponse.json(

@@ -2,16 +2,21 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET() {
+  // Block this diagnostic endpoint in production to prevent info leakage
+  if (process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production.' }, { status: 404 });
+  }
+
   const startTime = Date.now();
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const hasUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
   const hasKey = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !hasKey) {
+  if (!hasUrl || !hasKey) {
     return NextResponse.json(
       {
         status: 'error',
         message: 'Supabase credentials missing in environment variables.',
-        supabaseUrl: supabaseUrl || null,
+        hasUrl,
         hasKey,
       },
       { status: 500 }
@@ -38,7 +43,6 @@ export async function GET() {
         {
           status: 'warning',
           message: 'Connected to Supabase, but encountered table query warnings.',
-          supabaseUrl,
           latencyMs,
           errors: {
             profiles: profileErr?.message,
@@ -52,7 +56,6 @@ export async function GET() {
     return NextResponse.json({
       status: 'connected',
       message: 'Successfully connected to Supabase PostgreSQL database!',
-      supabaseUrl,
       latencyMs: `${latencyMs}ms`,
       tables: {
         profiles: { status: 'accessible', totalRows: profileCount || 0 },
