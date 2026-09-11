@@ -1,180 +1,154 @@
 import React from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/common/Navbar';
-import IndiaGovHero from '@/components/home/IndiaGovHero';
-import {
-  Recycle,
-  Truck,
-  MapPin,
-  Sparkles,
-  Wallet,
-  Leaf,
-  Shield,
-  Award,
-  CheckCircle2,
-  Building2,
-  TrendingUp,
-  FileCheck,
-} from 'lucide-react';
+import { Recycle, Truck, MapPin, Sparkles, Wallet, Leaf, Shield } from 'lucide-react';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#191C1E] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans">
       <Navbar />
 
-      {/* Hero Section: National Portal of India (india.gov.in aesthetic) */}
-      <IndiaGovHero />
-
-      {/* Main Government Circular Economy Pillars & Impact */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 flex-1 w-full space-y-16">
+      {/* Hero Section */}
+      <section className="relative pt-16 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex-1 flex flex-col justify-center items-center text-center">
         
-        {/* Government Initiative Mission Banner */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl text-left">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E6F4EA] border border-[#A6D5B8] text-[#136B3B] text-xs font-bold">
-              <Award className="w-3.5 h-3.5" />
-              <span>Smart India Hackathon &bull; National Circular Economy Framework</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
-              Swachh Bharat Mission 2.0 &amp; Extended Producer Responsibility (EPR)
+        {/* Soft botanical ambient blur */}
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 w-96 h-96 bg-[#E6F4EA]/80 rounded-full blur-3xl -z-10 pointer-events-none" />
+
+        {/* Pill Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E6F4EA] border border-[#A6D5B8] text-[#136B3B] text-xs font-bold mb-6 shadow-xs">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Eco-Waste & Circular Logistics System</span>
+        </div>
+
+        {/* Title */}
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#191C1E] max-w-4xl leading-tight sm:leading-tight">
+          Turn Your Household Waste Into Value with{' '}
+          <span className="text-[#136B3B]">AiCLE</span>
+        </h1>
+
+        {/* Subtitle */}
+        <p className="mt-5 text-base sm:text-lg text-[#526056] max-w-2xl leading-relaxed">
+          Connect with trusted local collectors, schedule effortless door-step scrap pickups, track live routes, and redeem circular recycling value.
+        </p>
+
+        {/* CTA Buttons */}
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5 w-full max-w-xl">
+          <Link
+            href="/register?role=household"
+            className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold text-sm shadow-md transition touch-feedback"
+          >
+            <Recycle className="w-4 h-4" />
+            <span>Sell Recyclables</span>
+          </Link>
+
+          <Link
+            href="/register?role=collector"
+            className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white hover:bg-gray-50 text-[#191C1E] border border-[#DDE3EA] font-bold text-sm shadow-xs transition touch-feedback"
+          >
+            <Truck className="w-4 h-4 text-[#136B3B]" />
+            <span>Collector Portal</span>
+          </Link>
+
+          <Link
+            href="/admin/login"
+            className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-sm shadow-xs transition touch-feedback"
+          >
+            <Shield className="w-4 h-4 text-purple-700" />
+            <span>Admin Portal</span>
+          </Link>
+        </div>
+
+        {/* Prototype Hero Card Preview */}
+        <div className="mt-14 w-full max-w-lg bg-[#136B3B] rounded-3xl p-6 sm:p-7 text-white text-left shadow-lg relative overflow-hidden">
+          <div className="relative z-10 space-y-2">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight leading-snug">
+              Turn recyclables into value.
             </h2>
-            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              ScrapMax integrates informal waste pickers (Kabadiwalas) into a digitized, formal circular supply chain with certified weighing, fair rate governance, and verifiable green credits for municipal sustainability.
+            <p className="text-sm text-[#A6D5B8] leading-normal">
+              Schedule a pickup from a nearby collector or monitor through the admin console.
             </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto shrink-0">
-            <Link
-              href="/register?role=household"
-              className="w-full sm:w-auto px-5 py-3 rounded-xl bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold text-xs shadow-sm transition text-center"
-            >
-              Request Doorstep Pickup
-            </Link>
-            <Link
-              href="/admin/login"
-              className="w-full sm:w-auto px-5 py-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-bold text-xs transition text-center"
-            >
-              Admin Governance Portal
-            </Link>
-          </div>
-        </div>
-
-        {/* 4 Key Pillar Features Grid */}
-        <section aria-labelledby="core-features">
-          <div className="text-center max-w-3xl mx-auto mb-10 space-y-2">
-            <h3 id="core-features" className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-              Transparent, Direct &amp; Verified Circular Recycling
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-500">
-              Transforming municipal waste into high-grade circular secondary raw materials through citizen participation.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
-            
-            <div className="p-6 rounded-2xl bg-white border border-gray-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-[#136B3B]/30 transition group">
-              <div className="w-12 h-12 rounded-xl bg-[#E6F4EA] flex items-center justify-center text-[#136B3B] mb-4 group-hover:scale-105 transition">
-                <MapPin className="w-6 h-6" />
-              </div>
-              <h4 className="text-base font-bold text-gray-900">Zero-Key GPS Live Map</h4>
-              <p className="mt-2 text-xs text-gray-600 leading-relaxed">
-                Interactive OpenStreetMap location picker with instant address reverse-geocoding for automated Kabadiwala route dispatch.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-white border border-gray-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-[#136B3B]/30 transition group">
-              <div className="w-12 h-12 rounded-xl bg-[#E6F4EA] flex items-center justify-center text-[#136B3B] mb-4 group-hover:scale-105 transition">
-                <Wallet className="w-6 h-6" />
-              </div>
-              <h4 className="text-base font-bold text-gray-900">Direct Benefit Transfer (DBT)</h4>
-              <p className="mt-2 text-xs text-gray-600 leading-relaxed">
-                Standardized CPCB benchmark rates for Paper, Plastic, Metal, Glass, and E-Waste paid instantly to citizens via direct UPI.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-white border border-gray-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-[#136B3B]/30 transition group">
-              <div className="w-12 h-12 rounded-xl bg-[#E6F4EA] flex items-center justify-center text-[#136B3B] mb-4 group-hover:scale-105 transition">
-                <Leaf className="w-6 h-6" />
-              </div>
-              <h4 className="text-base font-bold text-gray-900">Two-Way Realtime Chat</h4>
-              <p className="mt-2 text-xs text-gray-600 leading-relaxed">
-                Live bidirectional messaging between households and assigned collectors using Supabase Realtime for arrival coordination.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-white border border-purple-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-purple-300 transition group">
-              <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-700 mb-4 group-hover:scale-105 transition">
-                <Shield className="w-6 h-6" />
-              </div>
-              <h4 className="text-base font-bold text-gray-900">Official Admin Hub</h4>
-              <p className="mt-2 text-xs text-gray-600 leading-relaxed">
-                Moderation console for municipal authorities: user lifecycle verification, pickup audits, price tuning &amp; grievance resolution.
-              </p>
-            </div>
-
-          </div>
-        </section>
-
-        {/* National Performance Metrics Banner */}
-        <div className="bg-gradient-to-r from-[#03132B] to-[#0A2540] rounded-2xl p-6 sm:p-8 text-white shadow-md">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div className="space-y-1">
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#38EF7D]">142.8 MT</div>
-              <div className="text-xs text-white/80">Recyclables Diverted</div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#FF9933]">1,840+</div>
-              <div className="text-xs text-white/80">Certified Kabadiwalas</div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-2xl sm:text-3xl font-extrabold text-white">99.4%</div>
-              <div className="text-xs text-white/80">Digital Scale Accuracy</div>
-            </div>
-            <div className="space-y-1">
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#60A5FA]">₹28.4 L</div>
-              <div className="text-xs text-white/80">Direct Citizen Earnings</div>
-            </div>
-          </div>
-        </div>
-
-      </main>
-
-      {/* Indian Government GIGW-Compliant Footer */}
-      <footer className="mt-auto border-t border-gray-200 bg-white text-xs text-gray-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-          
-          <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-gray-100">
-            <div className="flex items-center gap-2 font-bold text-gray-800">
-              <div className="w-6 h-6 rounded bg-[#136B3B] text-white flex items-center justify-center font-black text-xs">
-                S
-              </div>
-              <span>ScrapMax &bull; National Circular Economy &amp; Eco-Waste Portal</span>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-gray-600">
-              <Link href="/register?role=household" className="hover:text-[#136B3B] transition">Citizen Portal</Link>
-              <span>•</span>
-              <Link href="/register?role=collector" className="hover:text-[#136B3B] transition">Collector Portal</Link>
-              <span>•</span>
-              <Link href="/stores" className="hover:text-[#136B3B] transition">Recycling Kendras</Link>
-              <span>•</span>
-              <Link href="/household/report" className="hover:text-[#136B3B] transition">Swachhata Grievance</Link>
-              <span>•</span>
-              <Link href="/admin/login" className="hover:text-purple-700 transition font-bold text-purple-700 inline-flex items-center gap-1">
+            <div className="pt-4 flex flex-wrap gap-2.5">
+              <Link
+                href="/register?role=household"
+                className="inline-block bg-white text-[#136B3B] text-xs font-bold px-5 py-2.5 rounded-full hover:bg-gray-50 shadow-xs transition"
+              >
+                Request pickup
+              </Link>
+              <Link
+                href="/admin/login"
+                className="inline-flex items-center gap-1.5 bg-[#0F5730] border border-[#A6D5B8]/40 text-white text-xs font-bold px-4 py-2.5 rounded-full hover:bg-[#0c4627] transition"
+              >
                 <Shield className="w-3.5 h-3.5" />
-                Admin Portal
+                <span>Admin Console</span>
               </Link>
             </div>
           </div>
+          {/* Subtle background curved design accent */}
+          <div className="absolute -right-8 -bottom-10 w-44 h-44 rounded-full bg-white/10 pointer-events-none" />
+        </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-gray-500">
-            <p>
-              Portal Content Managed by Ministry of Environment, Forest &amp; Climate Change &bull; Central Pollution Control Board (CPCB).
+        {/* Feature Cards Grid */}
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full text-left max-w-6xl">
+          
+          <div className="p-6 rounded-2xl bg-white border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md transition">
+            <div className="w-11 h-11 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#136B3B] mb-4">
+              <MapPin className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold text-[#191C1E]">Zero-Key GPS Live Map</h3>
+            <p className="mt-2 text-xs text-[#6B7280] leading-relaxed">
+              Interactive OpenStreetMap location picker with instant address reverse-geocoding for hassle-free collector dispatch.
             </p>
-            <p>&copy; {new Date().getFullYear()} ScrapMax — Smart India Hackathon (SIH) Initiative.</p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-white border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md transition">
+            <div className="w-11 h-11 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#136B3B] mb-4">
+              <Wallet className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold text-[#191C1E]">Transparent Fair Value</h3>
+            <p className="mt-2 text-xs text-[#6B7280] leading-relaxed">
+              Standardized market rates for Paper, Plastic, Metal, Glass, and E-Waste calculated transparently on pickup verification.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-white border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md transition">
+            <div className="w-11 h-11 rounded-full bg-[#E6F4EA] flex items-center justify-center text-[#136B3B] mb-4">
+              <Leaf className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold text-[#191C1E]">Real-Time Coordination</h3>
+            <p className="mt-2 text-xs text-[#6B7280] leading-relaxed">
+              Live WebSocket chat directly between households and assigned collectors using Supabase Realtime messaging.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-white border border-purple-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-md transition">
+            <div className="w-11 h-11 rounded-full bg-purple-50 flex items-center justify-center text-purple-700 mb-4">
+              <Shield className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold text-[#191C1E]">Admin Control Hub</h3>
+            <p className="mt-2 text-xs text-[#6B7280] leading-relaxed">
+              Enterprise moderation, user lifecycle management, dispute resolution, rate tuning, and live circular waste analytics.
+            </p>
           </div>
 
         </div>
+
+      </section>
+
+      {/* Footer */}
+      <footer className="py-8 border-t border-gray-200 bg-white text-center text-xs text-[#6B7280] space-y-3">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-[#526056]">
+          <Link href="/register?role=household" className="hover:text-[#136B3B] transition">Household Portal</Link>
+          <span>•</span>
+          <Link href="/register?role=collector" className="hover:text-[#136B3B] transition">Collector Portal</Link>
+          <span>•</span>
+          <Link href="/stores" className="hover:text-[#136B3B] transition">Store Locator</Link>
+          <span>•</span>
+          <Link href="/admin/login" className="hover:text-purple-700 transition inline-flex items-center gap-1 font-bold text-purple-700">
+            <Shield className="w-3.5 h-3.5" />
+            Admin Portal
+          </Link>
+        </div>
+        <p>&copy; {new Date().getFullYear()} AiCLE — Eco-Waste & Circular Logistics System.</p>
       </footer>
     </div>
   );
