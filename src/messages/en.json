@@ -126,6 +126,7 @@
     "NAVIGATE_TO_HISTORY": "View Pickup History 📜",
     "NAVIGATE_TO_PROFILE": "Manage Profile & Addresses 👤",
     "NAVIGATE_TO_COLLECTOR_MAP": "Open Collector Route Map 🗺️",
-    "SHOW_NEARBY_COLLECTORS": "Find Nearby Collectors Near Me 📍"
+    "SHOW_NEARBY_COLLECTORS": "Find Nearby Collectors Near Me 📍",
+    "UNKNOWN_COMMAND": "I didn't understand that command. Try: 'Show my earnings', 'Book a pickup', or 'Show scrap prices'."
   }
 }

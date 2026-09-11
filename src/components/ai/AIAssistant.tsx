@@ -50,6 +50,14 @@ interface ISpeechRecognition {
   stop: () => void;
 }
 
+function getInitialRole(path: string | null): AppUserRole {
+  if (!path) return 'guest';
+  if (path.startsWith('/admin')) return 'admin';
+  if (path.startsWith('/collector')) return 'collector';
+  if (path.startsWith('/household')) return 'household';
+  return 'guest';
+}
+
 export default function AIAssistant() {
   const pathname = usePathname();
   const router = useRouter();
@@ -60,7 +68,9 @@ export default function AIAssistant() {
   const [inputText, setInputText] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isListening, setIsListening] = useState<boolean>(false);
-  const [userRole, setUserRole] = useState<AppUserRole>('guest');
+  const [userRole, setUserRole] = useState<AppUserRole>(() =>
+    getInitialRole(typeof window !== 'undefined' ? window.location.pathname : pathname)
+  );
   const [commandLogs, setCommandLogs] = useState<CommandLogItem[]>([]);
 
   // Confirmation Modal State
@@ -77,6 +87,10 @@ export default function AIAssistant() {
   // Detect user role from Supabase session & active route
   useEffect(() => {
     async function loadUserRole() {
+      // Synchronously set initial role from active pathname to eliminate initial race condition
+      const fallbackRole = getInitialRole(pathname);
+      setUserRole(fallbackRole);
+
       try {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -93,20 +107,10 @@ export default function AIAssistant() {
             return;
           }
           setUserRole((user.user_metadata?.role as AppUserRole) || 'household');
-        } else {
-          if (pathname?.startsWith('/admin')) {
-            setUserRole('admin');
-          } else if (pathname?.startsWith('/collector')) {
-            setUserRole('collector');
-          } else if (pathname?.startsWith('/household')) {
-            setUserRole('household');
-          } else {
-            setUserRole('guest');
-          }
         }
       } catch {
         console.warn('[AI] Error fetching session user role. Defaulting to route fallback.');
-        setUserRole('guest');
+        setUserRole(fallbackRole);
       }
     }
     loadUserRole();
@@ -122,13 +126,22 @@ export default function AIAssistant() {
         (window as unknown as Record<string, new () => ISpeechRecognition>).webkitSpeechRecognition;
 
       if (SpeechRecognition) {
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.stop();
+          } catch {
+            // ignore
+          }
+        }
+
         const rec = new SpeechRecognition();
         rec.continuous = false;
         rec.interimResults = false;
         rec.lang = locale === 'mr' ? 'mr-IN' : locale === 'hi' ? 'hi-IN' : 'en-US';
 
         rec.onresult = (event: { results: Array<Array<{ transcript: string }>> }) => {
-          const transcript = event.results[0][0].transcript;
+          const transcript = event.results[0][0]?.transcript || '';
+          console.log('[AI STT] SpeechRecognition result transcript:', transcript);
           if (transcript) {
             setInputText(transcript);
             if (handleProcessCommandRef.current) {
@@ -139,17 +152,48 @@ export default function AIAssistant() {
         };
 
         rec.onerror = (event: { error: string }) => {
-          console.warn('[AI] Speech recognition event error:', event.error);
+          console.warn('[AI STT] SpeechRecognition event error:', event.error);
           setIsListening(false);
+
+          const errFeedback =
+            event.error === 'no-speech'
+              ? 'No speech detected. Please speak clearly into your microphone.'
+              : event.error === 'not-allowed'
+              ? 'Microphone permission was denied by browser settings.'
+              : event.error === 'audio-capture'
+              ? 'No microphone hardware was detected on your device.'
+              : `Voice recognition error (${event.error}). Please try typing your command.`;
+
+          const sttErrorLog: CommandLogItem = {
+            id: `cmd-${++cmdCounterRef.current}`,
+            query: 'Voice Input',
+            role: 'user',
+            feedback: errFeedback,
+            status: 'warning',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          };
+          setCommandLogs((prev) => [sttErrorLog, ...prev]);
         };
 
         rec.onend = () => {
+          console.log('[AI STT] SpeechRecognition ended.');
           setIsListening(false);
         };
 
         recognitionRef.current = rec;
       }
     }
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+        recognitionRef.current = null;
+      }
+    };
   }, [locale]);
 
   const toggleListening = () => {
@@ -251,11 +295,17 @@ export default function AIAssistant() {
     const generateId = () => `cmd-${++cmdCounterRef.current}`;
 
     if (!intent) {
+      const translatedFallback = t('assistantActions.UNKNOWN_COMMAND');
+      const fallbackFeedback =
+        translatedFallback && translatedFallback !== 'assistantActions.UNKNOWN_COMMAND'
+          ? translatedFallback
+          : "I didn't understand that command. Try: 'Show my earnings', 'Book a pickup', or 'Show scrap prices'.";
+
       const unknownMsg: CommandLogItem = {
         id: generateId(),
         query,
         role: 'user',
-        feedback: t('assistantActions.UNKNOWN_COMMAND') || "I didn't understand that. Try: 'Show my earnings', 'Book a pickup', or 'Show scrap prices'.",
+        feedback: fallbackFeedback,
         status: 'warning',
         timestamp,
       };

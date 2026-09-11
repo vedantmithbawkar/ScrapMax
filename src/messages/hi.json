@@ -126,6 +126,7 @@
     "NAVIGATE_TO_HISTORY": "पिकअप इतिहास देखें 📜",
     "NAVIGATE_TO_PROFILE": "प्रोफ़ाइल और पते प्रबंधित करें 👤",
     "NAVIGATE_TO_COLLECTOR_MAP": "कलेक्टर रूट मैप खोलें 🗺️",
-    "SHOW_NEARBY_COLLECTORS": "पास के कबाड़ी खोजें 📍"
+    "SHOW_NEARBY_COLLECTORS": "पास के कबाड़ी खोजें 📍",
+    "UNKNOWN_COMMAND": "मुझे वह कमांड समझ नहीं आया। 'मेरी कमाई दिखाएं', 'पिकअप बुक करें', या 'दर पत्रक देखें' का प्रयास करें।"
   }
 }
