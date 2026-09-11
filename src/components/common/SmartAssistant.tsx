@@ -88,17 +88,18 @@ const COMPREHENSIVE_INTENTS: IntentPattern[] = [
     ],
     patterns: [/about/i, /who.*(are|made|created)/i, /what.*(is|purpose).*scrapmax/i, /mission/i, /vision/i],
     response: () =>
-      `🌿 **About Us — ScrapMax (AiCLE):**\n\n` +
-      `ScrapMax is a next-generation **Circular Economy & Eco-Waste Logistics Platform** built for the **Smart India Hackathon (SIH)**, aligned with the **Swachh Bharat Mission 2.0** and **Ministry of Environment, Forest & Climate Change (MoEFCC)**.\n\n` +
+      `🌿 **About Us — ScrapMax:**\n\n` +
+      `ScrapMax is a smart, modern **Doorstep Scrap Recycling & Logistics Platform** designed to make recycling effortless, transparent, and rewarding for everyday households.\n\n` +
       `🎯 **Our Mission:**\n` +
-      `To formalize and modernize India's informal waste ecosystem by bridging urban households directly with verified local collectors (Kabadiwalas) through real-time technology, fair pricing, and certified recycling.\n\n` +
-      `✨ **What We Stand For:**\n` +
-      `• ⚖️ **Fair & Standardized Rates:** Transparent benchmark prices (Paper, Plastic, Metal, E-Waste, Glass) calculated automatically with zero unfair bargaining.\n` +
-      `• 🚛 **Kabadiwala Empowerment:** Equipping informal waste workers with smart GPS route navigation, digital weighing scales, and steady livelihoods.\n` +
-      `• 💳 **Instant Direct Benefit Transfer (DBT):** Direct digital UPI payouts (GPay/PhonePe/Paytm) or verified cash handover with cryptographic receipts.\n` +
-      `• 🌳 **Verifiable Green Impact:** Live environmental ledger tracking landfill diversion, trees saved, and carbon offset credits (DPDP Act 2023 compliant).\n\n` +
-      `*Developed with pride to create a cleaner, greener, and circular India!* 🇮🇳`,
-    suggestions: ['How does ScrapMax work?', 'Current Scrap Rates', 'Privacy Policy & Data Rights', 'Book a Pickup Now'],
+      `To revolutionize urban recycling by directly connecting citizens with verified local collectors through real-time technology, guaranteed fair market rates, and certified doorstep collection.\n\n` +
+      `✨ **What Makes Us Different:**\n` +
+      `• ⚖️ **Guaranteed Fair Pricing:** Real-time standardized rates across paper, plastic, metal, and e-waste — weighed on certified digital scales with zero unfair bargaining.\n` +
+      `• 📍 **Smart Doorstep Convenience:** GPS address picker and live collector tracking so you never have to carry scrap or search for a local dealer.\n` +
+      `• ⚡ **Instant Digital Payouts:** Direct digital UPI payment (GPay, PhonePe, Paytm) or verified cash right at your doorstep with instant digital receipts.\n` +
+      `• 💬 **Live Direct Coordination:** Real-time in-app chat with your assigned collector for smooth arrival updates.\n` +
+      `• 🌳 **Your Personal Green Impact:** Live environmental tracker calculating your kilograms diverted from landfills, trees saved, and carbon emissions prevented.\n\n` +
+      `*Empowering greener homes and sustainable communities, one pickup at a time!* ♻️`,
+    suggestions: ['How does ScrapMax work?', 'Current Scrap Rates', 'How Payment Works', 'Book a Pickup Now'],
   },
 
   // 1. HOW IT WORKS / GENERAL FLOW (Answers "how does it workd", "what is scrapmax", "explain process")
