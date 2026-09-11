@@ -45,25 +45,28 @@ export default function UserProfilePage() {
           .single();
 
         if (data) {
+          const isCollector = (cachedName || data.full_name || '').toLowerCase().includes('collector') || data.role === 'collector';
           setProfile({
             ...(data as UserProfile),
-            full_name: cachedName || data.full_name || 'Sahil Household',
-            phone: cachedPhone || data.phone || '+91 9876543210',
+            full_name: cachedName || data.full_name || 'Budi Collector',
+            phone: cachedPhone || data.phone || '+91 9123456780',
+            role: isCollector ? 'collector' : (data.role || 'collector'),
           });
         } else {
+          const isCollector = (cachedName || user.user_metadata?.full_name || '').toLowerCase().includes('collector') || user.user_metadata?.role === 'collector';
           setProfile({
             id: user.id,
-            full_name: cachedName || user.user_metadata?.full_name || 'Sahil Household',
-            role: (user.user_metadata?.role as 'household' | 'collector') || 'household',
-            phone: cachedPhone || user.user_metadata?.phone || '+91 9876543210',
+            full_name: cachedName || user.user_metadata?.full_name || 'Budi Collector',
+            role: isCollector ? 'collector' : ((user.user_metadata?.role as 'household' | 'collector') || 'collector'),
+            phone: cachedPhone || user.user_metadata?.phone || '+91 9123456780',
           });
         }
       } else {
         setProfile({
           id: 'demo-user-id',
-          full_name: cachedName || 'Sahil Household',
-          role: 'household',
-          phone: cachedPhone || '+91 9876543210',
+          full_name: cachedName || 'Budi Collector',
+          role: 'collector',
+          phone: cachedPhone || '+91 9123456780',
         });
       }
     }
@@ -76,8 +79,8 @@ export default function UserProfilePage() {
     router.push('/login');
   };
 
-  const displayName = profile?.full_name || 'Sahil Household';
-  const displayPhone = profile?.phone || '+91 9876543210';
+  const displayName = profile?.full_name || 'Budi Collector';
+  const displayPhone = profile?.phone || '+91 9123456780';
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
@@ -110,7 +113,7 @@ export default function UserProfilePage() {
             <h2 className="text-2xl font-bold text-[#191C1E] tracking-tight">{displayName}</h2>
             <p className="text-[#6B7280] text-sm font-medium mt-0.5 tracking-wide">{displayPhone}</p>
             <span className="mt-2 inline-block px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#E6F4EA] text-[#136B3B]">
-              {t('householdAccount')}
+              Collector
             </span>
           </section>
 
