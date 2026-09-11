@@ -563,14 +563,14 @@ export default function TrackPickupPage() {
               </div>
             )}
 
-            {/* Address */}
-            <div className="flex items-center gap-2.5 bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm">
-              <div className="w-9 h-9 rounded-full bg-[#EAF5EE] flex items-center justify-center flex-shrink-0">
+            {/* Doorstep Address */}
+            <div className="flex items-start gap-2.5 bg-white rounded-2xl p-3.5 border border-gray-100 shadow-sm">
+              <div className="w-9 h-9 rounded-full bg-[#EAF5EE] flex items-center justify-center flex-shrink-0 mt-0.5">
                 <MapPin className="w-4 h-4 text-[#136B3B]" />
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-[#526056]">Pickup address</p>
-                <p className="text-sm font-semibold text-[#191C1E] truncate">{request.address}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-[#526056]">Pickup Doorstep Address</p>
+                <p className="text-sm font-semibold text-[#191C1E] leading-relaxed break-words mt-0.5">{request.address}</p>
               </div>
             </div>
 

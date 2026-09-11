@@ -23,7 +23,7 @@ export default function LandingPage() {
         {/* Title */}
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#191C1E] max-w-4xl leading-tight sm:leading-tight">
           Turn Your Household Waste Into Value with{' '}
-          <span className="text-[#136B3B]">AiCLE</span>
+          <span className="text-[#136B3B]">ScrapMax</span>
         </h1>
 
         {/* Subtitle */}
@@ -148,7 +148,7 @@ export default function LandingPage() {
             Admin Portal
           </Link>
         </div>
-        <p>&copy; {new Date().getFullYear()} AiCLE — Eco-Waste & Circular Logistics System.</p>
+        <p>&copy; {new Date().getFullYear()} ScrapMax — Eco-Waste & Circular Logistics System.</p>
       </footer>
     </div>
   );

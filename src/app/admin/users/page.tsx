@@ -177,7 +177,7 @@ export default function AdminUsersPage() {
 
         // Sync cached personal profile info if updated from Household profile
         try {
-          const cached = localStorage.getItem('aicle_personal_info');
+          const cached = localStorage.getItem('scrapmax_personal_info') || localStorage.getItem('aicle_personal_info');
           if (cached) {
             const parsed = JSON.parse(cached);
             if (parsed.fullName) {

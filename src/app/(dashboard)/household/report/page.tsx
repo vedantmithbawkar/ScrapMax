@@ -39,6 +39,24 @@ export default function ReportPlatformPage() {
     if (!userId) {
       const num = `RPT-${new Date().getFullYear()}-${Math.floor(Math.random() * 999999).toString().padStart(6, '0')}`;
       setReportNumber(num);
+      try {
+        const newLocalReport = {
+          id: `rep-${Date.now()}`,
+          report_number: num,
+          report_type: 'platform',
+          reporter_id: 'guest-user',
+          category,
+          subject: subject.trim() || undefined,
+          description: description.trim() || undefined,
+          evidence_urls: evidenceUrl.trim() ? [evidenceUrl.trim()] : [],
+          status: 'submitted',
+          priority: 'normal',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        const existing = JSON.parse(localStorage.getItem('local_reports') || '[]');
+        localStorage.setItem('local_reports', JSON.stringify([newLocalReport, ...existing]));
+      } catch {}
       await new Promise((r) => setTimeout(r, 800));
       setPhase('success');
       return;

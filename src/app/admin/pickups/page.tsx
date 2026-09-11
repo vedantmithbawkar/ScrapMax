@@ -481,7 +481,7 @@ export default function AdminPickupsPage() {
                     {/* Address with MapPin */}
                     <div className="flex items-start gap-2">
                       <MapPin className="w-4 h-4 text-[#136B3B] flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-[#191C1E] font-bold line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-[#191C1E] font-bold break-words leading-relaxed">
                         {pickup.address}
                       </p>
                     </div>

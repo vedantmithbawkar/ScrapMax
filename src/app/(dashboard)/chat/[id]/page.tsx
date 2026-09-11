@@ -12,7 +12,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   // Mock user session for demo messaging
   const currentUser = {
     id: 'user-demo-id',
-    full_name: 'AiCLE User',
+    full_name: typeof window !== 'undefined' && localStorage.getItem('scrapmax_personal_info')
+      ? JSON.parse(localStorage.getItem('scrapmax_personal_info') || '{}').fullName || 'ScrapMax User'
+      : 'ScrapMax User',
     role: 'household' as const,
   };
 

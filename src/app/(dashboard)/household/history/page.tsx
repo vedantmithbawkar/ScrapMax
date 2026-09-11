@@ -7,8 +7,9 @@ import BottomNav from '@/components/common/BottomNav';
 import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
-import { ArrowLeft, Star } from 'lucide-react';
+import { ArrowLeft, Star, Receipt } from 'lucide-react';
 import RatingModal from '@/components/request/RatingModal';
+import ReceiptModal from '@/components/request/ReceiptModal';
 
 const DEMO_HISTORY_LOGS = [
   {
@@ -58,6 +59,80 @@ export default function RecyclingHistoryPage() {
   const [activeFilter, setActiveFilter] = useState<'All' | 'Completed' | 'Pending'>('All');
   const [liveRequests, setLiveRequests] = useState<PickupRequest[]>([]);
   const [selectedLogToRate, setSelectedLogToRate] = useState<{ id: string; category: string } | null>(null);
+  const [selectedReceiptRequest, setSelectedReceiptRequest] = useState<PickupRequest | null>(null);
+
+  const openLogReceipt = (log: typeof DEMO_HISTORY_LOGS[0]) => {
+    const weightNum = parseFloat(log.weight) || 5;
+    const totalAmount = parseInt(log.points) || 100;
+    const unitRate = Math.round(totalAmount / weightNum);
+
+    // Check user info if stored in local cache
+    let cachedName = 'Household Customer';
+    let cachedPhone = '+91 98201 54321';
+    let cachedAddress = 'Flat 402, Green Valley Apts, 100ft Road, Indiranagar, Bangalore - 560038';
+
+    if (typeof window !== 'undefined') {
+      try {
+        const info = localStorage.getItem('scrapmax_personal_info') || localStorage.getItem('aicle_personal_info');
+        if (info) {
+          const parsed = JSON.parse(info);
+          if (parsed.fullName) cachedName = parsed.fullName;
+          if (parsed.phone) cachedPhone = parsed.phone;
+        }
+        const addrs = localStorage.getItem('scrapmax_saved_addresses') || localStorage.getItem('aicle_saved_addresses');
+        if (addrs) {
+          const parsedAddrs = JSON.parse(addrs);
+          if (Array.isArray(parsedAddrs) && parsedAddrs.length > 0) {
+            const def = parsedAddrs.find((a: any) => a.is_default) || parsedAddrs[0];
+            if (def) {
+              cachedAddress = `${def.flat_building}, ${def.area_street}${def.landmark ? `, Near ${def.landmark}` : ''}, ${def.city} - ${def.pincode}`;
+              if (def.phone) cachedPhone = def.phone;
+            }
+          }
+        }
+      } catch {}
+    }
+
+    const req: PickupRequest = {
+      id: `REQ-${log.id.toUpperCase()}`,
+      household_id: 'user-h101',
+      collector_id: 'collector-c201',
+      status: 'completed',
+      scheduled_date: '2026-09-08',
+      address: cachedAddress,
+      latitude: 12.9784,
+      longitude: 77.6408,
+      contact_name: cachedName,
+      contact_phone: cachedPhone,
+      household: {
+        id: 'user-h101',
+        full_name: cachedName,
+        phone: cachedPhone,
+        role: 'household',
+      },
+      collector: {
+        id: 'collector-c201',
+        full_name: 'Verified Scrap Partner',
+        phone: '+91 98201 45892',
+        role: 'collector',
+      },
+      waste_items: [
+        {
+          id: `item-${log.id}`,
+          request_id: `REQ-${log.id.toUpperCase()}`,
+          category: log.category.toLowerCase() as any,
+          approx_weight_kg: weightNum,
+          actual_weight_kg: weightNum,
+          price_per_kg: unitRate,
+          total_price: totalAmount,
+        },
+      ],
+      created_at: '2026-09-08T10:30:00Z',
+      updated_at: '2026-09-08T10:30:00Z',
+      notes: log.notes,
+    };
+    setSelectedReceiptRequest(req);
+  };
 
   useEffect(() => {
     async function loadRequests() {
@@ -194,19 +269,37 @@ export default function RecyclingHistoryPage() {
                 <p className="text-[12px] font-medium text-[#6B7280] tracking-normal">
                   {log.notes}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setSelectedLogToRate({ id: log.id, category: log.category })}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs transition"
-                >
-                  <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
-                  <span>Rate</span>
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => openLogReceipt(log)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-[#E6F4EA] hover:bg-[#D4EBD9] text-[#136B3B] border border-[#A6D5B8] shadow-2xs transition"
+                  >
+                    <Receipt className="w-3 h-3" />
+                    <span>Receipt</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedLogToRate({ id: log.id, category: log.category })}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs transition"
+                  >
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                    <span>Rate</span>
+                  </button>
+                </div>
               </div>
             </article>
           ))}
         </section>
       </div>
+
+      {/* Receipt Modal */}
+      {selectedReceiptRequest && (
+        <ReceiptModal
+          request={selectedReceiptRequest}
+          onClose={() => setSelectedReceiptRequest(null)}
+        />
+      )}
 
       {/* Rating & Review Modal */}
       {selectedLogToRate && (

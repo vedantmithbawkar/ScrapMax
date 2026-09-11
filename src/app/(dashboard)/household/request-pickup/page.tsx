@@ -58,7 +58,7 @@ export default function RequestPickupPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem('aicle_saved_addresses');
+        const stored = localStorage.getItem('scrapmax_saved_addresses') || localStorage.getItem('aicle_saved_addresses');
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -87,7 +87,7 @@ export default function RequestPickupPage() {
 
       // Load logged-in user's name & phone if available
       try {
-        const cached = localStorage.getItem('aicle_personal_info');
+        const cached = localStorage.getItem('scrapmax_personal_info') || localStorage.getItem('aicle_personal_info');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed.fullName) setContactName(parsed.fullName);
@@ -383,6 +383,7 @@ export default function RequestPickupPage() {
       try {
         const updated = [...savedAddresses, newSaved];
         setSavedAddresses(updated);
+        localStorage.setItem('scrapmax_saved_addresses', JSON.stringify(updated));
         localStorage.setItem('aicle_saved_addresses', JSON.stringify(updated));
       } catch {}
     }

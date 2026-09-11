@@ -23,7 +23,7 @@ export default function UserProfilePage() {
       let cachedPhone = '';
       if (typeof window !== 'undefined') {
         try {
-          const cached = localStorage.getItem('aicle_personal_info');
+          const cached = localStorage.getItem('scrapmax_personal_info') || localStorage.getItem('aicle_personal_info');
           if (cached) {
             const parsed = JSON.parse(cached);
             if (parsed.fullName) cachedName = parsed.fullName;
@@ -48,11 +48,11 @@ export default function UserProfilePage() {
             .maybeSingle();
 
           if (data) {
-            detectedRole = data.role || (user.user_metadata?.role as any) || 'household';
+            detectedRole = 'household';
             if (!detectedName) detectedName = data.full_name;
             if (!detectedPhone) detectedPhone = data.phone;
           } else if (user.user_metadata) {
-            detectedRole = (user.user_metadata.role as any) || 'household';
+            detectedRole = 'household';
             if (!detectedName) detectedName = user.user_metadata.full_name;
             if (!detectedPhone) detectedPhone = user.user_metadata.phone;
           }
@@ -62,7 +62,7 @@ export default function UserProfilePage() {
           id: user.id,
           full_name: detectedName || (user.email ? user.email.split('@')[0] : 'Household Customer'),
           phone: detectedPhone || '+91 98201 54321',
-          role: detectedRole,
+          role: 'household',
         });
       } else {
         // Guest household session
@@ -97,7 +97,7 @@ export default function UserProfilePage() {
           {/* Top Bar */}
           <header className="flex items-center gap-3 pt-2 pb-5" data-purpose="page-header">
             <button
-              onClick={() => router.push(profile?.role === 'collector' ? '/collector' : '/household')}
+              onClick={() => router.push('/household')}
               aria-label="Go back to Dashboard"
               className="p-1 -ml-1 text-[#191C1E] hover:opacity-75 transition touch-feedback"
               type="button"
@@ -229,7 +229,7 @@ export default function UserProfilePage() {
       </main>
 
       {/* Docked Stitch Bottom Navigation */}
-      <BottomNav role={profile?.role || 'household'} />
+      <BottomNav role="household" />
     </div>
   );
 }

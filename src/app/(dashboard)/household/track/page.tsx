@@ -110,9 +110,9 @@ export default function HouseholdTrackListPage() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
-                      <MapPin className="w-3.5 h-3.5 text-[#136B3B] flex-shrink-0" />
-                      <span className="truncate">{req.address}</span>
+                    <div className="flex items-start gap-1.5 text-xs text-[#526056] bg-gray-50 p-2 rounded-xl">
+                      <MapPin className="w-3.5 h-3.5 text-[#136B3B] flex-shrink-0 mt-0.5" />
+                      <span className="leading-relaxed break-words font-medium">{req.address}</span>
                     </div>
 
                     {/* Assigned Collector Details Strip */}

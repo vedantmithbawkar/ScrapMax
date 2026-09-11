@@ -428,7 +428,7 @@ function CollectorMapContent() {
 
     if (!collectorFullName && typeof window !== 'undefined') {
       try {
-        const cached = localStorage.getItem('aicle_personal_info');
+        const cached = localStorage.getItem('scrapmax_personal_info') || localStorage.getItem('aicle_personal_info');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed.fullName) collectorFullName = parsed.fullName;

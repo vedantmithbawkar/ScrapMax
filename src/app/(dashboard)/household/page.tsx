@@ -127,7 +127,7 @@ export default function HouseholdDashboard() {
       // Check cached name if updated in personal info
       if (typeof window !== 'undefined') {
         try {
-          const cached = localStorage.getItem('aicle_personal_info');
+          const cached = localStorage.getItem('scrapmax_personal_info') || localStorage.getItem('aicle_personal_info');
           if (cached) {
             const parsed = JSON.parse(cached);
             if (parsed.fullName) {

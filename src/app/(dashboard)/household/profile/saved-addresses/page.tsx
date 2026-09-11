@@ -56,7 +56,7 @@ export default function SavedAddressesPage() {
   const [addresses, setAddresses] = useState<SavedAddress[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem('aicle_saved_addresses');
+        const stored = localStorage.getItem('scrapmax_saved_addresses') || localStorage.getItem('aicle_saved_addresses');
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -88,6 +88,7 @@ export default function SavedAddressesPage() {
   const saveToStorage = (updatedList: SavedAddress[]) => {
     setAddresses(updatedList);
     if (typeof window !== 'undefined') {
+      localStorage.setItem('scrapmax_saved_addresses', JSON.stringify(updatedList));
       localStorage.setItem('aicle_saved_addresses', JSON.stringify(updatedList));
     }
   };

@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { PickupRequest, PaymentDetails, PaymentMethod, VerifiedWasteItem, STANDARD_SCRAP_RATES, WASTE_CATEGORY_LABELS, WasteCategory } from '@/types';
-import { X, CheckCircle2, QrCode, Banknote, Scale, ArrowRight, Sparkles, Download, Printer, ShieldCheck, KeyRound } from 'lucide-react';
+import { X, CheckCircle2, QrCode, Banknote, Scale, ArrowRight, Sparkles, Download, Printer, ShieldCheck, KeyRound, MapPin, Copy, Check } from 'lucide-react';
 import { getPickupOtp } from '@/lib/tracking-service';
 
 interface HandoverModalProps {
@@ -22,6 +22,8 @@ const UPI_APPS = [
 export default function HandoverModal({ request, onClose, onCompletePayment }: HandoverModalProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
   const expectedOtp = getPickupOtp(request.id);
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
 
   const initialItems: VerifiedWasteItem[] = (request.waste_items && request.waste_items.length > 0
     ? request.waste_items
@@ -37,15 +39,23 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
     };
   });
 
-  const [step, setStep] = useState<'otp' | 'weigh' | 'payment' | 'receipt'>('otp');
+  const [step, setStep] = useState<'otp' | 'weigh' | 'payment' | 'receipt'>(
+    request.status === 'completed' ? 'receipt' : 'otp'
+  );
   const [enteredOtp, setEnteredOtp] = useState<string>('');
   const [otpError, setOtpError] = useState<string | null>(null);
-  const [isOtpVerified, setIsOtpVerified] = useState<boolean>(false);
+  const [isOtpVerified, setIsOtpVerified] = useState<boolean>(request.status === 'completed');
   const [items, setItems] = useState<VerifiedWasteItem[]>(initialItems);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi');
-  const [householdUpiId, setHouseholdUpiId] = useState<string>('household@upi');
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [completedPayment, setCompletedPayment] = useState<PaymentDetails | null>(null);
+  const [householdUpiId, setHouseholdUpiId] = useState<string>(
+    request.household?.phone
+      ? `${request.household.phone.replace(/[^0-9]/g, '').slice(-10)}@paytm`
+      : '9820154321@paytm'
+  );
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [completedPayment, setCompletedPayment] = useState<PaymentDetails | null>(
+    request.payment || null
+  );
 
   const totalVerifiedWeight = items.reduce((acc, curr) => acc + curr.verifiedWeightKg, 0);
   const totalPayout = items.reduce((acc, curr) => acc + curr.subtotal, 0);
@@ -123,32 +133,133 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
     return `${scheme}?pa=${encodeURIComponent(householdUpiId)}&pn=${encodeURIComponent(householdName)}&am=${totalPayout}&cu=INR&tn=${encodeURIComponent(`ScrapMax Pickup #${request.id.slice(0, 6)}`)}`;
   };
 
+  // Isolated iframe print
+  const handlePrintReceipt = () => {
+    if (!receiptRef.current) return;
+    const content = receiptRef.current.innerHTML;
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
+
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>ScrapMax Official Handover Voucher</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; color: #191C1E; }
+            .bg-\\[\\#F8FAF9\\], .bg-gray-50 { background-color: #F8FAF9 !important; -webkit-print-color-adjust: exact; }
+            .bg-\\[\\#E6F4EA\\], .bg-emerald-50 { background-color: #E6F4EA !important; -webkit-print-color-adjust: exact; }
+            .text-\\[\\#136B3B\\], .text-emerald-700 { color: #136B3B !important; }
+            .border { border: 1px solid #E5E7EB; }
+            .border-b { border-bottom: 1px solid #E5E7EB; }
+            .border-t { border-top: 1px solid #E5E7EB; }
+            .border-dashed { border-style: dashed; }
+            .text-xs { font-size: 11.5px; }
+            .text-sm { font-size: 13.5px; }
+            .text-base { font-size: 15px; }
+            .text-lg { font-size: 18px; }
+            .truncate { overflow: visible !important; white-space: normal !important; }
+            svg { display: none; }
+          </style>
+        </head>
+        <body>
+          ${content}
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 2000);
+    }, 250);
+  };
+
   const handleDownloadReceipt = () => {
     if (!receiptRef.current) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    printWindow.document.write(`
-      <html><head><title>ScrapMax Receipt</title>
-      <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; color: #191C1E; max-width: 480px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #E5E7EB; padding-bottom: 12px; margin-bottom: 12px; }
-        .title { font-size: 16px; font-weight: 900; color: #136B3B; text-transform: uppercase; letter-spacing: 1px; }
-        .subtitle { font-size: 11px; color: #6B7280; }
-        .txid { font-family: monospace; font-size: 11px; font-weight: bold; }
-        .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
-        .row-header { font-weight: bold; color: #6B7280; font-size: 11px; border-bottom: 1px solid #E5E7EB; padding-bottom: 4px; margin-bottom: 4px; }
-        .total-row { border-top: 2px dashed #E5E7EB; padding-top: 8px; margin-top: 8px; font-size: 15px; }
-        .amount { font-weight: 900; color: #136B3B; }
-        .info-box { background: #F8FAF9; padding: 10px; border-radius: 8px; font-size: 11px; margin-top: 10px; }
-        .credit-note { background: #EDF7F2; padding: 10px; border-radius: 8px; font-size: 11px; margin-top: 10px; color: #1B4332; border: 1px solid #A6D5B8; }
-        .env { background: #EDF7F2; padding: 10px; border-radius: 8px; font-size: 11px; margin-top: 10px; color: #1B4332; }
-        @media print { body { padding: 0; } }
-      </style></head><body>
-      ${receiptRef.current.innerHTML}
-      <script>window.print(); window.close();</script>
-      </body></html>
-    `);
-    printWindow.document.close();
+    const content = receiptRef.current.innerHTML;
+    const currentTxId = completedPayment?.transactionId || `TXN-${Date.now().toString().slice(-6)}`;
+    const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScrapMax Receipt - ${currentTxId}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #F7F9FA;
+      color: #191C1E;
+      margin: 0;
+      padding: 24px 16px;
+      display: flex;
+      justify-content: center;
+    }
+    .card {
+      max-width: 480px;
+      width: 100%;
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .print-btn {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px;
+      background: #136B3B;
+      color: #FFFFFF;
+      border: 0;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 13px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .print-btn:hover { background: #0F5730; }
+    @media print {
+      body { background: #FFFFFF; padding: 0; }
+      .card { box-shadow: none; border: 1px solid #E5E7EB; }
+      .print-btn { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    ${content}
+    <button class="print-btn" onclick="window.print()">Print or Save as PDF</button>
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.setAttribute('download', `ScrapMax_Receipt_${currentTxId}.html`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setDownloaded(true);
+    setTimeout(() => setDownloaded(false), 3000);
   };
 
   return (
@@ -399,16 +510,41 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
             {/* UPI Section */}
             {paymentMethod === 'upi' ? (
               <div className="p-4 bg-white border border-gray-200 rounded-2xl space-y-4">
-                {/* Household UPI ID Input */}
+                {/* Household UPI ID Input with Copy Option */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#191C1E]">Household&apos;s UPI ID (Receiver)</label>
-                  <input
-                    type="text"
-                    value={householdUpiId}
-                    onChange={(e) => setHouseholdUpiId(e.target.value)}
-                    placeholder="e.g. name@paytm, name@ybl"
-                    className="w-full px-3 py-2.5 bg-[#F8FAF9] border border-gray-300 rounded-xl text-sm font-mono text-center focus:outline-none focus:border-[#136B3B] focus:ring-2 focus:ring-[#136B3B]/20"
-                  />
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#191C1E]">Household&apos;s UPI ID (Receiver)</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(householdUpiId);
+                        setCopiedUpi(true);
+                        setTimeout(() => setCopiedUpi(false), 2500);
+                      }}
+                      className="text-[11px] font-bold text-[#136B3B] hover:underline flex items-center gap-1"
+                    >
+                      {copiedUpi ? (
+                        <>
+                          <Check className="w-3 h-3 text-[#136B3B]" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3 text-[#136B3B]" />
+                          <span>Copy UPI ID</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={householdUpiId}
+                      onChange={(e) => setHouseholdUpiId(e.target.value)}
+                      placeholder="e.g. name@paytm, name@ybl"
+                      className="flex-1 px-3 py-2.5 bg-[#F8FAF9] border border-gray-300 rounded-xl text-sm font-mono text-center focus:outline-none focus:border-[#136B3B] focus:ring-2 focus:ring-[#136B3B]/20"
+                    />
+                  </div>
                   <p className="text-[10px] text-[#6B7280] text-center">₹{totalPayout} will be sent to this UPI ID and credited to their bank</p>
                 </div>
 
@@ -440,6 +576,9 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
                       </a>
                     ))}
                   </div>
+                  <p className="text-[10px] text-[#6B7280] text-center mt-1">
+                    Direct app links open mobile banking apps. On desktop, scan the QR code above.
+                  </p>
                 </div>
               </div>
             ) : (
@@ -504,16 +643,29 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
                 </div>
               </div>
 
-              {/* Parties */}
+              {/* Parties - Who paid, Who received with Phone Numbers */}
               <div className="grid grid-cols-2 gap-2">
-                <div className="p-2.5 bg-[#F8FAF9] rounded-xl">
+                <div className="p-2.5 bg-[#F8FAF9] rounded-xl border border-gray-100 space-y-0.5">
                   <span className="text-[10px] text-[#6B7280] font-medium block">Paid By (Collector)</span>
-                  <span className="text-xs font-bold text-[#191C1E]">{completedPayment.paidBy || 'Collector'}</span>
+                  <span className="text-xs font-bold text-[#191C1E] block truncate">{completedPayment.paidBy || 'Collector'}</span>
+                  <span className="text-[10.5px] font-mono text-[#136B3B] font-bold block">{request.collector?.phone || '+91 98201 45892'}</span>
                 </div>
-                <div className="p-2.5 bg-[#EDF7F2] rounded-xl border border-[#A6D5B8]">
+                <div className="p-2.5 bg-[#EDF7F2] rounded-xl border border-[#A6D5B8] space-y-0.5">
                   <span className="text-[10px] text-[#136B3B] font-medium block">Received By (Household)</span>
-                  <span className="text-xs font-bold text-[#136B3B]">{completedPayment.receivedBy || 'Household'}</span>
+                  <span className="text-xs font-bold text-[#136B3B] block truncate">{completedPayment.receivedBy || 'Household'}</span>
+                  <span className="text-[10.5px] font-mono text-[#136B3B] font-bold block">{request.household?.phone || '+91 98201 54321'}</span>
                 </div>
+              </div>
+
+              {/* Complete Doorstep Address Breakdown */}
+              <div className="p-3 bg-[#F8FAF9] rounded-xl border border-gray-100 space-y-1 text-xs">
+                <div className="flex items-center gap-1.5 font-bold text-[#191C1E]">
+                  <MapPin className="w-3.5 h-3.5 text-[#136B3B] shrink-0" />
+                  <span>Pickup Doorstep Location:</span>
+                </div>
+                <p className="text-gray-700 leading-relaxed font-medium pl-5 break-words">
+                  {request.address}
+                </p>
               </div>
 
               {/* Items */}
@@ -561,8 +713,8 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
             <div className="flex gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => window.print()}
-                className="flex-1 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-[#191C1E] font-bold text-xs rounded-2xl transition flex items-center justify-center gap-1.5 shadow-xs"
+                onClick={handlePrintReceipt}
+                className="flex-1 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-[#191C1E] font-bold text-xs rounded-2xl transition flex items-center justify-center gap-1.5 shadow-xs touch-feedback"
               >
                 <Printer className="w-4 h-4" />
                 <span>Print</span>
@@ -570,15 +722,24 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
               <button
                 type="button"
                 onClick={handleDownloadReceipt}
-                className="flex-1 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-[#191C1E] font-bold text-xs rounded-2xl transition flex items-center justify-center gap-1.5 shadow-xs"
+                className="flex-1 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-[#191C1E] font-bold text-xs rounded-2xl transition flex items-center justify-center gap-1.5 shadow-xs touch-feedback"
               >
-                <Download className="w-4 h-4" />
-                <span>Download</span>
+                {downloaded ? (
+                  <>
+                    <Check className="w-4 h-4 text-[#136B3B]" />
+                    <span className="text-[#136B3B]">Saved!</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    <span>Download</span>
+                  </>
+                )}
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-3 bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold text-xs rounded-2xl transition shadow-xs"
+                className="flex-1 py-3 bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold text-xs rounded-2xl transition shadow-xs touch-feedback"
               >
                 Done
               </button>

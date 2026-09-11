@@ -43,6 +43,9 @@ export interface WasteItem {
   request_id?: string;
   category: WasteCategory;
   approx_weight_kg: number;
+  actual_weight_kg?: number;
+  price_per_kg?: number;
+  total_price?: number;
   photos?: string[];
   notes?: string;
   created_at?: string;
@@ -92,6 +95,8 @@ export interface PickupRequest {
   scheduled_date: string;
   notes?: string;
   total_estimated_weight_kg?: number;
+  contact_name?: string;
+  contact_phone?: string;
   photos?: string[];
   payment?: PaymentDetails;
   payment_json?: PaymentJson | null;

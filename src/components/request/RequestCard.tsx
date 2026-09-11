@@ -130,10 +130,10 @@ export default function RequestCard({
           </div>
         </div>
 
-        {/* Address line */}
-        <div className="flex items-center gap-1.5 text-xs text-[#526056] bg-[#F8FAF9] p-2.5 rounded-xl border border-gray-100">
-          <MapPin className="w-3.5 h-3.5 text-[#136B3B] flex-shrink-0" />
-          <span className="truncate">{request.address}</span>
+        {/* Doorstep Address line */}
+        <div className="flex items-start gap-2 text-xs text-[#526056] bg-[#F8FAF9] p-2.5 rounded-xl border border-gray-100">
+          <MapPin className="w-3.5 h-3.5 text-[#136B3B] flex-shrink-0 mt-0.5" />
+          <p className="leading-snug break-words font-medium text-[#191C1E]">{request.address}</p>
         </div>
 
         {/* Payment Received Banner for Household */}

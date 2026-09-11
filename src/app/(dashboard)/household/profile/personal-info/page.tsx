@@ -10,7 +10,7 @@ import { ArrowLeft, User, Phone, Mail, Calendar, Sparkles, CheckCircle2, Clock, 
 function getCachedPersonalInfo() {
   if (typeof window !== 'undefined') {
     try {
-      const cached = localStorage.getItem('aicle_personal_info');
+      const cached = localStorage.getItem('scrapmax_personal_info') || localStorage.getItem('aicle_personal_info');
       if (cached) return JSON.parse(cached);
     } catch {
       // ignore
@@ -102,6 +102,7 @@ export default function PersonalInfoPage() {
 
     // Cache to localStorage for instant UI updates everywhere
     if (typeof window !== 'undefined') {
+      localStorage.setItem('scrapmax_personal_info', JSON.stringify(payload));
       localStorage.setItem('aicle_personal_info', JSON.stringify(payload));
     }
 
