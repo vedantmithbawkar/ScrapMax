@@ -34,10 +34,11 @@ async function dispatchSmsToRegisteredNumber(phone: string, otp: string): Promis
   const internationalNumber = `+91${clean10Digit}`;
   const smsBody = `ScrapMax UIDAI Verification: Your OTP for Aadhaar verification is ${otp}. Valid for 10 mins. Do not share with anyone.`;
 
-  // 1. Fast2SMS Provider (India DLT/Quick OTP route)
+  // 1. Fast2SMS Provider (India DLT/Quick OTP / Quick SMS route)
   if (FAST2SMS_API_KEY) {
     try {
-      const res = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+      // Try Route 1: 'otp'
+      let res = await fetch('https://www.fast2sms.com/dev/bulkV2', {
         method: 'POST',
         headers: {
           'authorization': FAST2SMS_API_KEY,
@@ -49,10 +50,32 @@ async function dispatchSmsToRegisteredNumber(phone: string, otp: string): Promis
           numbers: clean10Digit,
         }),
       });
-      const resData = await res.json();
+      let resData = await res.json();
       if (res.ok && resData.return) {
         return { sent: true, provider: 'fast2sms', note: `SMS sent via Fast2SMS to +91 ${clean10Digit}` };
       }
+
+      // Try Route 2: 'q' (Quick SMS)
+      res = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+        method: 'POST',
+        headers: {
+          'authorization': FAST2SMS_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          route: 'q',
+          message: `ScrapMax UIDAI Verification OTP is ${otp}. Valid for 10 mins.`,
+          language: 'english',
+          flash: 0,
+          numbers: clean10Digit,
+        }),
+      });
+      resData = await res.json();
+      if (res.ok && resData.return) {
+        return { sent: true, provider: 'fast2sms', note: `SMS sent via Fast2SMS Quick SMS to +91 ${clean10Digit}` };
+      }
+
+      console.warn('Fast2SMS provider note:', resData?.message || resData);
     } catch (err) {
       console.warn('Fast2SMS dispatch error:', err);
     }
