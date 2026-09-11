@@ -16,7 +16,7 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
   const { t } = useTranslation();
 
   const isHousehold = role === 'household';
-  const isAdmin = role === 'admin';
+  const isAdmin = role === 'admin' || pathname.startsWith('/admin');
 
   const tabs = isAdmin
     ? [
