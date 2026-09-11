@@ -371,19 +371,10 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
                 </p>
               )}
 
-              {/* Demo auto-fill helper */}
-              <button
-                type="button"
-                onClick={() => {
-                  setEnteredOtp(expectedOtp);
-                  setOtpError(null);
-                  setIsOtpVerified(true);
-                  setTimeout(() => setStep('weigh'), 350);
-                }}
-                className="text-[11px] text-[#136B3B] font-bold bg-[#EAF5EE] hover:bg-[#D4EBD9] px-3 py-1 rounded-full transition inline-flex items-center gap-1"
-              >
-                <span>💡 Demo Shortcut: Enter OTP ({expectedOtp})</span>
-              </button>
+              {/* Doorstep verification guide */}
+              <p className="text-[11px] text-[#526056] text-center bg-gray-50 py-1.5 px-3 rounded-xl border border-gray-200">
+                Customer can view their 4-digit handover PIN in their ScrapMax tracking screen.
+              </p>
 
               <button
                 type="submit"

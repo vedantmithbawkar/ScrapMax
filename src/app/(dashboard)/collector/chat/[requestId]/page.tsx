@@ -24,8 +24,8 @@ import {
 
 const MapContainer = dynamic(() => import('@/components/map/MapContainer'), { ssr: false });
 
-const DEMO_REQUEST: PickupRequest = {
-  id: 'demo-col-001',
+const DEFAULT_REQUEST: PickupRequest = {
+  id: 'req-col-001',
   household_id: 'user-h101',
   collector_id: 'collector-c201',
   status: 'accepted',
@@ -44,17 +44,17 @@ const DEMO_REQUEST: PickupRequest = {
   ],
 };
 
-const DEMO_MESSAGES: ChatMessage[] = [
+const DEFAULT_MESSAGES: ChatMessage[] = [
   {
     id: 'msg-1',
-    chat_id: 'chat-demo',
+    chat_id: 'chat-req-001',
     sender_id: 'collector-c201',
     text: 'Hello! I have accepted your pickup. I\'ll be there by 5:30 PM.',
     created_at: new Date(Date.now() - 3600000).toISOString(),
   },
   {
     id: 'msg-2',
-    chat_id: 'chat-demo',
+    chat_id: 'chat-req-001',
     sender_id: 'user-h101',
     text: 'Great! The recyclables are packed near the gate.',
     created_at: new Date(Date.now() - 3000000).toISOString(),
@@ -64,10 +64,10 @@ const DEMO_MESSAGES: ChatMessage[] = [
 export default function CollectorChatPage() {
   const params = useParams();
   const router = useRouter();
-  const requestId = (params?.requestId as string) ?? 'demo';
+  const requestId = (params?.requestId as string) ?? 'req-col-001';
 
   const [activeTab, setActiveTab] = useState<'track' | 'chat'>('chat');
-  const [request, setRequest] = useState<PickupRequest>(DEMO_REQUEST);
+  const [request, setRequest] = useState<PickupRequest>(DEFAULT_REQUEST);
   const [messages, setMessages] = useState<ChatMessage[]>(() => getChatMessages(requestId));
   const [inputText, setInputText] = useState('');
   const [chatId, setChatId] = useState<string | null>(null);
@@ -100,7 +100,7 @@ export default function CollectorChatPage() {
         .single();
       if (req) setRequest(req as PickupRequest);
     }
-    if (requestId !== 'demo') load();
+    load();
   }, [requestId, currentUserId]);
 
   useEffect(() => {

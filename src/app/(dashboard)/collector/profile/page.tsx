@@ -42,7 +42,7 @@ export default function CollectorProfilePage() {
     }
     return '+91 98201 45892';
   });
-  const [email, setEmail] = useState<string>('collector@scrapmax.demo');
+  const [email, setEmail] = useState<string>('collector@scrapmax.com');
   const [collectorAadhaar, setCollectorAadhaar] = useState<string>('XXXX-XXXX-9842');
   const [completedCount, setCompletedCount] = useState<number>(24);
   const [totalWeight, setTotalWeight] = useState<number>(412);

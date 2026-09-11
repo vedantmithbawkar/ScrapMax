@@ -121,6 +121,20 @@ export default function CollectorDashboard() {
 
       const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values()) as PickupRequest[];
       setRequests(unique);
+
+      // Auto-align default hub location to requests city if collector location is at cross-state default (>100km away)
+      if (unique.length > 0) {
+        const firstReq = unique[0];
+        const saved = getCollectorSavedLocation();
+        const distFromDefault = calculateDistanceMeters(saved.pos[0], saved.pos[1], firstReq.latitude, firstReq.longitude);
+        const isManuallySet = typeof window !== 'undefined' && localStorage.getItem('scrapmax_collector_hub_manually_set');
+        if (distFromDefault > 100000 && !isManuallySet) {
+          const alignedPos: [number, number] = [firstReq.latitude + 0.012, firstReq.longitude - 0.014];
+          const alignedName = firstReq.address ? `${firstReq.address.split(',')[0]} Hub` : 'Operating Hub';
+          setCollectorSavedLocation(alignedPos, alignedName);
+          setCollectorLoc({ pos: alignedPos, locationName: alignedName, hubName: alignedName, updatedAt: new Date().toISOString() });
+        }
+      }
     }
     loadCollectorData();
   }, []);
@@ -235,6 +249,23 @@ export default function CollectorDashboard() {
 
     // Trigger live smart notifications & sync with collector location
     if (newStatus === 'accepted') {
+      // STRICT SERVICE RADIUS ENFORCEMENT: Collector can ONLY accept pickups within their maximum 25 km radius
+      const targetReq = requests.find((r) => r.id === requestId);
+      if (targetReq) {
+        const distanceMeters = calculateDistanceMeters(
+          collectorLoc.pos[0],
+          collectorLoc.pos[1],
+          targetReq.latitude,
+          targetReq.longitude
+        );
+        const maxMeters = radiusFilter === 'all' ? 25000 : Number(radiusFilter) * 1000;
+        if (distanceMeters > maxMeters) {
+          const distKm = (distanceMeters / 1000).toFixed(1);
+          alert(`❌ Out of Service Radius: This pickup is ${distKm} km away. You can only accept pickups within your active ${maxMeters / 1000} km service radius.`);
+          return;
+        }
+      }
+
       triggerCollectorAcceptedNotification(finalCollectorName);
       acceptPickupInTracking(requestId, collectorObj, collectorLoc.pos, collectorLoc.locationName || collectorLoc.hubName);
     } else if (newStatus === 'in_progress') {
@@ -292,7 +323,7 @@ export default function CollectorDashboard() {
         .from('pickup_requests')
         .update({
           status: 'completed',
-          collector_id: user?.id || 'demo-collector-id',
+          collector_id: user?.id || 'collector-c201',
           payment_json: payment,
           total_estimated_weight_kg: payment?.items.reduce((a, c) => a + c.verifiedWeightKg, 0),
           updated_at: new Date().toISOString(),
@@ -321,7 +352,7 @@ export default function CollectorDashboard() {
           ? {
               ...req,
               status: 'completed' as const,
-              collector_id: user?.id || 'demo-collector-id',
+              collector_id: user?.id || 'collector-c201',
               payment,
               payment_json: payment as any,
               total_estimated_weight_kg: payment?.items.reduce((a, c) => a + c.verifiedWeightKg, 0),
@@ -339,9 +370,9 @@ export default function CollectorDashboard() {
     if (filterTab === 'available' && r.status !== 'pending') return false;
     if (filterTab === 'my_pickups' && r.status === 'pending') return false;
 
-    // Radius filter for available jobs
-    if (filterTab === 'available' && radiusFilter !== 'all') {
-      const maxMeters = Number(radiusFilter) * 1000;
+    // Radius filter for available jobs: maximum operational limit is 25 km
+    if (filterTab === 'available') {
+      const maxMeters = radiusFilter === 'all' ? 25000 : Number(radiusFilter) * 1000;
       const d = calculateDistanceMeters(collectorLoc.pos[0], collectorLoc.pos[1], r.latitude, r.longitude);
       if (d > maxMeters) return false;
     }
@@ -463,6 +494,39 @@ export default function CollectorDashboard() {
                 )}
                 <span>{isDetectingGps ? 'Locating...' : 'Refresh Live GPS'}</span>
               </button>
+            </div>
+          </div>
+
+          {/* Quick Operating Hub / City Switcher */}
+          <div className="pt-2 border-t border-gray-100 flex items-center justify-between gap-2 flex-wrap text-xs">
+            <span className="text-[11px] font-bold text-[#526056] pl-1">Operating Hub:</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                { name: 'Bangalore (Indiranagar)', label: 'Bangalore', pos: [12.9716, 77.5946] as [number, number] },
+                { name: 'Mumbai (Andheri)', label: 'Mumbai', pos: [19.1136, 72.8697] as [number, number] },
+                { name: 'Delhi NCR', label: 'Delhi NCR', pos: [28.6139, 77.2090] as [number, number] },
+                { name: 'Pune', label: 'Pune', pos: [18.5204, 73.8567] as [number, number] },
+              ].map((hub) => {
+                const isCurrent = collectorLoc.locationName?.toLowerCase().includes(hub.label.toLowerCase());
+                return (
+                  <button
+                    key={hub.name}
+                    type="button"
+                    onClick={() => {
+                      setCollectorSavedLocation(hub.pos, hub.name);
+                      setCollectorLoc({ pos: hub.pos, locationName: hub.name, hubName: hub.name, updatedAt: new Date().toISOString() });
+                      localStorage.setItem('scrapmax_collector_hub_manually_set', 'true');
+                    }}
+                    className={`px-2.5 py-1 rounded-xl text-[10.5px] font-bold transition border ${
+                      isCurrent
+                        ? 'bg-[#E6F4EA] text-[#136B3B] border-[#A6D5B8] shadow-2xs font-black'
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    📍 {hub.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

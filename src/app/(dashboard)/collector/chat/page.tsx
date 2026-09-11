@@ -29,7 +29,7 @@ const DEFAULT_CHATS: ChatSummary[] = [
     unread: 0,
   },
   {
-    requestId: 'req-h102-demo-uuid',
+    requestId: 'req-h102',
     householdName: 'Household — Koramangala',
     address: '80ft Road, Koramangala 4th Block',
     status: 'accepted',
@@ -38,7 +38,7 @@ const DEFAULT_CHATS: ChatSummary[] = [
     unread: 0,
   },
   {
-    requestId: 'req-c302-demo-uuid',
+    requestId: 'req-c302',
     householdName: 'Household — Commercial Hub',
     address: 'Station Road West, Commercial Hub',
     status: 'in_progress',

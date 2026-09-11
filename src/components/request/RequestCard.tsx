@@ -363,13 +363,23 @@ export default function RequestCard({
             {userRole === 'collector' && onStatusUpdate && (
               <>
                 {request.status === 'pending' && (
-                  <button
-                    onClick={() => onStatusUpdate(request.id, 'accepted')}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold rounded-xl shadow-xs transition"
-                  >
-                    <span>Accept</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
+                  collectorDistanceKm !== undefined && collectorDistanceKm > 25 ? (
+                    <span
+                      title={`Pickup is ${collectorDistanceKm} km away. Exceeds your maximum 25 km service radius.`}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl border border-gray-200 cursor-not-allowed select-none"
+                    >
+                      <span>Out of Radius</span>
+                      <span className="text-[10px] text-red-500 font-semibold">({collectorDistanceKm}km)</span>
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => onStatusUpdate(request.id, 'accepted')}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#136B3B] hover:bg-[#0F5730] text-white text-xs font-bold rounded-xl shadow-xs transition"
+                    >
+                      <span>Accept</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  )
                 )}
 
                 {(request.status === 'accepted' || request.status === 'in_progress') && (

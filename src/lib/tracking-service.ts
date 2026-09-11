@@ -227,24 +227,31 @@ export async function initializeTrackingState(params: {
   collectorPhone?: string;
 }): Promise<LiveTrackingState> {
   const existing = getTrackingState(params.requestId);
-  if (existing) return existing;
+  // Only reuse existing state if distance is realistic (<= 50km); otherwise reinitialize to fix cross-state default mismatch
+  if (existing && existing.distanceMeters <= 50000) return existing;
 
   const savedLoc = getCollectorSavedLocation();
 
-  // Starting collector position: use live GPS or saved location, fallback near household
-  const startCollectorPos: [number, number] =
-    params.collectorPos ||
-    params.collectorOriginPos ||
-    savedLoc.pos || [
-      params.householdPos[0] + 0.012,
-      params.householdPos[1] - 0.014,
-    ];
+  // Starting collector position: use live GPS or saved location if within 50km, otherwise place realistic local origin (~1.5km)
+  let startCollectorPos: [number, number];
+  if (params.collectorPos) {
+    const dist = calculateDistanceMeters(params.collectorPos[0], params.collectorPos[1], params.householdPos[0], params.householdPos[1]);
+    startCollectorPos = dist < 50000 ? params.collectorPos : [params.householdPos[0] + 0.012, params.householdPos[1] - 0.014];
+  } else if (params.collectorOriginPos) {
+    const dist = calculateDistanceMeters(params.collectorOriginPos[0], params.collectorOriginPos[1], params.householdPos[0], params.householdPos[1]);
+    startCollectorPos = dist < 50000 ? params.collectorOriginPos : [params.householdPos[0] + 0.012, params.householdPos[1] - 0.014];
+  } else if (savedLoc.pos) {
+    const dist = calculateDistanceMeters(savedLoc.pos[0], savedLoc.pos[1], params.householdPos[0], params.householdPos[1]);
+    startCollectorPos = dist < 50000 ? savedLoc.pos : [params.householdPos[0] + 0.012, params.householdPos[1] - 0.014];
+  } else {
+    startCollectorPos = [params.householdPos[0] + 0.012, params.householdPos[1] - 0.014];
+  }
 
   const originAddress =
     params.collectorOriginAddress ||
     savedLoc.locationName ||
     savedLoc.hubName ||
-    'Collector Current GPS';
+    'Collector Current Location';
 
   const routeCoordinates = await fetchDrivingRoute(startCollectorPos, params.householdPos);
   const distanceMeters = calculateDistanceMeters(

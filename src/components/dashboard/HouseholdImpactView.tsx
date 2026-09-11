@@ -28,11 +28,6 @@ export default function HouseholdImpactView({ stats, isDemo }: HouseholdImpactVi
           >
             Your Recycling Impact
           </h2>
-          {isDemo && (
-            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-              Demo
-            </span>
-          )}
         </div>
       </div>
 

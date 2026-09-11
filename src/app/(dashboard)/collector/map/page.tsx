@@ -21,8 +21,6 @@ import {
   ExternalLink,
   Copy,
   Check,
-  Play,
-  Pause,
   AlertCircle,
   ShieldCheck,
   Star,
@@ -35,11 +33,9 @@ import {
   initializeTrackingState,
   getTrackingState,
   subscribeToTracking,
-  startRouteSimulation,
-  stopRouteSimulation,
-  isSimulationRunning,
   markArrivedAtDoorstep,
   completeTrackingPayment,
+  calculateDistanceMeters,
   formatDistance,
   fetchDrivingRoute,
   getCollectorSavedLocation,
@@ -53,317 +49,11 @@ import {
   triggerPaymentReceivedNotification,
 } from '@/lib/notification-service';
 
-const MOCK_MAP_REQUESTS: PickupRequest[] = [
-  {
-    id: 'req-map-001',
-    household_id: 'user-h101',
-    household: {
-      id: 'user-h101',
-      full_name: 'Aarav Sharma (Flat 402, Green Heights)',
-      phone: '+91 98201 54321',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Flat 402, Green Heights, Main Market Road, City Center',
-    latitude: 19.0760,
-    longitude: 72.8777,
-    scheduled_date: 'Today · 5:30 PM',
-    notes: 'Paper & plastic recyclables ready at society gate. Ring bell twice upon arrival.',
-    total_estimated_weight_kg: 18.5,
-    photos: [
-      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [{ category: 'PAPER', approx_weight_kg: 18.5 }],
-  },
-  {
-    id: 'req-map-002',
-    household_id: 'user-h102',
-    household: {
-      id: 'user-h102',
-      full_name: 'Priya Verma (Building 3B, Tech Park)',
-      phone: '+91 98334 12789',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Tower B, Station Road West, Commercial Tech Park, Andheri East',
-    latitude: 19.1136,
-    longitude: 72.8697,
-    scheduled_date: 'Today · 6:00 PM',
-    notes: 'Electronic waste, wiring, and computer scrap. Please call before arriving.',
-    total_estimated_weight_kg: 35.0,
-    photos: [
-      'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [{ category: 'E_WASTE', approx_weight_kg: 35.0 }],
-  },
-  {
-    id: 'req-map-003',
-    household_id: 'user-h103',
-    household: {
-      id: 'user-h103',
-      full_name: 'Vikram Mehta (Gala 14)',
-      phone: '+91 98112 34567',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Ring Road Link, Industrial Estate, Gala No 14, Kurla West',
-    latitude: 19.0685,
-    longitude: 72.8842,
-    scheduled_date: 'Today · 6:30 PM',
-    notes: 'Heavy scrap metal, iron pieces, and packaging boxes.',
-    total_estimated_weight_kg: 22.0,
-    photos: [
-      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [{ category: 'METAL', approx_weight_kg: 22.0 }],
-  },
-  {
-    id: 'req-map-004',
-    household_id: 'user-h104',
-    household: {
-      id: 'user-h104',
-      full_name: 'Sneha Patel (Bungalow 7)',
-      phone: '+91 98450 98765',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Green Park Colony, Sector 4, Behind Central Bank, Bandra West',
-    latitude: 19.0596,
-    longitude: 72.8295,
-    scheduled_date: 'Today · 7:00 PM',
-    notes: 'Sorted plastic bottles and cardboard packaging.',
-    total_estimated_weight_kg: 14.2,
-    photos: [
-      'https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [{ category: 'PLASTIC', approx_weight_kg: 14.2 }],
-  },
-  {
-    id: 'req-map-005',
-    household_id: 'user-h105',
-    household: {
-      id: 'user-h105',
-      full_name: 'Ananya Deshmukh (Flat 801)',
-      phone: '+91 98205 67890',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Sunview Heights, 10th Road, JVPD Scheme, Juhu',
-    latitude: 19.1075,
-    longitude: 72.8263,
-    scheduled_date: 'Tomorrow · 10:00 AM',
-    notes: 'Glass bottles and newspaper bundles ready on balcony.',
-    total_estimated_weight_kg: 26.0,
-    photos: [
-      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 1000 * 60 * 150).toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [
-      { category: 'GLASS', approx_weight_kg: 12.0 },
-      { category: 'PAPER', approx_weight_kg: 14.0 },
-    ],
-  },
-  {
-    id: 'req-map-006',
-    household_id: 'user-h106',
-    household: {
-      id: 'user-h106',
-      full_name: 'Rajesh Kulkarni (Tower 12B)',
-      phone: '+91 98701 23456',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Cliff Tower 12B, Central Avenue, Hiranandani Gardens, Powai',
-    latitude: 19.1197,
-    longitude: 72.9051,
-    scheduled_date: 'Tomorrow · 11:30 AM',
-    notes: 'Old CPU cabinets, aluminium frames, and copper wires.',
-    total_estimated_weight_kg: 41.5,
-    photos: [
-      'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [
-      { category: 'E_WASTE', approx_weight_kg: 21.5 },
-      { category: 'METAL', approx_weight_kg: 20.0 },
-    ],
-  },
-  {
-    id: 'req-map-007',
-    household_id: 'user-h107',
-    household: {
-      id: 'user-h107',
-      full_name: 'Kavita Nair (House 19)',
-      phone: '+91 98198 76543',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Shivaji Park View, Cadell Road, Dadar West',
-    latitude: 19.0282,
-    longitude: 72.8384,
-    scheduled_date: 'Tomorrow · 2:00 PM',
-    notes: 'Old school notebooks and magazines tied in rope.',
-    total_estimated_weight_kg: 16.0,
-    photos: [
-      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 1000 * 60 * 210).toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [{ category: 'PAPER', approx_weight_kg: 16.0 }],
-  },
-  {
-    id: 'req-map-008',
-    household_id: 'user-h108',
-    household: {
-      id: 'user-h108',
-      full_name: 'Mohit Agarwal (Flat 302)',
-      phone: '+91 98212 34987',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Diamond Garden Society, 2nd Main Road, Chembur East',
-    latitude: 19.0522,
-    longitude: 72.8994,
-    scheduled_date: 'Tomorrow · 3:30 PM',
-    notes: 'Stainless steel utensils and crushed plastic bottles.',
-    total_estimated_weight_kg: 29.0,
-    photos: [
-      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [
-      { category: 'METAL', approx_weight_kg: 15.0 },
-      { category: 'PLASTIC', approx_weight_kg: 14.0 },
-    ],
-  },
-  {
-    id: 'req-map-009',
-    household_id: 'user-h109',
-    household: {
-      id: 'user-h109',
-      full_name: 'Sunil Joshi (Wing C)',
-      phone: '+91 98331 45678',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Neelkanth Valley, Building 4, Ghatkopar East',
-    latitude: 19.0864,
-    longitude: 72.9082,
-    scheduled_date: 'Tomorrow · 4:30 PM',
-    notes: 'Large cardboard appliance packaging boxes and plastic containers.',
-    total_estimated_weight_kg: 19.5,
-    photos: [
-      'https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 1000 * 60 * 270).toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [{ category: 'PAPER', approx_weight_kg: 19.5 }],
-  },
-  {
-    id: 'req-map-010',
-    household_id: 'user-h110',
-    household: {
-      id: 'user-h110',
-      full_name: 'Farhan Shaikh (Silver Arch)',
-      phone: '+91 98200 87654',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Silver Arch, Lokhandwala Complex, Andheri West',
-    latitude: 19.1392,
-    longitude: 72.8265,
-    scheduled_date: 'Tomorrow · 5:00 PM',
-    notes: 'Old microwave, broken toaster, and brass fittings.',
-    total_estimated_weight_kg: 24.0,
-    photos: [
-      'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 1000 * 60 * 300).toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [
-      { category: 'E_WASTE', approx_weight_kg: 14.0 },
-      { category: 'METAL', approx_weight_kg: 10.0 },
-    ],
-  },
-  {
-    id: 'req-map-011',
-    household_id: 'user-h111',
-    household: {
-      id: 'user-h111',
-      full_name: 'Meera Sen (Sea Face Enclave)',
-      phone: '+91 98190 11223',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Sea Face Enclave, Dr. Annie Besant Road, Worli',
-    latitude: 19.0125,
-    longitude: 72.8182,
-    scheduled_date: 'Tomorrow · 6:00 PM',
-    notes: 'Corrugated cartons and newspapers packed in sacks.',
-    total_estimated_weight_kg: 15.0,
-    photos: [
-      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 1000 * 60 * 330).toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [{ category: 'PAPER', approx_weight_kg: 15.0 }],
-  },
-  {
-    id: 'req-map-012',
-    household_id: 'user-h112',
-    household: {
-      id: 'user-h112',
-      full_name: 'Deepak Chawla (Panchsheel Heights)',
-      phone: '+91 98209 99887',
-      role: 'household',
-    },
-    status: 'completed',
-    address: 'Panchsheel Heights, New Link Road, Malad West',
-    latitude: 19.1865,
-    longitude: 72.8481,
-    scheduled_date: 'Yesterday · 4:00 PM',
-    notes: 'Completed scrap pickup. Verified weight & instant UPI payment settled.',
-    total_estimated_weight_kg: 21.0,
-    payment: {
-      transactionId: 'TXN-882194',
-      method: 'upi',
-      totalAmount: 380,
-      timestamp: new Date(Date.now() - 86400000).toISOString(),
-      items: [
-        { category: 'PAPER', verifiedWeightKg: 11.0, ratePerKg: 14, subtotal: 154 },
-        { category: 'PLASTIC', verifiedWeightKg: 10.0, ratePerKg: 22, subtotal: 226 },
-      ],
-      paidBy: 'Ramesh Kumar (Verified Kabadiwala)',
-      receivedBy: 'Deepak Chawla',
-    },
-    photos: [
-      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    updated_at: new Date(Date.now() - 86400000).toISOString(),
-    waste_items: [
-      { category: 'PAPER', approx_weight_kg: 11.0 },
-      { category: 'PLASTIC', approx_weight_kg: 10.0 },
-    ],
-  },
-];
-
 function CollectorMapContent() {
   const searchParams = useSearchParams();
   const queryRequestId = searchParams?.get('requestId');
 
-  const [requests, setRequests] = useState<PickupRequest[]>(MOCK_MAP_REQUESTS);
+  const [requests, setRequests] = useState<PickupRequest[]>([]);
   const [selectedReq, setSelectedReq] = useState<PickupRequest | null>(null);
   const [collectorPos, setCollectorPos] = useState<[number, number] | null>(() => {
     if (typeof window !== 'undefined') {
@@ -380,7 +70,6 @@ function CollectorMapContent() {
   // Live tracking & navigation state for selected request
   const [trackingState, setTrackingState] = useState<LiveTrackingState | null>(null);
   const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
-  const [isSimulating, setIsSimulating] = useState(false);
   const [showHandoverModal, setShowHandoverModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
 
@@ -466,8 +155,17 @@ function CollectorMapContent() {
     async function initRoute() {
       const savedCollectorLoc = getCollectorSavedLocation();
       const householdPos: [number, number] = [selectedReq!.latitude, selectedReq!.longitude];
-      const startCollectorPos: [number, number] =
-        collectorPos || savedCollectorLoc.pos || [householdPos[0] + 0.012, householdPos[1] - 0.014];
+
+      let startCollectorPos: [number, number];
+      if (collectorPos) {
+        const d = calculateDistanceMeters(collectorPos[0], collectorPos[1], householdPos[0], householdPos[1]);
+        startCollectorPos = d < 50000 ? collectorPos : [householdPos[0] + 0.012, householdPos[1] - 0.014];
+      } else if (savedCollectorLoc.pos) {
+        const d = calculateDistanceMeters(savedCollectorLoc.pos[0], savedCollectorLoc.pos[1], householdPos[0], householdPos[1]);
+        startCollectorPos = d < 50000 ? savedCollectorLoc.pos : [householdPos[0] + 0.012, householdPos[1] - 0.014];
+      } else {
+        startCollectorPos = [householdPos[0] + 0.012, householdPos[1] - 0.014];
+      }
 
       const state = await initializeTrackingState({
         requestId: selectedReq!.id,
@@ -485,7 +183,6 @@ function CollectorMapContent() {
         setTrackingState(state);
         setCollectorPos(state.collectorPos);
         setRouteCoords(state.routeCoordinates);
-        setIsSimulating(isSimulationRunning(selectedReq!.id));
       }
     }
 
@@ -497,7 +194,6 @@ function CollectorMapContent() {
         setTrackingState(newState);
         setCollectorPos(newState.collectorPos);
         setRouteCoords(newState.routeCoordinates);
-        setIsSimulating(isSimulationRunning(selectedReq.id));
       }
     });
 
@@ -586,34 +282,7 @@ function CollectorMapContent() {
     setTimeout(() => setCopiedAddress(false), 2500);
   };
 
-  // Toggle route driving simulation
-  const handleToggleSimulation = () => {
-    if (!selectedReq) return;
 
-    if (isSimulating) {
-      stopRouteSimulation(selectedReq.id);
-      setIsSimulating(false);
-      showToast('⏸️ Route navigation simulation paused');
-    } else {
-      setIsSimulating(true);
-      showToast('🚀 Simulated drive started! Household is tracking your movement live.');
-      startRouteSimulation(selectedReq.id, {
-        speedMs: 1400,
-        onUpdate: (state) => {
-          setTrackingState(state);
-          setCollectorPos(state.collectorPos);
-          if (state.isNearDoorstep && state.distanceMeters <= 300) {
-            showToast('🔔 Doorstep proximity alert triggered for household!');
-          }
-        },
-        onArrived: (state) => {
-          setIsSimulating(false);
-          setTrackingState(state);
-          showToast('🏠 Arrived at household doorstep!');
-        },
-      });
-    }
-  };
 
   // Mark arrived at doorstep directly
   const handleMarkArrived = () => {
@@ -675,6 +344,14 @@ function CollectorMapContent() {
     };
 
     if (newStatus === 'accepted') {
+      const targetReq = requests.find((r) => r.id === requestId);
+      if (targetReq && collectorPos) {
+        const distKm = calculateDistanceMeters(collectorPos[0], collectorPos[1], targetReq.latitude, targetReq.longitude) / 1000;
+        if (distKm > 25) {
+          showToast(`❌ Out of Radius: Pickup is ${distKm.toFixed(1)} km away (exceeds 25 km service limit).`);
+          return;
+        }
+      }
       triggerCollectorAcceptedNotification(finalCollectorName);
       showToast('✅ Pickup Accepted! Live route navigation generated.');
     } else if (newStatus === 'in_progress') {
@@ -1035,52 +712,90 @@ function CollectorMapContent() {
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>WhatsApp</span>
                     </a>
+                    <Link
+                      href={`/collector/chat/${selectedReq.id}`}
+                      className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-2xs"
+                      title="In-App Chat"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>Chat</span>
+                    </Link>
                   </div>
                 </div>
 
-                {/* Simulation Controls & Doorstep Actions */}
+                {/* Real Navigation & Trip Lifecycle Actions */}
                 <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={handleToggleSimulation}
-                    className={`w-full py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-sm touch-feedback ${
-                      isSimulating
-                        ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                        : 'bg-[#136B3B] hover:bg-[#0F5730] text-white'
-                    }`}
+                  {/* 1. Turn-by-Turn GPS Navigation via Google Maps */}
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${selectedReq.latitude},${selectedReq.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 px-3 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 bg-[#136B3B] hover:bg-[#0F5730] text-white transition shadow-sm touch-feedback"
                   >
-                    {isSimulating ? (
-                      <>
-                        <Pause className="w-4 h-4" />
-                        <span>Pause Live Drive Simulation</span>
-                      </>
+                    <Navigation className="w-4 h-4 fill-white" />
+                    <span>Start Turn-by-Turn Navigation (Google Maps)</span>
+                    <ExternalLink className="w-3.5 h-3.5 opacity-85" />
+                  </a>
+
+                  {/* 2. Lifecycle Status Buttons: Start Trip / Mark Arrived / Verify OTP */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedReq.status === 'accepted' ? (
+                      <button
+                        type="button"
+                        onClick={() => handleStatusUpdate(selectedReq.id, 'in_progress')}
+                        className="col-span-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-[#136B3B] hover:from-emerald-700 hover:to-[#0F5730] text-white text-xs font-extrabold transition flex items-center justify-center gap-2 shadow-xs touch-feedback"
+                      >
+                        <Truck className="w-4 h-4" />
+                        <span>Start Trip (I&apos;m On The Way)</span>
+                      </button>
                     ) : (
                       <>
-                        <Play className="w-4 h-4 fill-white" />
-                        <span>Simulate Drive to Customer Doorstep</span>
+                        <button
+                          type="button"
+                          onClick={handleMarkArrived}
+                          className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs touch-feedback ${
+                            trackingState?.hasArrived
+                              ? 'bg-emerald-100 text-[#136B3B] border-emerald-300 font-extrabold'
+                              : 'bg-white hover:bg-emerald-50 text-[#136B3B] border-[#A6D5B8]'
+                          }`}
+                        >
+                          <span>{trackingState?.hasArrived ? '✅ Arrived at Doorstep' : '🚪 Mark Arrived'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowHandoverModal(true)}
+                          className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#136B3B] to-emerald-700 hover:from-[#0F5730] hover:to-emerald-800 text-white text-xs font-extrabold transition flex items-center justify-center gap-1.5 shadow-xs touch-feedback"
+                        >
+                          <span>🔐 Verify OTP &amp; Settle</span>
+                        </button>
                       </>
                     )}
-                  </button>
+                  </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  {/* 3. Live Device GPS Status */}
+                  <div className="flex items-center justify-between p-2.5 bg-white rounded-2xl border border-gray-200 text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${isWatchingGps ? 'bg-emerald-500 animate-ping' : 'bg-gray-400'}`} />
+                      <div className="min-w-0 truncate">
+                        <p className="font-extrabold text-[11px] text-[#191C1E]">
+                          {isWatchingGps ? 'Live GPS Location Streaming' : 'Live GPS Standby'}
+                        </p>
+                        <p className="text-[10px] text-gray-500 truncate">
+                          {isWatchingGps ? 'Device GPS transmitting coordinates to customer' : 'Tap to sync your real-time location'}
+                        </p>
+                      </div>
+                    </div>
                     <button
                       type="button"
-                      onClick={handleMarkArrived}
-                      className="py-2.5 px-3 rounded-xl bg-white hover:bg-emerald-50 text-[#136B3B] border border-[#A6D5B8] text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
+                      onClick={toggleGpsWatch}
+                      className="px-2.5 py-1 bg-gray-100 hover:bg-emerald-50 text-[#136B3B] rounded-lg text-[10.5px] font-bold transition border border-gray-200 shrink-0"
                     >
-                      <span>🚪 Mark Arrived</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowHandoverModal(true)}
-                      className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#136B3B] to-emerald-700 text-white text-xs font-extrabold transition flex items-center justify-center gap-1.5 shadow-xs"
-                    >
-                      <span>🔐 Verify OTP &amp; Settle</span>
+                      {isWatchingGps ? 'GPS Active' : 'Sync GPS'}
                     </button>
                   </div>
 
-                  {/* Doorstep Safety OTP reminder */}
+                  {/* 4. Doorstep Safety OTP Card */}
                   <div className="bg-white/90 p-2.5 rounded-2xl border border-emerald-200 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       <span className="text-base">🔐</span>
@@ -1166,6 +881,11 @@ function CollectorMapContent() {
                       <RequestCard
                         request={req}
                         userRole="collector"
+                        collectorDistanceKm={
+                          collectorPos
+                            ? Number((calculateDistanceMeters(collectorPos[0], collectorPos[1], req.latitude, req.longitude) / 1000).toFixed(1))
+                            : undefined
+                        }
                         onStatusUpdate={handleStatusUpdate}
                         onCompletePayment={handleCompletePayment}
                       />
