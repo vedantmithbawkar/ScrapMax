@@ -231,7 +231,7 @@ export async function initializeTrackingState(params: {
 
   const savedLoc = getCollectorSavedLocation();
 
-  // Starting collector position: use provided or saved hub
+  // Starting collector position: use live GPS or saved location, fallback near household
   const startCollectorPos: [number, number] =
     params.collectorPos ||
     params.collectorOriginPos ||

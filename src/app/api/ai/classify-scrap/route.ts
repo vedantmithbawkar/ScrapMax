@@ -3,6 +3,11 @@ import { WasteCategory, STANDARD_SCRAP_RATES, WASTE_CATEGORY_LABELS } from '@/ty
 
 export const dynamic = 'force-dynamic';
 
+// Basic in-process rate limiter: max 10 AI calls per IP per minute
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
@@ -29,6 +34,25 @@ function mapToWasteCategory(material: string): WasteCategory {
 
 export async function POST(req: Request) {
   try {
+    // Rate limiting: max 10 requests per IP per minute
+    const ip =
+      (req as any).headers?.get?.('x-forwarded-for')?.split(',')[0]?.trim() ||
+      (req as any).headers?.get?.('x-real-ip') ||
+      'unknown';
+    const now = Date.now();
+    const entry = rateLimitMap.get(ip);
+    if (entry && now < entry.resetAt) {
+      if (entry.count >= RATE_LIMIT_MAX) {
+        return NextResponse.json(
+          { error: 'Too many requests. Please wait a moment before trying again.' },
+          { status: 429 }
+        );
+      }
+      entry.count++;
+    } else {
+      rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    }
+
     let base64Data = '';
     let mimeType = 'image/jpeg';
 
