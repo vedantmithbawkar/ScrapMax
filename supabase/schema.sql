@@ -12,9 +12,17 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   phone TEXT,
   role TEXT NOT NULL CHECK (role IN ('household', 'collector')),
   avatar_url TEXT,
+  aadhaar_number TEXT,
+  aadhaar_verified BOOLEAN DEFAULT false,
+  aadhaar_verified_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration safety: Add Aadhaar columns to profiles table if it already exists
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS aadhaar_number TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS aadhaar_verified BOOLEAN DEFAULT false;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS aadhaar_verified_at TIMESTAMPTZ;
 
 -- 2. PICKUP REQUESTS TABLE
 CREATE TABLE IF NOT EXISTS public.pickup_requests (

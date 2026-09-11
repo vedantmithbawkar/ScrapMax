@@ -43,6 +43,7 @@ export default function CollectorProfilePage() {
     return '+91 98201 45892';
   });
   const [email, setEmail] = useState<string>('collector@scrapmax.demo');
+  const [collectorAadhaar, setCollectorAadhaar] = useState<string>('XXXX-XXXX-9842');
   const [completedCount, setCompletedCount] = useState<number>(24);
   const [totalWeight, setTotalWeight] = useState<number>(412);
   const [isEditing, setIsEditing] = useState(false);
@@ -73,6 +74,9 @@ export default function CollectorProfilePage() {
               setCollectorPhone(parsed.phone);
               setEditPhone(parsed.phone);
             }
+            if (parsed.aadhaarNumber) {
+              setCollectorAadhaar(parsed.aadhaarNumber);
+            }
           }
         } catch {}
       }
@@ -85,6 +89,7 @@ export default function CollectorProfilePage() {
           if (user.email) setEmail(user.email);
           if (user.user_metadata?.full_name) setCollectorName(user.user_metadata.full_name);
           if (user.user_metadata?.phone) setCollectorPhone(user.user_metadata.phone);
+          if (user.user_metadata?.aadhaar_number) setCollectorAadhaar(user.user_metadata.aadhaar_number);
 
           const { data: profile } = await supabase
             .from('profiles')
@@ -100,6 +105,9 @@ export default function CollectorProfilePage() {
             if (profile.phone) {
               setCollectorPhone(profile.phone);
               setEditPhone(profile.phone);
+            }
+            if (profile.aadhaar_number) {
+              setCollectorAadhaar(profile.aadhaar_number);
             }
           }
         }
@@ -180,10 +188,16 @@ export default function CollectorProfilePage() {
                   </p>
                 )}
                 <p className="text-[#6B7280] text-sm font-medium mt-0.5">{collectorPhone}</p>
-                <span className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Verified Collector Partner</span>
-                </span>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Verified Collector Partner</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8]">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>UIDAI Aadhaar Verified: {collectorAadhaar}</span>
+                  </span>
+                </div>
               </div>
             ) : (
               <form

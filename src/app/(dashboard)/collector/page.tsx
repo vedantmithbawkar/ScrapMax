@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Loader2,
   Crosshair,
+  ShieldCheck,
 } from 'lucide-react';
 import PersonalDashboard from '@/components/dashboard/PersonalDashboard';
 import {
@@ -33,6 +34,7 @@ import {
   triggerPickupCompletedNotification,
   triggerPaymentReceivedNotification,
 } from '@/lib/notification-service';
+import { isCollectorAadhaarVerified } from '@/lib/aadhaar-service';
 
 export default function CollectorDashboard() {
   const [requests, setRequests] = useState<PickupRequest[]>([]);
@@ -40,6 +42,7 @@ export default function CollectorDashboard() {
   const [collectorLoc, setCollectorLoc] = useState<CollectorSavedLocation>(() => getCollectorSavedLocation());
   const [radiusFilter, setRadiusFilter] = useState<'5' | '10' | '25' | 'all'>('10');
   const [isDetectingGps, setIsDetectingGps] = useState<boolean>(false);
+  const [collectorAadhaar, setCollectorAadhaar] = useState<string>('XXXX-XXXX-9842');
 
   useEffect(() => {
     async function loadCollectorData() {
@@ -78,6 +81,43 @@ export default function CollectorDashboard() {
       } catch (err) {
         console.warn('Supabase collector load notice:', err);
       }
+
+      // Check current collector Aadhaar verification & enforce verification
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('aadhaar_number, aadhaar_verified, role')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          const isVerified = isCollectorAadhaarVerified(
+            user.email,
+            prof?.aadhaar_verified,
+            user.user_metadata?.aadhaar_verified
+          );
+
+          if (!isVerified) {
+            // Unverified collector accessed directly - redirect to login to complete verification
+            window.location.href = '/login?notice=aadhaar_required';
+            return;
+          }
+
+          if (prof?.aadhaar_number) {
+            setCollectorAadhaar(prof.aadhaar_number);
+          }
+        }
+      } catch {}
+
+      try {
+        const cached = localStorage.getItem('scrapmax_collector_profile');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.aadhaarNumber) setCollectorAadhaar(parsed.aadhaarNumber);
+        }
+      } catch {}
 
       const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values()) as PickupRequest[];
       setRequests(unique);
@@ -323,6 +363,12 @@ export default function CollectorDashboard() {
             <p className="text-sm text-[#A6D5B8]">
               Browse household waste pickup requests, accept jobs, and navigate route maps.
             </p>
+            <div className="flex items-center gap-2 pt-1">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#E6F4EA] text-[#136B3B] border border-[#A6D5B8] shadow-2xs">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>UIDAI Aadhaar Verified: {collectorAadhaar}</span>
+              </span>
+            </div>
           </div>
 
           <Link

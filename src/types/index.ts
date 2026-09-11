@@ -17,6 +17,9 @@ export interface UserProfile {
   preferred_pickup_slot?: string;
   rating?: number;
   completed_pickups?: number;
+  aadhaar_number?: string;
+  aadhaar_verified?: boolean;
+  aadhaar_verified_at?: string;
   created_at?: string;
   updated_at?: string;
 }
