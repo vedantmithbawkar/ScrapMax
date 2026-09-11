@@ -21,6 +21,7 @@ import {
   Sparkles,
   Layers,
   ShieldAlert,
+  Globe,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { UserProfile, UserRole } from '@/types';
@@ -31,6 +32,7 @@ import {
 } from '@/lib/notification-service';
 import AnnouncementBar from '@/components/common/AnnouncementBar';
 import { getAdminSession, logoutAdmin } from '@/lib/admin-auth';
+import { useTranslation, SUPPORTED_LANGUAGES, openLanguageModal } from '@/lib/i18n';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -39,6 +41,8 @@ export default function Navbar() {
   const [dbConnected, setDbConnected] = useState<boolean | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const { t, language } = useTranslation();
+  const activeLang = SUPPORTED_LANGUAGES.find((l) => l.code === language) || SUPPORTED_LANGUAGES[0];
 
   useEffect(() => {
     setUnreadCount(getUnreadNotificationsCount());
@@ -526,28 +530,45 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <Link
                   href="/login"
-                  className="px-3 py-1.5 text-xs font-bold text-[#191C1E] hover:bg-[#F2F4F6] rounded-xl transition"
+                  className="px-2.5 sm:px-3 py-1.5 text-xs font-bold text-[#191C1E] hover:bg-[#F2F4F6] rounded-xl transition"
                 >
-                  Sign In
+                  {t('navSignIn')}
                 </Link>
                 <Link
                   href="/register"
-                  className="px-3.5 py-1.5 text-xs font-bold text-white bg-[#136B3B] hover:bg-[#0F5730] rounded-full shadow-xs transition"
+                  className="px-3 sm:px-3.5 py-1.5 text-xs font-bold text-white bg-[#136B3B] hover:bg-[#0F5730] rounded-full shadow-xs transition shrink-0"
                 >
-                  Join Market
+                  {t('navRegister')}
                 </Link>
               </div>
             )}
+
+            {/* Global Language Selector Button */}
+            <button
+              type="button"
+              onClick={() => openLanguageModal()}
+              title="Change Language / भाषा चुनें / ભાષા પસંદ કરો"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-emerald-200/80 bg-emerald-50/60 hover:bg-emerald-100/70 hover:border-emerald-300 text-emerald-900 transition shadow-2xs group shrink-0"
+              aria-label="Change language"
+            >
+              <Globe className="w-3.5 h-3.5 text-emerald-700 group-hover:rotate-12 transition-transform shrink-0" />
+              <span className="text-[11px] font-extrabold font-mono tracking-tight text-emerald-950">
+                {activeLang.short}
+              </span>
+              <span className="hidden xl:inline text-[10px] font-bold text-emerald-800">
+                {activeLang.nativeName}
+              </span>
+            </button>
 
             {/* Smart Notification Bell Button */}
             <button
               type="button"
               onClick={() => setIsDrawerOpen(true)}
               title="Smart Notifications"
-              className="relative p-2 rounded-xl text-[#191C1E] hover:bg-[#F2F4F6] transition active:scale-95"
+              className="relative p-2 rounded-xl text-[#191C1E] hover:bg-[#F2F4F6] transition active:scale-95 shrink-0"
               aria-label="Open notifications"
             >
               <Bell className="w-5 h-5 text-gray-700" />

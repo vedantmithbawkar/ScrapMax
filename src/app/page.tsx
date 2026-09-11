@@ -12,16 +12,50 @@ import {
   Factory,
   Shield,
   ArrowRight,
+  Globe2,
 } from 'lucide-react';
+import { useTranslation, SUPPORTED_LANGUAGES, openLanguageModal, SupportedLanguage } from '@/lib/i18n';
 
 export default function HomePage() {
+  const { t, language, setLanguage } = useTranslation();
+
+  const primaryLanguages = SUPPORTED_LANGUAGES.filter((l) =>
+    ['English', 'Hindi', 'Marathi', 'Gujarati'].includes(l.code)
+  );
+
   return (
     <div className="min-h-screen bg-[#F7F9FA] text-[#191C1E] flex flex-col font-sans">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="flex-1 flex flex-col items-center justify-center text-center px-4 pt-12 pb-16 max-w-5xl mx-auto w-full">
+      <section className="flex-1 flex flex-col items-center justify-center text-center px-4 pt-8 pb-16 max-w-5xl mx-auto w-full">
         
+        {/* PWA Multi-Language Quick Selector Banner */}
+        <div className="mb-6 flex flex-wrap items-center justify-center gap-1.5 p-1.5 bg-white border border-emerald-200/80 rounded-full shadow-2xs">
+          <button
+            type="button"
+            onClick={() => openLanguageModal()}
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-emerald-800 hover:text-emerald-950 transition"
+          >
+            <Globe2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Language:</span>
+          </button>
+          {primaryLanguages.map((l) => (
+            <button
+              key={l.code}
+              type="button"
+              onClick={() => setLanguage(l.code as SupportedLanguage)}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition ${
+                language === l.code
+                  ? 'bg-[#136B3B] text-white shadow-2xs scale-105'
+                  : 'bg-transparent text-gray-600 hover:bg-emerald-50 hover:text-emerald-900'
+              }`}
+            >
+              <span>{l.flag} {l.nativeName}</span>
+            </button>
+          ))}
+        </div>
+
         {/* Top Badge */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E6F4EA] border border-[#A6D5B8] text-[#136B3B] text-xs font-bold mb-6">
           <span className="w-2 h-2 rounded-full bg-[#136B3B] animate-pulse"></span>
@@ -34,9 +68,12 @@ export default function HomePage() {
           <span className="text-[#136B3B]">Authorized Industrial Recyclers</span>
         </h1>
 
-        {/* Subtitle */}
-        <p className="mt-5 text-sm sm:text-base text-[#526056] max-w-2xl leading-relaxed">
-          From doorstep citizen scrap pickups to B2B multi-supplier aggregation for verified recycling facilities — transparent pricing, live GPS logistics, and circular chain-of-custody traceability.
+        {/* Subtitle with dynamic translation */}
+        <p className="mt-5 text-base sm:text-lg font-medium text-[#136B3B] max-w-2xl leading-relaxed">
+          {t('turnRecyclables')}
+        </p>
+        <p className="mt-1 text-xs sm:text-sm text-[#526056] max-w-2xl leading-relaxed">
+          {t('schedulePickup')}
         </p>
 
         {/* 4-Role Navigation CTAs */}
@@ -46,7 +83,7 @@ export default function HomePage() {
             className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-[#136B3B] hover:bg-[#0F5730] text-white font-bold text-xs sm:text-sm shadow-sm transition touch-feedback"
           >
             <Recycle className="w-4 h-4" />
-            <span>Citizen / Sell Scrap</span>
+            <span>{t('sellRecyclables')}</span>
           </Link>
 
           <Link
@@ -54,7 +91,7 @@ export default function HomePage() {
             className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-white hover:bg-emerald-50 text-[#191C1E] border border-[#DDE3EA] font-bold text-xs sm:text-sm shadow-xs transition touch-feedback"
           >
             <Truck className="w-4 h-4 text-[#136B3B]" />
-            <span>Collector Marketplace</span>
+            <span>{t('joinAsCollector')}</span>
           </Link>
 
           <Link
