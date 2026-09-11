@@ -58,13 +58,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${plusJakartaSans.variable} font-sans h-full antialiased selection:bg-[#E6F4EA] selection:text-[#136B3B]`}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
-      <body className="min-h-full flex flex-col bg-[#F7F9FA] text-[#191C1E] font-sans">
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-[#F7F9FA] text-[#191C1E] font-sans">
         {children}
         <NotificationToast />
         <SmartAssistant />

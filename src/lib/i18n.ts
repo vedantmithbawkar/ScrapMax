@@ -1269,9 +1269,13 @@ export function openLanguageModal() {
 }
 
 export function useTranslation() {
-  const [language, setLanguageState] = useState<SupportedLanguage>(getCurrentLanguage);
+  const [language, setLanguageState] = useState<SupportedLanguage>('English');
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+    setLanguageState(getCurrentLanguage());
+
     const handleLangChange = (e: Event) => {
       const customEvent = e as CustomEvent<SupportedLanguage>;
       if (customEvent.detail && customEvent.detail in TRANSLATIONS) {
@@ -1293,7 +1297,8 @@ export function useTranslation() {
   }, []);
 
   const t = (key: string): string => {
-    const langDict = TRANSLATIONS[language] || TRANSLATIONS.English;
+    const activeLang = isMounted ? language : 'English';
+    const langDict = TRANSLATIONS[activeLang] || TRANSLATIONS.English;
     return langDict[key] || TRANSLATIONS.English[key] || key;
   };
 
