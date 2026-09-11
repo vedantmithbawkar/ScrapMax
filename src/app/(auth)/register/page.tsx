@@ -912,30 +912,34 @@ function RegisterForm() {
                         </p>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
                         <button
                           type="button"
                           onClick={() => setAadhaarOtp('123456')}
-                          className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-[11px] font-bold transition shadow-2xs flex items-center gap-1"
+                          className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
                         >
                           <span>⚡ Auto-Fill OTP (123456)</span>
                         </button>
 
                         <a
-                          href={`https://wa.me/91${phone.replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent('ScrapMax UIDAI Aadhaar Verification OTP is: 123456')}`}
+                          href={`https://api.whatsapp.com/send?phone=91${phone.replace(/\D/g, '').slice(-10)}&text=${encodeURIComponent('ScrapMax UIDAI Aadhaar Verification OTP is: 123456')}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-2.5 py-1 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-lg text-[11px] font-bold transition shadow-2xs flex items-center gap-1"
+                          className="px-3 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
                         >
-                          <span>💬 Open in WhatsApp</span>
+                          <span>💬 Send to WhatsApp (+91 {phone.replace(/\D/g, '').slice(-10)})</span>
                         </a>
 
                         <a
                           href={`sms:+91${phone.replace(/\D/g, '').slice(-10)}?body=${encodeURIComponent('ScrapMax UIDAI Aadhaar Verification OTP is: 123456')}`}
-                          className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-bold transition shadow-2xs flex items-center gap-1"
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
                         >
                           <span>📲 Open Phone SMS</span>
                         </a>
+                      </div>
+
+                      <div className="text-[10px] text-emerald-800/80 bg-emerald-100/60 p-2 rounded-lg border border-emerald-200/60 leading-relaxed">
+                        ℹ️ <strong>Telecom Carrier Note:</strong> Direct telecom tower SMS (Jio/Airtel) requires <code className="font-mono bg-white px-1 rounded">FAST2SMS_API_KEY</code> in <code className="font-mono bg-white px-1 rounded">.env.local</code>. Tap <strong>Send to WhatsApp</strong> or <strong>Auto-Fill OTP</strong> for instant phone verification.
                       </div>
                     </div>
 
