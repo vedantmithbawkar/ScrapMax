@@ -12,6 +12,7 @@ import {
   subscribeToNotifications,
 } from '@/lib/notification-service';
 import AnnouncementBar from '@/components/common/AnnouncementBar';
+import { getAdminSession, logoutAdmin } from '@/lib/admin-auth';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -66,6 +67,17 @@ export default function Navbar() {
     loadUser();
   }, [pathname]);
 
+  const [adminSession, setAdminSession] = useState<any>(null);
+
+  useEffect(() => {
+    setAdminSession(getAdminSession());
+    const handleAdminSync = () => {
+      setAdminSession(getAdminSession());
+    };
+    window.addEventListener('scrapmax_admin_auth_change', handleAdminSync);
+    return () => window.removeEventListener('scrapmax_admin_auth_change', handleAdminSync);
+  }, []);
+
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -73,7 +85,16 @@ export default function Navbar() {
     router.push('/login');
   };
 
-  const isAdmin = pathname.startsWith('/admin') || profile?.role === 'admin';
+  const handleAdminLogout = async () => {
+    await logoutAdmin();
+    setAdminSession(null);
+    router.push('/admin/login');
+  };
+
+  const isAdmin =
+    pathname.startsWith('/admin') &&
+    pathname !== '/admin/login' &&
+    (adminSession !== null || profile?.role === 'admin');
 
   return (
     <>
@@ -188,7 +209,7 @@ export default function Navbar() {
 
                 {/* Admin Portal Link */}
                 <Link
-                  href="/admin"
+                  href={adminSession ? '/admin' : '/admin/login'}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                     pathname.startsWith('/admin')
                       ? 'bg-[#F3E8FF] text-purple-900'
@@ -262,8 +283,30 @@ export default function Navbar() {
               </>
             )}
 
-            {/* Profile Info Badge */}
-            {profile ? (
+            {/* Admin Session or Profile Info Badge */}
+            {pathname.startsWith('/admin') && pathname !== '/admin/login' ? (
+              <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-[#E5E7EB]">
+                <div className="flex items-center gap-2 py-1 px-2 rounded-xl bg-purple-50 border border-purple-200">
+                  <div className="w-7 h-7 rounded-full bg-purple-700 text-white flex items-center justify-center font-bold text-xs select-none">
+                    A
+                  </div>
+                  <div className="text-left hidden sm:block">
+                    <p className="text-xs font-bold text-purple-950 leading-tight">Admin Officer</p>
+                    <span className="text-[9px] uppercase font-bold text-purple-700">
+                      Municipal Console
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleAdminLogout}
+                  title="Admin Logout"
+                  className="p-2 rounded-xl text-[#6B7280] hover:text-[#BA1A1A] hover:bg-[#FEE2E2] transition"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : profile ? (
               <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-[#E5E7EB]">
                 <Link
                   href={profile.role === 'admin' ? '/admin' : '/household/profile'}
