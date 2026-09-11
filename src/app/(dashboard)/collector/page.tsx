@@ -440,7 +440,7 @@ export default function CollectorDashboard() {
           <div className="text-center py-16 bg-white border border-dashed border-gray-200 rounded-3xl text-[#6B7280] text-sm space-y-2">
             <p className="font-bold text-[#191C1E]">No pickup requests found within {radiusFilter === 'all' ? 'this region' : `${radiusFilter} km`}.</p>
             <p className="text-xs text-gray-500 max-w-sm mx-auto">
-              Try expanding your radius filter to &quot;All Region&quot; or update your operating base to see more jobs.
+              Try expanding your radius filter to &quot;All Region&quot; or refresh your Live GPS to see more nearby jobs.
             </p>
           </div>
         ) : (

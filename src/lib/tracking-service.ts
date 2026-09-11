@@ -59,17 +59,17 @@ export function getCollectorSavedLocation(): CollectorSavedLocation {
   };
 }
 
-export function setCollectorSavedLocation(pos: [number, number], hubName: string): void {
+export function setCollectorSavedLocation(pos: [number, number], locationName: string): void {
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(
         'scrapmax_collector_location',
-        JSON.stringify({ pos, hubName, updatedAt: new Date().toISOString() })
+        JSON.stringify({ pos, locationName, hubName: locationName, updatedAt: new Date().toISOString() })
       );
       // Dispatch event so active pages refresh
       window.dispatchEvent(
         new CustomEvent('scrapmax:collector_location_change', {
-          detail: { pos, hubName },
+          detail: { pos, locationName },
         })
       );
     } catch {}
