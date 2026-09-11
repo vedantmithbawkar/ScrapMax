@@ -126,6 +126,7 @@ function RegisterForm() {
   const [aadhaarError, setAadhaarError] = useState<string | null>(null);
   const [aadhaarNotice, setAadhaarNotice] = useState<string | null>(null);
   const [smsMessageReceived, setSmsMessageReceived] = useState<string | null>(null);
+  const [dispatchedOtp, setDispatchedOtp] = useState('123456');
 
   // Send Aadhaar OTP
   const handleSendAadhaarOtp = async (e?: React.MouseEvent) => {
@@ -195,6 +196,7 @@ function RegisterForm() {
 
     if (successData) {
       setAadhaarTxnId(successData.txnId || `txn_${Date.now()}`);
+      if (successData.testOtp) setDispatchedOtp(successData.testOtp);
       setOtpSent(true);
       setAadhaarNotice(successData.message || `OTP dispatched to registered number: +91 ${cleanPhone.slice(-10)}`);
       setSmsMessageReceived(
@@ -255,10 +257,10 @@ function RegisterForm() {
       }
     } catch (err: any) {
       // If network fails, verify against test OTP or session
-      if (cleanOtp === '123456') {
+      if (cleanOtp === dispatchedOtp || cleanOtp === '123456') {
         isVerified = true;
       } else {
-        setAadhaarError('Invalid OTP code. Please enter 123456 to verify.');
+        setAadhaarError('Invalid OTP code. Please enter the 6-digit code received on your phone.');
         setAadhaarLoading(false);
         return;
       }
@@ -915,14 +917,14 @@ function RegisterForm() {
                       <div className="flex flex-wrap items-center gap-2 pt-1">
                         <button
                           type="button"
-                          onClick={() => setAadhaarOtp('123456')}
+                          onClick={() => setAadhaarOtp(dispatchedOtp)}
                           className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
                         >
-                          <span>⚡ Auto-Fill OTP (123456)</span>
+                          <span>⚡ Auto-Fill OTP ({dispatchedOtp})</span>
                         </button>
 
                         <a
-                          href={`https://api.whatsapp.com/send?phone=91${phone.replace(/\D/g, '').slice(-10)}&text=${encodeURIComponent('ScrapMax UIDAI Aadhaar Verification OTP is: 123456')}`}
+                          href={`https://api.whatsapp.com/send?phone=91${phone.replace(/\D/g, '').slice(-10)}&text=${encodeURIComponent(`ScrapMax UIDAI Aadhaar Verification OTP is: ${dispatchedOtp}`)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-3 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
@@ -931,7 +933,7 @@ function RegisterForm() {
                         </a>
 
                         <a
-                          href={`sms:+91${phone.replace(/\D/g, '').slice(-10)}?body=${encodeURIComponent('ScrapMax UIDAI Aadhaar Verification OTP is: 123456')}`}
+                          href={`sms:+91${phone.replace(/\D/g, '').slice(-10)}?body=${encodeURIComponent(`ScrapMax UIDAI Aadhaar Verification OTP is: ${dispatchedOtp}`)}`}
                           className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
                         >
                           <span>📲 Open Phone SMS</span>

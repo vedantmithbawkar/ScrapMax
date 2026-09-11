@@ -103,6 +103,7 @@ function LoginForm() {
   const [gateError, setGateError] = useState<string | null>(null);
   const [gateNotice, setGateNotice] = useState<string | null>(null);
   const [gateSmsMessage, setGateSmsMessage] = useState<string | null>(null);
+  const [dispatchedOtp, setDispatchedOtp] = useState('123456');
 
   const handleRoleRouting = async (user: any, profileRole?: string, roleHint?: UserRole) => {
     const supabase = createClient();
@@ -265,6 +266,7 @@ function LoginForm() {
         setGateError(data.error || 'Failed to send verification OTP.');
       } else {
         setGateTxnId(data.txnId || '');
+        if (data.testOtp) setDispatchedOtp(data.testOtp);
         setGateOtpSent(true);
         setGateNotice(data.message || `OTP dispatched via SMS to your registered number: ${data.registeredPhone || cleanPhone}`);
         setGateSmsMessage(data.smsMessage || `ScrapMax UIDAI: Your OTP for Aadhaar verification is 123456. Sent to registered mobile +91 ${cleanPhone.slice(-10)}.`);
@@ -325,10 +327,10 @@ function LoginForm() {
         return;
       }
     } catch (err: any) {
-      if (cleanOtp === '123456') {
+      if (cleanOtp === dispatchedOtp || cleanOtp === '123456') {
         isVerified = true;
       } else {
-        setGateError('Invalid OTP code. Please enter 123456 to verify.');
+        setGateError('Invalid OTP code. Please enter the 6-digit code received on your phone.');
         setGateLoading(false);
         return;
       }
@@ -665,14 +667,14 @@ function LoginForm() {
                       <div className="flex flex-wrap items-center gap-2 pt-1">
                         <button
                           type="button"
-                          onClick={() => setGateAadhaarOtp('123456')}
+                          onClick={() => setGateAadhaarOtp(dispatchedOtp)}
                           className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
                         >
-                          <span>⚡ Auto-Fill OTP (123456)</span>
+                          <span>⚡ Auto-Fill OTP ({dispatchedOtp})</span>
                         </button>
 
                         <a
-                          href={`https://api.whatsapp.com/send?phone=91${gatePhoneInput.replace(/\D/g, '').slice(-10)}&text=${encodeURIComponent('ScrapMax UIDAI Aadhaar Verification OTP is: 123456')}`}
+                          href={`https://api.whatsapp.com/send?phone=91${gatePhoneInput.replace(/\D/g, '').slice(-10)}&text=${encodeURIComponent(`ScrapMax UIDAI Aadhaar Verification OTP is: ${dispatchedOtp}`)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-3 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
@@ -681,7 +683,7 @@ function LoginForm() {
                         </a>
 
                         <a
-                          href={`sms:+91${gatePhoneInput.replace(/\D/g, '').slice(-10)}?body=${encodeURIComponent('ScrapMax UIDAI Aadhaar Verification OTP is: 123456')}`}
+                          href={`sms:+91${gatePhoneInput.replace(/\D/g, '').slice(-10)}?body=${encodeURIComponent(`ScrapMax UIDAI Aadhaar Verification OTP is: ${dispatchedOtp}`)}`}
                           className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
                         >
                           <span>📲 Open Phone SMS</span>

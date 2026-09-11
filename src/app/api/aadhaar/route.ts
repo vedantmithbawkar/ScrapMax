@@ -165,9 +165,9 @@ export async function POST(request: Request) {
       const formattedPhone = `+91 ${clean10.slice(0, 5)} ${clean10.slice(5)}`;
       const maskedPhone = `+91 ******${clean10.slice(-4)}`;
 
-      // Generate a transaction ID and a 6-digit OTP
+      // Generate a transaction ID and a dynamic 6-digit OTP
       const newTxnId = `txn_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      const generatedOtp = '123456'; // Standard evaluation test OTP, or random 6-digits if preferred
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
       txnStore.set(newTxnId, {
