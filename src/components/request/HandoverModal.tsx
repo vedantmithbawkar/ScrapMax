@@ -85,7 +85,7 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
     setIsProcessing(true);
     const txId = 'TXN-' + Math.random().toString(36).substring(2, 8).toUpperCase() + '-' + Date.now().toString().slice(-4);
     const finalPaidBy = resolveCollectorName(request.collector?.full_name) || 'Collector Partner';
-    const finalReceivedBy = resolveHouseholdName(request.household?.full_name || request.contact_name) || 'Citizen Household';
+    const finalReceivedBy = resolveHouseholdName(request.household?.full_name || request.contact_name) || request.contact_name || request.household?.full_name || 'Resident Citizen';
 
     const paymentData: PaymentDetails = {
       transactionId: txId,
@@ -661,7 +661,7 @@ export default function HandoverModal({ request, onClose, onCompletePayment }: H
                     <span className="text-[10px] text-[#136B3B] font-medium block">Received By (Household)</span>
                     <span className="text-[9px] font-bold text-emerald-800 bg-white/80 px-1.5 py-0.5 rounded border border-[#A6D5B8]">Citizen</span>
                   </div>
-                  <span className="text-xs font-bold text-[#136B3B] block truncate">{resolveHouseholdName(completedPayment.receivedBy) || 'Citizen Household'}</span>
+                  <span className="text-xs font-bold text-[#136B3B] block truncate">{resolveHouseholdName(completedPayment.receivedBy) || request.contact_name || request.household?.full_name || 'Resident Citizen'}</span>
                   <span className="text-[10.5px] font-mono text-[#136B3B] font-bold block">{request.household?.phone || request.contact_phone || '+91 98201 54321'}</span>
                 </div>
               </div>

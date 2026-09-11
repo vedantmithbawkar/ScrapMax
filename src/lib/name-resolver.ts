@@ -19,6 +19,7 @@ const PLACEHOLDER_HOUSEHOLD_NAMES = new Set([
   'household user',
   'customer',
   'citizen',
+  'citizen household',
   'friend',
 ]);
 

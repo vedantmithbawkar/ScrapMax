@@ -13,7 +13,7 @@ interface ReceiptModalProps {
 export default function ReceiptModal({ request, onClose }: ReceiptModalProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
   const [downloaded, setDownloaded] = useState(false);
-  const payment = request.payment;
+  const payment = request.payment || (request as unknown as { payment_json?: import('@/types').PaymentDetails }).payment_json;
   const verifiedItems = payment?.items || (request.waste_items || []).map((it) => ({
     category: it.category,
     verifiedWeightKg: it.approx_weight_kg,
@@ -26,7 +26,7 @@ export default function ReceiptModal({ request, onClose }: ReceiptModalProps) {
   const txId = payment?.transactionId || `TXN-VERIFIED-${request.id.slice(0, 6).toUpperCase()}`;
   const timestamp = payment?.timestamp || request.updated_at || request.created_at;
 
-  const householdName = resolveHouseholdName(payment?.receivedBy || request.household?.full_name || request.contact_name) || 'Citizen Household';
+  const householdName = resolveHouseholdName(payment?.receivedBy || request.household?.full_name || request.contact_name) || request.contact_name || request.household?.full_name || 'Resident Citizen';
   const householdPhone = request.household?.phone || request.contact_phone || '+91 98201 54321';
   const collectorName = resolveCollectorName(payment?.paidBy || request.collector?.full_name) || 'Collector Partner';
   const collectorPhone = request.collector?.phone || '+91 98201 45892';

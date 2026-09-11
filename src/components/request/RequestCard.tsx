@@ -70,6 +70,8 @@ export default function RequestCard({
 
   const statusInfo = STATUS_LABELS[request.status];
 
+  const effectivePayment = request.payment || (request as unknown as { payment_json?: PaymentDetails }).payment_json;
+
   // Derive primary category icon & name
   const primaryItem = request.waste_items?.[0];
   const primaryCatInfo = primaryItem ? WASTE_CATEGORY_LABELS[primaryItem.category] : null;
@@ -113,7 +115,7 @@ export default function RequestCard({
 
           <div className="text-right flex-shrink-0">
             <span className="text-[18px] sm:text-[20px] font-extrabold text-[#136B3B] leading-tight block">
-              {request.payment ? `₹${request.payment.totalAmount}` : estimatedPoints}
+              {effectivePayment ? `₹${effectivePayment.totalAmount}` : estimatedPoints}
             </span>
             <span
               className={`inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full mt-1 ${
@@ -138,15 +140,15 @@ export default function RequestCard({
         </div>
 
         {/* Payment Received Banner for Household */}
-        {userRole === 'household' && request.status === 'completed' && request.payment && (
+        {userRole === 'household' && request.status === 'completed' && effectivePayment && (
           <div className="flex items-center gap-2.5 p-3 bg-gradient-to-r from-[#EDF7F2] to-[#E6F4EA] border border-[#A6D5B8] rounded-2xl">
             <span className="text-xl flex-shrink-0">💰</span>
             <div className="min-w-0">
               <p className="text-xs font-extrabold text-[#136B3B]">
-                ₹{request.payment.totalAmount} Received!
+                ₹{effectivePayment.totalAmount} Received!
               </p>
               <p className="text-[10px] text-[#2B6B47] leading-snug">
-                {request.payment.method === 'upi'
+                {effectivePayment.method === 'upi'
                   ? 'Money credited to your bank account via UPI.'
                   : 'Cash received at doorstep.'}
               </p>
@@ -192,10 +194,10 @@ export default function RequestCard({
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="font-bold text-[#191C1E] truncate">
-                    {resolveHouseholdName(request.household?.full_name || request.contact_name) || 'Citizen Household'}
+                    {resolveHouseholdName(request.household?.full_name || request.contact_name) || request.contact_name || request.household?.full_name || 'Resident Citizen'}
                   </span>
                   <span className="text-[10px] font-bold text-blue-700 bg-white px-1.5 py-0.5 rounded-full border border-blue-200 shrink-0">
-                    Citizen Household
+                    ✓ Verified Citizen
                   </span>
                 </div>
                 <span className="text-[11px] text-blue-700 font-mono font-bold block truncate mt-0.5">
@@ -211,7 +213,7 @@ export default function RequestCard({
                 Call
               </a>
               <a
-                href={`https://wa.me/${(request.household?.phone || request.contact_phone || '+919820154321').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${resolveHouseholdName(request.household?.full_name || request.contact_name) || 'Citizen'}, I am your ScrapMax collector for pickup #${request.id.slice(0, 8)}.`)}`}
+                href={`https://wa.me/${(request.household?.phone || request.contact_phone || '+919820154321').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${resolveHouseholdName(request.household?.full_name || request.contact_name) || request.contact_name || 'Citizen'}, I am your ScrapMax collector for pickup #${request.id.slice(0, 8)}.`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition shadow-2xs"
@@ -426,7 +428,7 @@ export default function RequestCard({
       {/* Digital Recycling Receipt Modal */}
       {showReceiptModal && (
         <ReceiptModal
-          request={request}
+          request={{ ...request, payment: effectivePayment }}
           onClose={() => setShowReceiptModal(false)}
         />
       )}

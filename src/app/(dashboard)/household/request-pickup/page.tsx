@@ -491,27 +491,17 @@ export default function RequestPickupPage() {
       }
     }
 
-    // 1. Ensure profile row exists for this authenticated user to satisfy foreign key constraints
+    // 1. Ensure profile row exists and is up-to-date with genuine citizen name & phone
     try {
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (!existingProfile) {
-        const { error: pErr } = await supabase.from('profiles').insert({
-          id: user.id,
-          full_name: user.user_metadata?.full_name || 'Household User',
-          role: 'household',
-          phone: user.user_metadata?.phone || '',
-        });
-        if (pErr) {
-          console.warn('Profile sync note:', pErr.message);
-        }
-      }
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        full_name: finalCitizenName || user.user_metadata?.full_name || 'Resident Citizen',
+        role: 'household',
+        phone: contactPhone.trim() || user.user_metadata?.phone || '',
+        updated_at: new Date().toISOString(),
+      });
     } catch (profErr) {
-      console.warn('Profile check warning:', profErr);
+      console.warn('Profile sync note:', profErr);
     }
 
     // 2. Insert into public.pickup_requests table (standard columns without photos)
@@ -618,6 +608,30 @@ export default function RequestPickupPage() {
 
       if (wErr) {
         console.warn('Waste items insert note:', wErr);
+      }
+
+      // Sync the complete request object with genuine citizen contact details into local cache
+      try {
+        const localRecord = {
+          ...req,
+          household_id: user.id,
+          household: householdObj,
+          contact_name: finalCitizenName,
+          contact_phone: contactPhone.trim(),
+          photos: finalPhotoUrls,
+          waste_items: items.map((it, idx) => ({
+            request_id: req.id,
+            category: it.category,
+            approx_weight_kg: it.approx_weight_kg,
+            photos: idx === 0 ? finalPhotoUrls : (it.photos || []),
+            notes: it.notes,
+          })),
+        };
+        const existing = JSON.parse(localStorage.getItem('local_pickup_requests') || '[]');
+        const filtered = existing.filter((e: any) => e.id !== req.id);
+        localStorage.setItem('local_pickup_requests', JSON.stringify([localRecord, ...filtered]));
+      } catch (syncErr) {
+        console.warn('Sync to local cache note:', syncErr);
       }
 
       alert('✅ Pickup request & scrap photos scheduled in Supabase successfully!');

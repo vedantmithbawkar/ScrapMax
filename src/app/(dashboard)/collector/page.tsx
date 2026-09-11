@@ -35,81 +35,8 @@ import {
   triggerPaymentReceivedNotification,
 } from '@/lib/notification-service';
 
-const DEMO_COLLECTOR_REQUESTS: PickupRequest[] = [
-  {
-    id: 'req-c301-demo-uuid',
-    household_id: 'user-h101',
-    household: {
-      id: 'user-h101',
-      full_name: 'Customer (Flat 402, Green Heights)',
-      phone: '+91 98201 54321',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Flat 402, Green Heights, Main Market Road, Near City Center',
-    latitude: 19.0760,
-    longitude: 72.8777,
-    scheduled_date: 'Today · 5:30 PM',
-    notes: 'Items packed in bags in garage. Ring bell twice upon arrival.',
-    total_estimated_weight_kg: 28.5,
-    photos: [
-      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [
-      {
-        category: 'PAPER',
-        approx_weight_kg: 15.0,
-        photos: ['https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80'],
-      },
-      {
-        category: 'PLASTIC',
-        approx_weight_kg: 13.5,
-        photos: ['https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80'],
-      },
-    ],
-  },
-  {
-    id: 'req-c302-demo-uuid',
-    household_id: 'user-h102',
-    household: {
-      id: 'user-h102',
-      full_name: 'Priya Verma (Building 3B, Tech Park)',
-      phone: '+91 98334 12789',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Tower B, Station Road West, Commercial Tech Park',
-    latitude: 19.0820,
-    longitude: 72.8820,
-    scheduled_date: 'Today · 6:00 PM',
-    notes: 'Copper scrap and e-waste motherboards. Security pass needed at gate.',
-    total_estimated_weight_kg: 42.0,
-    photos: [
-      'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [
-      {
-        category: 'E_WASTE',
-        approx_weight_kg: 22.0,
-        photos: ['https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80'],
-      },
-      {
-        category: 'METAL',
-        approx_weight_kg: 20.0,
-        photos: ['https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80'],
-      },
-    ],
-  },
-];
-
 export default function CollectorDashboard() {
-  const [requests, setRequests] = useState<PickupRequest[]>(DEMO_COLLECTOR_REQUESTS);
+  const [requests, setRequests] = useState<PickupRequest[]>([]);
   const [filterTab, setFilterTab] = useState<'available' | 'my_pickups'>('available');
   const [collectorLoc, setCollectorLoc] = useState<CollectorSavedLocation>(() => getCollectorSavedLocation());
   const [radiusFilter, setRadiusFilter] = useState<'5' | '10' | '25' | 'all'>('10');
@@ -118,41 +45,44 @@ export default function CollectorDashboard() {
 
   useEffect(() => {
     async function loadCollectorData() {
+      let combined: PickupRequest[] = [];
+
       // 1. Check local pickup requests created by households
       try {
         const raw = localStorage.getItem('local_pickup_requests');
         if (raw) {
           const local = JSON.parse(raw);
           if (Array.isArray(local) && local.length > 0) {
-            setRequests((prev) => {
-              const combined = [...local, ...prev];
-              const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values());
-              return unique as PickupRequest[];
-            });
+            combined = [...local];
           }
         }
       } catch (err) {
         console.warn('Local request load notice:', err);
       }
 
-      // 2. Query Supabase
+      // 2. Query Supabase joining customer profile
       try {
         const supabase = createClient();
         const { data } = await supabase
           .from('pickup_requests')
-          .select('*, waste_items(*)')
+          .select('*, waste_items(*), household:profiles!household_id(id, full_name, phone, role)')
           .order('created_at', { ascending: false });
 
         if (data && data.length > 0) {
-          setRequests((prev) => {
-            const combined = [...(data as PickupRequest[]), ...prev];
-            const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values());
-            return unique as PickupRequest[];
-          });
+          const normalized = (data as any[]).map((r) => ({
+            ...r,
+            payment: r.payment || r.payment_json || undefined,
+            contact_name: r.household?.full_name || r.contact_name,
+            contact_phone: r.household?.phone || r.contact_phone,
+          }));
+          combined = [...normalized, ...combined];
         }
       } catch (err) {
         console.warn('Supabase collector load notice:', err);
       }
+
+      const unique = Array.from(new Map(combined.map((item) => [item.id, item])).values()) as PickupRequest[];
+      setRequests(unique);
     }
     loadCollectorData();
   }, []);
@@ -332,6 +262,7 @@ export default function CollectorDashboard() {
         .update({
           status: 'completed',
           collector_id: user?.id || 'demo-collector-id',
+          payment_json: payment,
           total_estimated_weight_kg: payment?.items.reduce((a, c) => a + c.verifiedWeightKg, 0),
           updated_at: new Date().toISOString(),
         })
@@ -339,6 +270,19 @@ export default function CollectorDashboard() {
     } catch (err) {
       console.warn('Supabase payment complete notice:', err);
     }
+
+    try {
+      const notifications = JSON.parse(localStorage.getItem('scrapmax_payment_notifications') || '[]');
+      notifications.push({
+        id: payment?.transactionId || 'TXN-' + Date.now(),
+        requestId,
+        amount: payment?.totalAmount || 0,
+        method: payment?.method || 'upi',
+        timestamp: new Date().toISOString(),
+        dismissed: false,
+      });
+      localStorage.setItem('scrapmax_payment_notifications', JSON.stringify(notifications));
+    } catch {}
 
     setRequests((prev) => {
       const updated = prev.map((req) =>
@@ -348,6 +292,7 @@ export default function CollectorDashboard() {
               status: 'completed' as const,
               collector_id: user?.id || 'demo-collector-id',
               payment,
+              payment_json: payment as any,
               total_estimated_weight_kg: payment?.items.reduce((a, c) => a + c.verifiedWeightKg, 0),
             }
           : req

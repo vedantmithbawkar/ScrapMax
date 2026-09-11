@@ -21,8 +21,6 @@ import {
   ExternalLink,
   Copy,
   Check,
-  Play,
-  Pause,
   AlertCircle,
   ShieldCheck,
   Star,
@@ -35,9 +33,6 @@ import {
   initializeTrackingState,
   getTrackingState,
   subscribeToTracking,
-  startRouteSimulation,
-  stopRouteSimulation,
-  isSimulationRunning,
   markArrivedAtDoorstep,
   completeTrackingPayment,
   formatDistance,
@@ -53,106 +48,13 @@ import {
   triggerPaymentReceivedNotification,
 } from '@/lib/notification-service';
 
-const MOCK_MAP_REQUESTS: PickupRequest[] = [
-  {
-    id: 'req-map-001',
-    household_id: 'user-h101',
-    household: {
-      id: 'user-h101',
-      full_name: 'Customer (Flat 402, Green Heights)',
-      phone: '+91 98201 54321',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Flat 402, Green Heights, Main Market Road, Near City Center',
-    latitude: 19.0760,
-    longitude: 72.8777,
-    scheduled_date: 'Today · 5:30 PM',
-    notes: 'Paper & plastic recyclables ready at society gate. Ring bell twice upon arrival.',
-    total_estimated_weight_kg: 18.5,
-    photos: [
-      'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [{ category: 'PAPER', approx_weight_kg: 18.5 }],
-  },
-  {
-    id: 'req-map-002',
-    household_id: 'user-h102',
-    household: {
-      id: 'user-h102',
-      full_name: 'Priya Verma (Building 3B, Tech Park)',
-      phone: '+91 98334 12789',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Tower B, Station Road West, Commercial Tech Park',
-    latitude: 19.0820,
-    longitude: 72.8820,
-    scheduled_date: 'Today · 6:00 PM',
-    notes: 'Electronic waste, wiring, and computer scrap. Please call before arriving.',
-    total_estimated_weight_kg: 35.0,
-    photos: [
-      'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [{ category: 'E_WASTE', approx_weight_kg: 35.0 }],
-  },
-  {
-    id: 'req-map-003',
-    household_id: 'user-h103',
-    household: {
-      id: 'user-h103',
-      full_name: 'Vikram Mehta (Shop 12)',
-      phone: '+91 98112 34567',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Ring Road Link, Industrial Estate, Gala No 14',
-    latitude: 19.0685,
-    longitude: 72.8942,
-    scheduled_date: 'Today · 6:30 PM',
-    notes: 'Heavy scrap metal, iron pieces, and packaging boxes.',
-    total_estimated_weight_kg: 22.0,
-    photos: [
-      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [{ category: 'METAL', approx_weight_kg: 22.0 }],
-  },
-  {
-    id: 'req-map-004',
-    household_id: 'user-h104',
-    household: {
-      id: 'user-h104',
-      full_name: 'Sneha Patel (Bungalow 7)',
-      phone: '+91 98450 98765',
-      role: 'household',
-    },
-    status: 'pending',
-    address: 'Green Park Colony, Sector 4, Behind Central Bank',
-    latitude: 19.0780,
-    longitude: 72.8690,
-    scheduled_date: 'Today · 7:00 PM',
-    notes: 'Sorted plastic bottles and cardboard packaging.',
-    total_estimated_weight_kg: 14.2,
-    photos: [
-      'https://images.unsplash.com/photo-1567095761054-7a02e69e5c43?auto=format&fit=crop&w=600&q=80',
-    ],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    waste_items: [{ category: 'PLASTIC', approx_weight_kg: 14.2 }],
-  },
-];
+
 
 function CollectorMapContent() {
   const searchParams = useSearchParams();
   const queryRequestId = searchParams?.get('requestId');
 
-  const [requests, setRequests] = useState<PickupRequest[]>(MOCK_MAP_REQUESTS);
+  const [requests, setRequests] = useState<PickupRequest[]>([]);
   const [selectedReq, setSelectedReq] = useState<PickupRequest | null>(null);
   const [collectorPos, setCollectorPos] = useState<[number, number] | null>(() => {
     if (typeof window !== 'undefined') {
@@ -169,14 +71,13 @@ function CollectorMapContent() {
   // Live tracking & navigation state for selected request
   const [trackingState, setTrackingState] = useState<LiveTrackingState | null>(null);
   const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
-  const [isSimulating, setIsSimulating] = useState(false);
   const [showHandoverModal, setShowHandoverModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
 
   // Load and merge local and database requests
   useEffect(() => {
     async function loadLiveRequests() {
-      let combinedRequests = [...MOCK_MAP_REQUESTS];
+      let combinedRequests: PickupRequest[] = [];
 
       // 1. Check localStorage for local pickup requests
       try {
@@ -184,30 +85,36 @@ function CollectorMapContent() {
         if (raw) {
           const local = JSON.parse(raw);
           if (Array.isArray(local) && local.length > 0) {
-            combinedRequests = [...local, ...combinedRequests];
+            combinedRequests = [...local];
           }
         }
       } catch (err) {
         console.warn('Error reading local requests:', err);
       }
 
-      // 2. Query Supabase
+      // 2. Query Supabase joining customer profile
       try {
         const supabase = createClient();
         const { data } = await supabase
           .from('pickup_requests')
-          .select('*, waste_items(*)')
+          .select('*, waste_items(*), household:profiles!household_id(id, full_name, phone, role)')
           .in('status', ['pending', 'accepted', 'in_progress'])
           .order('created_at', { ascending: false });
 
         if (data && data.length > 0) {
-          combinedRequests = [...(data as PickupRequest[]), ...combinedRequests];
+          const normalized = (data as any[]).map((r) => ({
+            ...r,
+            payment: r.payment || r.payment_json || undefined,
+            contact_name: r.household?.full_name || r.contact_name,
+            contact_phone: r.household?.phone || r.contact_phone,
+          }));
+          combinedRequests = [...normalized, ...combinedRequests];
         }
       } catch (err) {
         console.warn('Supabase fetch notice:', err);
       }
 
-      // Deduplicate
+      // Deduplicate by ID
       const unique = Array.from(
         new Map(combinedRequests.map((item) => [item.id, item])).values()
       ) as PickupRequest[];
@@ -223,7 +130,7 @@ function CollectorMapContent() {
         }
       }
 
-      // Or select first accepted request, or first request
+      // Or select first active request, or first request
       const activeAccepted = unique.find((r) => ['accepted', 'in_progress'].includes(r.status));
       setSelectedReq(activeAccepted || unique[0] || null);
     }
@@ -263,19 +170,17 @@ function CollectorMapContent() {
         setTrackingState(state);
         setCollectorPos(state.collectorPos);
         setRouteCoords(state.routeCoordinates);
-        setIsSimulating(isSimulationRunning(selectedReq!.id));
       }
     }
 
     initRoute();
 
-    // Subscribe to live tracking updates (from multi-tab / simulation)
+    // Subscribe to live tracking updates (from multi-tab / real GPS)
     const unsubscribe = subscribeToTracking(selectedReq.id, (newState) => {
       if (isMounted) {
         setTrackingState(newState);
         setCollectorPos(newState.collectorPos);
         setRouteCoords(newState.routeCoordinates);
-        setIsSimulating(isSimulationRunning(selectedReq.id));
       }
     });
 
@@ -345,7 +250,7 @@ function CollectorMapContent() {
         console.warn('GPS error:', err);
         setIsLocating(false);
         setIsWatchingGps(false);
-        alert('Could not lock GPS signal. You can use Route Simulation instead.');
+        alert('Could not lock GPS signal. Please ensure location permissions are enabled.');
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 }
     );
@@ -364,34 +269,7 @@ function CollectorMapContent() {
     setTimeout(() => setCopiedAddress(false), 2500);
   };
 
-  // Toggle route driving simulation
-  const handleToggleSimulation = () => {
-    if (!selectedReq) return;
 
-    if (isSimulating) {
-      stopRouteSimulation(selectedReq.id);
-      setIsSimulating(false);
-      showToast('⏸️ Route navigation simulation paused');
-    } else {
-      setIsSimulating(true);
-      showToast('🚀 Simulated drive started! Household is tracking your movement live.');
-      startRouteSimulation(selectedReq.id, {
-        speedMs: 1400,
-        onUpdate: (state) => {
-          setTrackingState(state);
-          setCollectorPos(state.collectorPos);
-          if (state.isNearDoorstep && state.distanceMeters <= 300) {
-            showToast('🔔 Doorstep proximity alert triggered for household!');
-          }
-        },
-        onArrived: (state) => {
-          setIsSimulating(false);
-          setTrackingState(state);
-          showToast('🏠 Arrived at household doorstep!');
-        },
-      });
-    }
-  };
 
   // Mark arrived at doorstep directly
   const handleMarkArrived = () => {
@@ -524,10 +402,14 @@ function CollectorMapContent() {
               ...req,
               status: 'completed' as const,
               payment,
+              payment_json: payment as any,
               updated_at: new Date().toISOString(),
             }
           : req
       );
+      try {
+        localStorage.setItem('local_pickup_requests', JSON.stringify(updated));
+      } catch {}
       return updated;
     });
 
@@ -537,9 +419,45 @@ function CollectorMapContent() {
         ...prev,
         status: 'completed' as const,
         payment,
+        payment_json: payment as any,
         updated_at: new Date().toISOString(),
       };
     });
+
+    // 2. Persist to Supabase pickup_requests
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase
+        .from('pickup_requests')
+        .update({
+          status: 'completed',
+          collector_id: user?.id || selectedReq?.collector_id || undefined,
+          payment_json: payment,
+          total_estimated_weight_kg:
+            payment?.items?.reduce((a, c) => a + c.verifiedWeightKg, 0) ||
+            selectedReq?.total_estimated_weight_kg,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', requestId);
+    } catch (err) {
+      console.warn('Supabase payment sync notice:', err);
+    }
+
+    // 3. Persist notification for household
+    try {
+      const notifications = JSON.parse(localStorage.getItem('scrapmax_payment_notifications') || '[]');
+      notifications.push({
+        id: payment?.transactionId || 'TXN-' + Date.now(),
+        requestId,
+        amount: payment?.totalAmount || 0,
+        method: payment?.method || 'upi',
+        timestamp: new Date().toISOString(),
+        householdId: selectedReq?.household_id,
+        dismissed: false,
+      });
+      localStorage.setItem('scrapmax_payment_notifications', JSON.stringify(notifications));
+    } catch {}
   };
 
   const displayedRequests = requests.filter((r) => {
@@ -674,18 +592,10 @@ function CollectorMapContent() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleToggleSimulation}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-xs ${
-                        isSimulating
-                          ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                          : 'bg-[#136B3B] hover:bg-[#0F5730] text-white'
-                      }`}
-                    >
-                      {isSimulating ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                      <span>{isSimulating ? 'Pause Drive' : 'Simulate Drive'}</span>
-                    </button>
+                    <span className="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-[#136B3B] text-white flex items-center gap-1.5 shadow-xs">
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>Live Route</span>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -716,9 +626,9 @@ function CollectorMapContent() {
                 {/* 1. Proper Household Address & Customer Contact Card */}
                 <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-xs space-y-4">
                   <div className="flex items-center justify-between pb-1 border-b border-gray-100">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" />
-                      <span>Citizen Household</span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#136B3B] border border-[#A6D5B8] flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3 text-[#136B3B]" />
+                      <span>Verified Citizen</span>
                     </span>
                     <span className="text-xs font-mono font-bold text-gray-500">
                       Req #{selectedReq.id.slice(0, 8)}
@@ -729,11 +639,11 @@ function CollectorMapContent() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#136B3B] border border-emerald-200 flex items-center justify-center text-xl font-black shrink-0">
-                        {(resolveHouseholdName(selectedReq.household?.full_name || selectedReq.contact_name) || 'C').charAt(0)}
+                        {((resolveHouseholdName(selectedReq.household?.full_name || selectedReq.contact_name) || selectedReq.household?.full_name || selectedReq.contact_name || 'C').charAt(0)).toUpperCase()}
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-extrabold text-sm text-[#191C1E] truncate">
-                          {resolveHouseholdName(selectedReq.household?.full_name || selectedReq.contact_name) || 'Citizen Household'}
+                          {resolveHouseholdName(selectedReq.household?.full_name || selectedReq.contact_name) || selectedReq.household?.full_name || selectedReq.contact_name || 'Resident Citizen'}
                         </h3>
                         <p className="text-xs font-mono font-bold text-[#136B3B] mt-0.5 flex items-center gap-1">
                           <Phone className="w-3 h-3" />
@@ -832,29 +742,8 @@ function CollectorMapContent() {
                       </span>
                     </div>
 
-                    {/* Simulation Controls */}
+                    {/* Navigation and Doorstep Actions */}
                     <div className="space-y-2">
-                      <button
-                        type="button"
-                        onClick={handleToggleSimulation}
-                        className={`w-full py-3 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-sm touch-feedback ${
-                          isSimulating
-                            ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                            : 'bg-[#136B3B] hover:bg-[#0F5730] text-white'
-                        }`}
-                      >
-                        {isSimulating ? (
-                          <>
-                            <Pause className="w-4 h-4" />
-                            <span>Pause Live Drive Simulation</span>
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-4 h-4 fill-white" />
-                            <span>Simulate Drive to Customer Doorstep</span>
-                          </>
-                        )}
-                      </button>
 
                       <div className="grid grid-cols-2 gap-2">
                         <button

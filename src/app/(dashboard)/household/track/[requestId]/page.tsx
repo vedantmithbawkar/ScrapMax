@@ -152,24 +152,30 @@ export default function TrackPickupPage() {
       const supabase = createClient();
       const { data: req } = await supabase
         .from('pickup_requests')
-        .select('*, waste_items(*)')
+        .select('*, waste_items(*), household:profiles!household_id(id, full_name, phone, role), collector:profiles!collector_id(id, full_name, phone, role)')
         .eq('id', requestId)
         .single();
       if (req) {
-        if (!req.collector && req.collector_id) {
+        const normalized = {
+          ...req,
+          payment: req.payment || (req as any).payment_json || undefined,
+          contact_name: (req as any).household?.full_name || req.contact_name,
+          contact_phone: (req as any).household?.phone || req.contact_phone,
+        };
+        if (!normalized.collector && normalized.collector_id) {
           const { data: colProfile } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', req.collector_id)
+            .eq('id', normalized.collector_id)
             .maybeSingle();
           if (colProfile) {
-            req.collector = {
+            normalized.collector = {
               ...colProfile,
               full_name: resolveCollectorName(colProfile.full_name),
             };
           } else {
-            req.collector = {
-              id: req.collector_id,
+            normalized.collector = {
+              id: normalized.collector_id,
               full_name: resolveCollectorName(),
               phone: '+91 98201 45892',
               role: 'collector',
@@ -178,10 +184,21 @@ export default function TrackPickupPage() {
             };
           }
         }
-        setRequest(req as PickupRequest);
+        setRequest(normalized as PickupRequest);
       }
     }
     if (requestId !== 'demo') load();
+
+    const handleSync = () => {
+      if (requestId !== 'demo') load();
+    };
+    window.addEventListener('scrapmax:tracking_update', handleSync);
+    window.addEventListener('storage', handleSync);
+
+    return () => {
+      window.removeEventListener('scrapmax:tracking_update', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
   }, [requestId]);
 
   const [trackingState, setTrackingState] = useState<LiveTrackingState | null>(null);
@@ -247,28 +264,6 @@ export default function TrackPickupPage() {
   }, [requestId, request.latitude, request.longitude, request.address, request.collector?.full_name, request.status]);
 
   const pickupOtp = getPickupOtp(requestId);
-
-  const handleSimulateAccept = () => {
-    const updated = acceptPickupInTracking(requestId, {
-      full_name: resolveCollectorName(request.collector?.full_name),
-      phone: request.collector?.phone || '+91 98201 45892',
-    });
-    if (updated) {
-      setTrackingState(updated);
-      setRequest((prev) => ({
-        ...prev,
-        status: 'accepted',
-        collector: {
-          id: 'collector-c201',
-          full_name: updated.collectorName,
-          phone: updated.collectorPhone,
-          role: 'collector',
-          rating: 4.9,
-          completed_pickups: 126,
-        },
-      }));
-    }
-  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -362,18 +357,6 @@ export default function TrackPickupPage() {
                   <p className="text-xs text-[#526056] max-w-sm mx-auto leading-relaxed">
                     Your scrap pickup request has been broadcasted to verified collectors in your locality. Once accepted, their name, contact phone, live map route, and distance will appear here instantly.
                   </p>
-                </div>
-
-                {/* Instant Simulation / Demo Button */}
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={handleSimulateAccept}
-                    className="py-3 px-5 rounded-2xl bg-[#136B3B] hover:bg-[#0F5730] text-white font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 mx-auto shadow-sm touch-feedback"
-                  >
-                    <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
-                    <span>Simulate Collector Accepting (Demo Test)</span>
-                  </button>
                 </div>
               </div>
             )}
