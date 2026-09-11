@@ -31,29 +31,30 @@ export interface LiveTrackingState {
 
 export interface CollectorSavedLocation {
   pos: [number, number];
-  hubName: string;
+  locationName: string;
+  hubName?: string; // Kept for backward compatibility
   updatedAt: string;
 }
-
-export const DEFAULT_COLLECTOR_HUBS: { name: string; pos: [number, number] }[] = [
-  { name: 'Dadar Station Hub, Mumbai', pos: [19.0178, 72.8478] },
-  { name: 'Bandra West Linking Rd, Mumbai', pos: [19.0596, 72.8295] },
-  { name: 'Andheri East MIDC, Mumbai', pos: [19.1136, 72.8697] },
-  { name: 'Powai Hiranandani, Mumbai', pos: [19.1197, 72.9051] },
-  { name: 'Indiranagar 100ft Rd, Bangalore', pos: [12.9784, 77.6408] },
-  { name: 'Connaught Place Hub, Delhi', pos: [28.6315, 77.2167] },
-];
 
 export function getCollectorSavedLocation(): CollectorSavedLocation {
   if (typeof window !== 'undefined') {
     try {
       const raw = localStorage.getItem('scrapmax_collector_location');
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          pos: parsed.pos || [19.076, 72.8777],
+          locationName: parsed.locationName || parsed.hubName || 'Live Collector GPS',
+          hubName: parsed.locationName || parsed.hubName || 'Live Collector GPS',
+          updatedAt: parsed.updatedAt || new Date().toISOString(),
+        };
+      }
     } catch {}
   }
   return {
-    pos: [19.0178, 72.8478],
-    hubName: 'Dadar Central Hub, Mumbai',
+    pos: [19.076, 72.8777],
+    locationName: 'Live Collector GPS',
+    hubName: 'Live Collector GPS',
     updatedAt: new Date().toISOString(),
   };
 }
@@ -241,8 +242,9 @@ export async function initializeTrackingState(params: {
 
   const originAddress =
     params.collectorOriginAddress ||
+    savedLoc.locationName ||
     savedLoc.hubName ||
-    'Collector Operating Hub';
+    'Collector Current GPS';
 
   const routeCoordinates = await fetchDrivingRoute(startCollectorPos, params.householdPos);
   const distanceMeters = calculateDistanceMeters(

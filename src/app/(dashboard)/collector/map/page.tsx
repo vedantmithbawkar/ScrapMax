@@ -149,17 +149,17 @@ function CollectorMapContent() {
     let isMounted = true;
 
     async function initRoute() {
-      const savedHub = getCollectorSavedLocation();
+      const savedCollectorLoc = getCollectorSavedLocation();
       const householdPos: [number, number] = [selectedReq!.latitude, selectedReq!.longitude];
       const startCollectorPos: [number, number] =
-        collectorPos || savedHub.pos || [householdPos[0] + 0.012, householdPos[1] - 0.014];
+        collectorPos || savedCollectorLoc.pos || [householdPos[0] + 0.012, householdPos[1] - 0.014];
 
       const state = await initializeTrackingState({
         requestId: selectedReq!.id,
         householdPos,
         collectorPos: startCollectorPos,
-        collectorOriginPos: savedHub.pos,
-        collectorOriginAddress: savedHub.hubName,
+        collectorOriginPos: savedCollectorLoc.pos,
+        collectorOriginAddress: savedCollectorLoc.locationName || savedCollectorLoc.hubName || 'Collector Live Location',
         householdName: resolveHouseholdName(selectedReq!.household?.full_name || selectedReq!.contact_name),
         householdPhone: selectedReq!.household?.phone || selectedReq!.contact_phone || '+91 98201 54321',
         householdAddress: selectedReq!.address,
@@ -607,7 +607,7 @@ function CollectorMapContent() {
               requests={displayedRequests}
               collectorPos={collectorPos}
               originPos={trackingState?.collectorOriginPos}
-              originLabel={trackingState?.collectorOriginAddress || 'Collector Hub'}
+              originLabel={trackingState?.collectorOriginAddress || 'Collector Live Location'}
               routeCoordinates={routeCoords}
               destinationPos={selectedReq ? [selectedReq.latitude, selectedReq.longitude] : null}
               destinationLabel={selectedReq?.household?.full_name ? `${selectedReq.household.full_name}'s Home` : 'Customer Doorstep'}
