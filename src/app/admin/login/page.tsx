@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/common/Navbar';
 import { Shield, Lock, Mail, KeyRound, AlertTriangle, ArrowRight, Eye, EyeOff } from 'lucide-react';
-import { loginAdmin, logoutAdmin } from '@/lib/admin-auth';
+import { loginAdmin, getAdminSession } from '@/lib/admin-auth';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -16,9 +16,12 @@ export default function AdminLoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    // Reset session whenever the admin login page is opened
-    logoutAdmin();
-  }, []);
+    // If already authenticated as admin, go straight to /admin
+    const session = getAdminSession();
+    if (session && session.role === 'admin') {
+      router.replace('/admin');
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +36,7 @@ export default function AdminLoginPage() {
     try {
       const res = await loginAdmin(identifier, password);
       if (res.success) {
-        router.push('/admin');
+        window.location.href = '/admin';
       } else {
         setErrorMsg(res.error || 'Invalid administrator credentials.');
       }
@@ -82,6 +85,7 @@ export default function AdminLoginPage() {
                 </div>
               </div>
             )}
+
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
