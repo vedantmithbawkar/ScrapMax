@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Download } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 export function NewStarburstBadge() {
   return (
@@ -25,6 +26,7 @@ export function NewStarburstBadge() {
 export default function AnnouncementBar() {
   const [isVisible, setIsVisible] = useState(true);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handleBeforeInstall = (e: Event) => {
@@ -60,14 +62,14 @@ export default function AnnouncementBar() {
             <span className="inline-flex items-center">
               <NewStarburstBadge />
               <span>
-                ScrapMax PWA: Install on your phone or desktop for instant 1-click door-step recyclable scrap booking, offline access &amp; live alerts!{' '}
+                {t('tickerInstallText')}{' '}
                 <button
                   type="button"
                   onClick={handleInstallClick}
                   className="inline-flex items-center gap-1 text-[#38EF7D] underline font-extrabold hover:text-white transition ml-1"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  Install App
+                  {t('tickerInstallBtn')}
                 </button>
               </span>
             </span>
@@ -76,9 +78,9 @@ export default function AnnouncementBar() {
             <span className="inline-flex items-center">
               <NewStarburstBadge />
               <span>
-                Live Coordination Chat: Real-time two-way messaging between Household and Kabadiwala is now active with instant status updates!{' '}
+                {t('tickerChatText')}{' '}
                 <Link href="/household" className="text-[#38EF7D] underline hover:text-white transition ml-1">
-                  Open Chat
+                  {t('tickerChatBtn')}
                 </Link>
               </span>
             </span>
@@ -87,7 +89,7 @@ export default function AnnouncementBar() {
             <span className="inline-flex items-center">
               <NewStarburstBadge />
               <span>
-                Digital Recycling Receipts: Every pickup includes verified digital scale weighing, itemized rates &amp; instant direct UPI payment settlement!
+                {t('tickerWeighText')}
               </span>
             </span>
 
@@ -95,9 +97,9 @@ export default function AnnouncementBar() {
             <span className="inline-flex items-center">
               <NewStarburstBadge />
               <span>
-                Spot illegal scrap or garbage dumping in your area? Upload geo-tagged photos directly to municipal administrators.{' '}
+                {t('tickerReportText')}{' '}
                 <Link href="/household/report" className="text-[#FFB347] underline hover:text-white transition ml-1">
-                  Report Problem
+                  {t('tickerReportBtn')}
                 </Link>
               </span>
             </span>
@@ -106,9 +108,9 @@ export default function AnnouncementBar() {
             <span className="inline-flex items-center">
               <NewStarburstBadge />
               <span>
-                Authorized Kabadiwalas: Interactive GPS live map with optimized scrap collection routes &amp; verified digital scales.{' '}
+                {t('tickerMapText')}{' '}
                 <Link href="/collector/map" className="text-[#38EF7D] underline hover:text-white transition ml-1">
-                  View Map
+                  {t('tickerMapBtn')}
                 </Link>
               </span>
             </span>

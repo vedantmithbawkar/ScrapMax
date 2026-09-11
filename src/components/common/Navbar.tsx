@@ -154,7 +154,9 @@ export default function Navbar() {
               </div>
               <div className="flex flex-col">
                 <span className="font-extrabold text-lg tracking-tight text-[#136B3B] leading-none">SCRAPMAX</span>
-                <span className="text-[10px] font-semibold text-[#6B7280] tracking-wider uppercase mt-0.5">Circular Scrap Marketplace</span>
+                <span className="text-[10px] font-semibold text-[#6B7280] tracking-wider uppercase mt-0.5 truncate max-w-[150px] sm:max-w-none">
+                  {t('footerTagline')}
+                </span>
               </div>
             </Link>
 
@@ -190,7 +192,7 @@ export default function Navbar() {
                   }`}
                 >
                   <Shield className="w-4 h-4 text-purple-700" />
-                  <span>Overview</span>
+                  <span>{t('navDashboard')}</span>
                 </Link>
                 <Link
                   href="/admin/pickups"
@@ -201,7 +203,7 @@ export default function Navbar() {
                   }`}
                 >
                   <Truck className="w-4 h-4 text-emerald-600" />
-                  <span>Pickups</span>
+                  <span>{t('navPickup')}</span>
                 </Link>
                 <Link
                   href="/admin/users"
@@ -212,7 +214,7 @@ export default function Navbar() {
                   }`}
                 >
                   <Users className="w-4 h-4 text-blue-600" />
-                  <span>Users</span>
+                  <span>{t('navUsers')}</span>
                 </Link>
                 <Link
                   href="/admin/recyclers"
@@ -223,7 +225,7 @@ export default function Navbar() {
                   }`}
                 >
                   <ShieldCheck className="w-4 h-4 text-purple-700" />
-                  <span>Recyclers</span>
+                  <span>{t('navRecyclers')}</span>
                 </Link>
                 <Link
                   href="/admin/reports"
@@ -234,7 +236,7 @@ export default function Navbar() {
                   }`}
                 >
                   <ClipboardList className="w-4 h-4 text-red-600" />
-                  <span>Reports</span>
+                  <span>{t('navReports')}</span>
                 </Link>
                 <Link
                   href="/admin/settings"
@@ -245,7 +247,7 @@ export default function Navbar() {
                   }`}
                 >
                   <Settings className="w-4 h-4 text-gray-700" />
-                  <span>Settings</span>
+                  <span>{t('settings')}</span>
                 </Link>
               </>
             ) : (
@@ -260,7 +262,7 @@ export default function Navbar() {
                   }`}
                 >
                   <Factory className="w-4 h-4 text-[#136B3B]" />
-                  <span className="hidden md:inline">Recyclers</span>
+                  <span className="hidden md:inline">{t('navRecyclers')}</span>
                 </Link>
 
                 <Link
@@ -272,7 +274,7 @@ export default function Navbar() {
                   }`}
                 >
                   <Store className="w-4 h-4 text-[#136B3B]" />
-                  <span className="hidden md:inline">Scrap Dealers</span>
+                  <span className="hidden md:inline">{t('navDealers')}</span>
                 </Link>
 
                 {/* Admin Portal Link */}
@@ -285,7 +287,7 @@ export default function Navbar() {
                   }`}
                 >
                   <Shield className="w-4 h-4 text-purple-600" />
-                  <span className="hidden sm:inline">Admin</span>
+                  <span className="hidden sm:inline">{t('navAdmin')}</span>
                 </Link>
 
                 {profile && (
@@ -302,7 +304,7 @@ export default function Navbar() {
                           }`}
                         >
                           <Layers className="w-4 h-4 text-[#136B3B]" />
-                          <span>Dashboard</span>
+                          <span>{t('navDashboard')}</span>
                         </Link>
 
                         <Link
@@ -313,7 +315,7 @@ export default function Navbar() {
                               : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
                           }`}
                         >
-                          <span>Demands</span>
+                          <span>{t('navDemands')}</span>
                         </Link>
 
                         <Link
@@ -324,7 +326,7 @@ export default function Navbar() {
                               : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
                           }`}
                         >
-                          <span>Incoming Scrap</span>
+                          <span>{t('navIncomingScrap')}</span>
                         </Link>
 
                         <Link
@@ -335,7 +337,7 @@ export default function Navbar() {
                               : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
                           }`}
                         >
-                          <span>Traceability</span>
+                          <span>{t('navTraceability')}</span>
                         </Link>
 
                         <Link
@@ -343,7 +345,7 @@ export default function Navbar() {
                           className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#136B3B] hover:bg-[#0F5730] text-white shadow-xs transition"
                         >
                           <PlusCircle className="w-3.5 h-3.5" />
-                          <span>+ Need Scrap</span>
+                          <span>{t('navNeedScrap')}</span>
                         </Link>
                       </>
                     )}
@@ -360,7 +362,7 @@ export default function Navbar() {
                           }`}
                         >
                           <Truck className="w-4 h-4 text-[#136B3B]" />
-                          <span>Pickups</span>
+                          <span>{t('navPickup')}</span>
                         </Link>
 
                         <Link
@@ -372,7 +374,7 @@ export default function Navbar() {
                           }`}
                         >
                           <MapPin className="w-4 h-4" />
-                          <span>Map Route</span>
+                          <span>{t('navMapRoute')}</span>
                         </Link>
 
                         <Link
@@ -380,7 +382,7 @@ export default function Navbar() {
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-xs transition animate-pulse`}
                         >
                           <Sparkles className="w-3.5 h-3.5" />
-                          <span>Find Buyers</span>
+                          <span>{t('navFindBuyers')}</span>
                         </Link>
 
                         <Link
@@ -391,7 +393,7 @@ export default function Navbar() {
                               : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
                           }`}
                         >
-                          <span>Demand Board</span>
+                          <span>{t('navDemandBoard')}</span>
                         </Link>
 
                         <Link
@@ -402,7 +404,7 @@ export default function Navbar() {
                               : 'text-[#526056] hover:text-[#191C1E] hover:bg-[#F2F4F6]'
                           }`}
                         >
-                          <span>My Offers</span>
+                          <span>{t('navMyOffers')}</span>
                         </Link>
 
                         <Link
@@ -414,7 +416,7 @@ export default function Navbar() {
                           }`}
                         >
                           <ShieldAlert className="w-4 h-4 text-red-600" />
-                          <span>Safety Guide</span>
+                          <span>{t('navSafetyGuide')}</span>
                         </Link>
                       </>
                     )}
@@ -431,7 +433,7 @@ export default function Navbar() {
                           }`}
                         >
                           <ShieldCheck className="w-4 h-4 text-purple-700" />
-                          <span>Recycler Verification</span>
+                          <span>{t('navVerification')}</span>
                         </Link>
                       </>
                     )}
@@ -448,14 +450,14 @@ export default function Navbar() {
                           }`}
                         >
                           <History className="w-4 h-4" />
-                          <span>Dashboard</span>
+                          <span>{t('navDashboard')}</span>
                         </Link>
                         <Link
                           href="/household/request-pickup"
                           className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-[#136B3B] hover:bg-[#0F5730] text-white shadow-xs transition"
                         >
                           <PlusCircle className="w-4 h-4" />
-                          <span>Request Pickup</span>
+                          <span>{t('navRequestPickup')}</span>
                         </Link>
                       </>
                     )}
