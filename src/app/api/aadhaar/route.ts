@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { validateAadhaarNumber, maskAadhaar } from '@/lib/aadhaar-service';
 
+// Aadhaar API Environment Configuration
+const AADHAAR_API_KEY = process.env.AADHAAR_API_KEY;
+const AADHAAR_API_SECRET = process.env.AADHAAR_API_SECRET;
+const AADHAAR_API_URL = process.env.AADHAAR_API_URL || 'https://api.surepass.io/api/v1/aadhaar-v2/generate-otp';
+const AADHAAR_SANDBOX_MODE = process.env.AADHAAR_SANDBOX_MODE !== 'false';
+
 // In-memory transaction store for demo/development verification sessions
 const txnStore = new Map<
   string,
