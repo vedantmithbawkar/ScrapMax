@@ -29,12 +29,14 @@ CREATE TABLE IF NOT EXISTS public.pickup_requests (
   notes TEXT,
   total_estimated_weight_kg DECIMAL(8, 2) DEFAULT 0,
   photos TEXT[] DEFAULT '{}',
+  payment_json JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Migration safety: add photos column if table already exists
+-- Migration safety: add photos and payment_json columns if table already exists
 ALTER TABLE public.pickup_requests ADD COLUMN IF NOT EXISTS photos TEXT[] DEFAULT '{}';
+ALTER TABLE public.pickup_requests ADD COLUMN IF NOT EXISTS payment_json JSONB;
 
 -- 3. WASTE ITEMS TABLE
 CREATE TABLE IF NOT EXISTS public.waste_items (

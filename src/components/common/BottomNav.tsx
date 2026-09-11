@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { useTranslation } from '@/lib/i18n';
+import { UserRole } from '@/types';
 
 interface BottomNavProps {
-  role?: 'household' | 'collector';
+  role?: UserRole;
 }
 
 export default function BottomNav({ role = 'household' }: BottomNavProps) {

@@ -7,7 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import RequestCard from '@/components/request/RequestCard';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest } from '@/types';
-import { Recycle, Package, Store } from 'lucide-react';
+import { Recycle, Package, Store, IndianRupee, X } from 'lucide-react';
 import PersonalDashboard from '@/components/dashboard/PersonalDashboard';
 import { useTranslation } from '@/lib/i18n';
 
@@ -91,6 +91,36 @@ export default function HouseholdDashboard() {
   const [requests, setRequests] = useState<PickupRequest[]>(DEMO_HOUSEHOLD_REQUESTS);
   const [userName, setUserName] = useState<string>('Sahil');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [paymentNotifications, setPaymentNotifications] = useState<Array<{
+    id: string;
+    requestId: string;
+    amount: number;
+    method: string;
+    timestamp: string;
+    dismissed: boolean;
+  }>>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('scrapmax_payment_notifications');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setPaymentNotifications(parsed.filter((n: any) => !n.dismissed));
+      }
+    } catch {}
+  }, []);
+
+  const dismissNotification = (id: string) => {
+    try {
+      const raw = localStorage.getItem('scrapmax_payment_notifications');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const updated = parsed.map((n: any) => (n.id === id ? { ...n, dismissed: true } : n));
+        localStorage.setItem('scrapmax_payment_notifications', JSON.stringify(updated));
+      }
+    } catch {}
+    setPaymentNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
 
   useEffect(() => {
     async function loadRequests() {
@@ -180,6 +210,44 @@ export default function HouseholdDashboard() {
             {userName.charAt(0)}
           </Link>
         </header>
+
+        {/* Payment Received Notifications */}
+        {paymentNotifications.map((notif) => (
+          <div
+            key={notif.id}
+            className="bg-emerald-50 border-2 border-emerald-500/30 rounded-2xl p-4 shadow-sm flex items-start justify-between gap-3 text-emerald-950 animate-in fade-in slide-in-from-top-2 duration-300"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
+                <IndianRupee className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider bg-emerald-200/80 text-emerald-800 px-2 py-0.5 rounded-full">
+                    Money Received
+                  </span>
+                  <span className="text-xs text-emerald-700">
+                    {new Date(notif.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                <p className="text-base font-bold text-emerald-900 mt-1">
+                  🎉 ₹{notif.amount} received for your scrap pickup!
+                </p>
+                <p className="text-xs text-emerald-700 font-medium mt-0.5">
+                  Payment settled via {notif.method.toUpperCase()}. Money will be credited directly to your registered bank account.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => dismissNotification(notif.id)}
+              className="p-1 text-emerald-600 hover:text-emerald-900 hover:bg-emerald-100 rounded-lg transition flex-shrink-0"
+              title="Dismiss"
+              aria-label="Dismiss notification"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
 
         {/* Demo Mode Notice Banner if not logged in */}
         {!isAuthenticated && (

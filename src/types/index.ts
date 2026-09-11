@@ -1,4 +1,4 @@
-export type UserRole = 'household' | 'collector';
+export type UserRole = 'household' | 'collector' | 'admin';
 
 export type PickupStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
 
@@ -65,6 +65,9 @@ export interface PaymentDetails {
   items: VerifiedWasteItem[];
   upiVpa?: string;
   cashGivenBy?: string;
+  paidBy?: string;
+  receivedBy?: string;
+  bankCreditNote?: string;
 }
 
 export interface PickupRequest {

@@ -129,7 +129,26 @@ export default function RequestCard({
           <span className="truncate">{request.address}</span>
         </div>
 
-        {/* Assigned Collector Details Strip for Citizen */}
+        {/* Payment Received Banner for Household */}
+        {userRole === 'household' && request.status === 'completed' && request.payment && (
+          <div className="flex items-center gap-2.5 p-3 bg-gradient-to-r from-[#EDF7F2] to-[#E6F4EA] border border-[#A6D5B8] rounded-2xl">
+            <span className="text-xl flex-shrink-0">💰</span>
+            <div className="min-w-0">
+              <p className="text-xs font-extrabold text-[#136B3B]">
+                ₹{request.payment.totalAmount} Received!
+              </p>
+              <p className="text-[10px] text-[#2B6B47] leading-snug">
+                {request.payment.method === 'upi'
+                  ? 'Money credited to your bank account via UPI.'
+                  : 'Cash received at doorstep.'}
+              </p>
+            </div>
+            <span className="text-[10px] font-bold text-[#136B3B] bg-white px-2 py-0.5 rounded-full border border-[#A6D5B8] flex-shrink-0">
+              ✓ Paid
+            </span>
+          </div>
+        )}
+
         {userRole === 'household' && request.status !== 'pending' && (
           <div className="flex items-center justify-between p-2 sm:p-2.5 bg-[#E6F4EA]/70 border border-[#A6D5B8] rounded-xl text-xs">
             <div className="flex items-center gap-2 min-w-0">
