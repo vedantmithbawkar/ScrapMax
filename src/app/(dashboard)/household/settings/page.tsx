@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/common/Navbar';
 import BottomNav from '@/components/common/BottomNav';
@@ -365,6 +366,20 @@ export default function HouseholdSettingsPage() {
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400" />
             </button>
+
+            <Link
+              href="/privacy"
+              className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded-xl transition cursor-pointer pt-2 border-t border-gray-50 text-left"
+            >
+              <div className="flex items-center gap-3 text-left">
+                <Shield className="w-4 h-4 text-emerald-600" />
+                <div>
+                  <p className="text-sm font-bold text-[#191C1E]">Privacy Policy &amp; Data Rights</p>
+                  <p className="text-xs text-[#6B7280]">DPDP Act 2023 compliance, permissions &amp; charter</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+            </Link>
           </div>
 
           {/* Danger Zone: Logout / Deactivate */}

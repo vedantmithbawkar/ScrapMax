@@ -143,6 +143,8 @@ export default function LandingPage() {
           <span>•</span>
           <Link href="/stores" className="hover:text-[#136B3B] transition">Store Locator</Link>
           <span>•</span>
+          <Link href="/privacy" className="hover:text-[#136B3B] transition">Privacy Policy</Link>
+          <span>•</span>
           <Link href="/admin/login" className="hover:text-purple-700 transition inline-flex items-center gap-1 font-bold text-purple-700">
             <Shield className="w-3.5 h-3.5" />
             Admin Portal
