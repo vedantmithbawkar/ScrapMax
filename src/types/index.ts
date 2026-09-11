@@ -1,4 +1,4 @@
-export type UserRole = 'household' | 'collector';
+export type UserRole = 'household' | 'collector' | 'admin';
 
 export type PickupStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
 

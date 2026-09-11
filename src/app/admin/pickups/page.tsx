@@ -6,7 +6,7 @@ import Navbar from '@/components/common/Navbar';
 import BottomNav from '@/components/common/BottomNav';
 import { createClient } from '@/lib/supabase/client';
 import { PickupRequest, PickupStatus, STATUS_LABELS, WASTE_CATEGORY_LABELS } from '@/types';
-import { ArrowLeft, Search, MapPin, Clock, ChevronRight, Filter } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, Clock } from 'lucide-react';
 
 type StatusFilter = 'all' | PickupStatus;
 

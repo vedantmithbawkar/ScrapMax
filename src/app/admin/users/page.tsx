@@ -6,7 +6,7 @@ import Navbar from '@/components/common/Navbar';
 import BottomNav from '@/components/common/BottomNav';
 import { createClient } from '@/lib/supabase/client';
 import { UserProfile } from '@/types';
-import { ArrowLeft, Search, Users as UsersIcon, User, Shield, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 
 type RoleFilter = 'all' | 'household' | 'collector' | 'admin';
 
@@ -19,7 +19,7 @@ const DEMO_USERS: (UserProfile & { created_at?: string })[] = [
   { id: 'u1', full_name: 'Sahil Kumar', role: 'household', phone: '+91 98765 43210', created_at: '2026-08-15T10:00:00Z' },
   { id: 'u2', full_name: 'Raju Kabadiwala', role: 'collector', phone: '+91 87654 32100', created_at: '2026-08-20T10:00:00Z' },
   { id: 'u3', full_name: 'Priya Sharma', role: 'household', phone: '+91 76543 21000', created_at: '2026-09-01T10:00:00Z' },
-  { id: 'u4', full_name: 'Admin User', role: 'admin' as UserProfile['role'], phone: '+91 99999 00000', created_at: '2026-07-01T10:00:00Z' },
+  { id: 'u4', full_name: 'Admin User', role: 'admin', phone: '+91 99999 00000', created_at: '2026-07-01T10:00:00Z' },
   { id: 'u5', full_name: 'Vikram Singh', role: 'collector', phone: '+91 65432 10000', created_at: '2026-09-05T10:00:00Z' },
   { id: 'u6', full_name: 'Ananya Patel', role: 'household', phone: '+91 54321 00000', created_at: '2026-09-08T10:00:00Z' },
 ];
