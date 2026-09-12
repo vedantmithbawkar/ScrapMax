@@ -127,7 +127,6 @@ function RegisterForm() {
   const [aadhaarLoading, setAadhaarLoading] = useState(false);
   const [aadhaarError, setAadhaarError] = useState<string | null>(null);
   const [aadhaarNotice, setAadhaarNotice] = useState<string | null>(null);
-  const [smsMessageReceived, setSmsMessageReceived] = useState<string | null>(null);
   const [dispatchedOtp, setDispatchedOtp] = useState('123456');
 
   // Send Aadhaar OTP
@@ -139,7 +138,6 @@ function RegisterForm() {
     setAadhaarLoading(true);
     setAadhaarError(null);
     setAadhaarNotice(null);
-    setSmsMessageReceived(null);
 
     const clean = aadhaarInput.replace(/\s+/g, '').replace(/-/g, '');
     if (clean.length !== 12) {
@@ -201,10 +199,6 @@ function RegisterForm() {
       if (successData.testOtp) setDispatchedOtp(successData.testOtp);
       setOtpSent(true);
       setAadhaarNotice(successData.message || `OTP dispatched to registered number: +91 ${cleanPhone.slice(-10)}`);
-      setSmsMessageReceived(
-        successData.smsMessage ||
-        `ScrapMax UIDAI Verification: Your OTP for Aadhaar verification is ${successData.testOtp || '123456'}. Valid for 10 mins. Sent to +91 ${cleanPhone.slice(-10)}.`
-      );
       setAadhaarError(null);
     }
     setAadhaarLoading(false);
@@ -894,57 +888,17 @@ function RegisterForm() {
 
                 {otpSent && (
                   <div className="pt-2 border-t border-gray-100 space-y-2.5">
-                    {/* Incoming SMS Notification Display */}
-                    <div className="p-3 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 rounded-xl space-y-2 animate-in fade-in shadow-xs">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 font-bold text-emerald-950 text-xs">
-                          <span className="text-base">💬</span>
-                          <span>SMS Dispatched to Registered Mobile:</span>
-                        </div>
-                        <span className="text-[11px] font-mono font-extrabold text-emerald-800 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
-                          +91 {phone.replace(/\D/g, '').slice(-10)}
+                    {/* Dispatched SMS Confirmation Banner */}
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between animate-in fade-in text-xs text-emerald-900">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">📲</span>
+                        <span className="font-semibold">
+                          {t('otpSentToMobile')}
                         </span>
                       </div>
-
-                      <div className="p-2.5 bg-white rounded-lg border border-emerald-200/80 shadow-2xs space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">SMS Message</span>
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">OTP: 123456</span>
-                        </div>
-                        <p className="font-mono text-xs text-gray-800 leading-relaxed font-semibold">
-                          &quot;{smsMessageReceived || `ScrapMax UIDAI: Your OTP for Aadhaar verification is 123456. Valid for 10 mins. Sent to your registered number (+91 ${phone.replace(/\D/g, '').slice(-10)}).`}&quot;
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => setAadhaarOtp(dispatchedOtp)}
-                          className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
-                        >
-                          <span>⚡ {t('autoFillOtp')} ({dispatchedOtp})</span>
-                        </button>
-
-                        <a
-                          href={`https://api.whatsapp.com/send?phone=91${phone.replace(/\D/g, '').slice(-10)}&text=${encodeURIComponent(`ScrapMax UIDAI Aadhaar Verification OTP is: ${dispatchedOtp}`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
-                        >
-                          <span>💬 {t('sendToWhatsApp')} (+91 {phone.replace(/\D/g, '').slice(-10)})</span>
-                        </a>
-
-                        <a
-                          href={`sms:+91${phone.replace(/\D/g, '').slice(-10)}?body=${encodeURIComponent(`ScrapMax UIDAI Aadhaar Verification OTP is: ${dispatchedOtp}`)}`}
-                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1.5"
-                        >
-                          <span>📲 {t('openPhoneSms')}</span>
-                        </a>
-                      </div>
-
-                      <div className="text-[10px] text-emerald-800/80 bg-emerald-100/60 p-2 rounded-lg border border-emerald-200/60 leading-relaxed">
-                        ℹ️ <strong>Telecom Carrier Note:</strong> Direct telecom tower SMS (Jio/Airtel) requires <code className="font-mono bg-white px-1 rounded">FAST2SMS_API_KEY</code> in <code className="font-mono bg-white px-1 rounded">.env.local</code>. Tap <strong>Send to WhatsApp</strong> or <strong>Auto-Fill OTP</strong> for instant phone verification.
-                      </div>
+                      <span className="text-[11px] font-mono font-extrabold text-emerald-800 bg-white px-2.5 py-0.5 rounded-full border border-emerald-200 shadow-2xs">
+                        +91 {phone.replace(/\D/g, '').slice(-10)}
+                      </span>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -961,7 +915,7 @@ function RegisterForm() {
                           maxLength={6}
                           value={aadhaarOtp}
                           onChange={(e) => setAadhaarOtp(e.target.value.replace(/\D/g, ''))}
-                          placeholder="123456"
+                          placeholder="••••••"
                           className="w-full pl-9 pr-3 py-2 bg-[#F8FAF9] border border-gray-200 rounded-xl text-xs font-mono text-[#191C1E] tracking-widest placeholder-gray-400 focus:outline-none focus:border-[#136B3B]"
                         />
                         <KeyRound className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />

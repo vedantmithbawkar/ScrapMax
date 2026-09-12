@@ -187,10 +187,8 @@ export async function POST(request: Request) {
         maskedAadhaar: maskAadhaar(cleanAadhaar),
         registeredPhone: formattedPhone,
         maskedMobile: maskedPhone,
-        testOtp: generatedOtp,
         smsDispatched: smsResult.sent,
         smsProvider: smsResult.provider,
-        smsMessage,
         message: `OTP sent successfully via SMS to your registered mobile number (${maskedPhone}).`,
       });
     }
