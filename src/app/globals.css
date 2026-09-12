@@ -78,13 +78,18 @@ body {
 }
 
 /* Universal Translation Silent Styling */
-.goog-te-banner-frame {
+.goog-te-banner-frame,
+iframe.goog-te-banner-frame,
+.goog-te-banner {
   display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
 }
 body {
   top: 0px !important;
+  position: static !important;
 }
-.skiptranslate {
+.skiptranslate:not(.pwa-lang-item) {
   display: none !important;
 }
 #google_translate_element {

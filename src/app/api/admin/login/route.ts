@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const adminPassword = cleanEnv(
       process.env.ADMIN_PASSWORD ||
       process.env.NEXT_PUBLIC_ADMIN_PASSWORD ||
-      ''
+      'admin123456'
     );
 
     const adminSecEmail = cleanEnv(

@@ -48,6 +48,7 @@ export default function PwaLanguageModal() {
 
   const handleSelectLanguage = (lang: SupportedLanguage) => {
     setLanguage(lang);
+    localStorage.setItem('scrapmax_language', lang);
     localStorage.setItem('scrapmax_language_set', 'true');
     setIsOpen(false);
   };
@@ -69,15 +70,19 @@ export default function PwaLanguageModal() {
       >
         {/* Header Gradient */}
         <div className="bg-gradient-to-r from-[#136B3B] via-[#0F5730] to-[#0A3D22] p-6 text-white relative">
-          {!isFirstTime && (
-            <button
-              onClick={() => setIsOpen(false)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
+          <button
+            onClick={() => {
+              if (!localStorage.getItem('scrapmax_language_set')) {
+                handleSelectLanguage('English');
+              } else {
+                setIsOpen(false);
+              }
+            }}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
 
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-2xl bg-white/15 flex items-center justify-center text-emerald-300 backdrop-blur-xs border border-white/20 shadow-inner">
@@ -110,7 +115,7 @@ export default function PwaLanguageModal() {
               Primary Regional &amp; Global Languages
             </span>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 notranslate" translate="no">
               {primaryLanguages.map((lang) => {
                 const isSelected = language === lang.code;
                 return (
@@ -118,26 +123,27 @@ export default function PwaLanguageModal() {
                     key={lang.code}
                     type="button"
                     onClick={() => handleSelectLanguage(lang.code)}
-                    className={`relative p-3.5 rounded-2xl border text-left transition flex items-center justify-between group ${
+                    className={`relative p-3.5 rounded-2xl border text-left transition flex items-center justify-between group notranslate ${
                       isSelected
                         ? 'border-[#136B3B] bg-emerald-50/70 shadow-xs ring-2 ring-[#136B3B]/20'
                         : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
                     }`}
+                    translate="no"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl select-none" role="img" aria-label={lang.label}>
+                      <span className="text-2xl select-none notranslate" role="img" aria-label={lang.label}>
                         {lang.flag}
                       </span>
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-bold text-gray-900 leading-none">
+                          <p className="text-sm font-bold text-gray-900 leading-none notranslate">
                             {lang.nativeName}
                           </p>
-                          <span className="text-[10px] font-mono font-bold text-gray-400">
+                          <span className="text-[10px] font-mono font-bold text-gray-400 notranslate">
                             {lang.short}
                           </span>
                         </div>
-                        <p className="text-[11px] text-gray-500 mt-1">
+                        <p className="text-[11px] text-gray-500 mt-1 notranslate">
                           {lang.welcome}
                         </p>
                       </div>
@@ -160,11 +166,11 @@ export default function PwaLanguageModal() {
 
           {/* Other Regional Languages */}
           {secondaryLanguages.length > 0 && (
-            <div className="pt-2 border-t border-gray-100">
-              <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider block mb-2">
+            <div className="pt-2 border-t border-gray-100 notranslate" translate="no">
+              <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider block mb-2 notranslate">
                 Other Languages
               </span>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2 notranslate" translate="no">
                 {secondaryLanguages.map((lang) => {
                   const isSelected = language === lang.code;
                   return (
@@ -172,14 +178,15 @@ export default function PwaLanguageModal() {
                       key={lang.code}
                       type="button"
                       onClick={() => handleSelectLanguage(lang.code)}
-                      className={`py-2 px-2.5 rounded-xl border text-center text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                      className={`py-2 px-2.5 rounded-xl border text-center text-xs font-bold transition flex items-center justify-center gap-1.5 notranslate ${
                         isSelected
                           ? 'border-[#136B3B] bg-emerald-50 text-[#136B3B]'
                           : 'border-gray-200 text-gray-700 hover:border-emerald-300'
                       }`}
+                      translate="no"
                     >
-                      <span>{lang.flag}</span>
-                      <span>{lang.nativeName}</span>
+                      <span className="notranslate">{lang.flag}</span>
+                      <span className="notranslate">{lang.nativeName}</span>
                     </button>
                   );
                 })}

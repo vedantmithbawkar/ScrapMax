@@ -554,14 +554,15 @@ export default function Navbar() {
               type="button"
               onClick={() => openLanguageModal()}
               title="Change Language / भाषा चुनें / ભાષા પસંદ કરો"
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-emerald-200/80 bg-emerald-50/60 hover:bg-emerald-100/70 hover:border-emerald-300 text-emerald-900 transition shadow-2xs group shrink-0"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-emerald-200/80 bg-emerald-50/60 hover:bg-emerald-100/70 hover:border-emerald-300 text-emerald-900 transition shadow-2xs group shrink-0 notranslate"
               aria-label="Change language"
+              translate="no"
             >
               <Globe className="w-3.5 h-3.5 text-emerald-700 group-hover:rotate-12 transition-transform shrink-0" />
-              <span className="text-[11px] font-extrabold font-mono tracking-tight text-emerald-950">
+              <span className="text-[11px] font-extrabold font-mono tracking-tight text-emerald-950 notranslate">
                 {activeLang.short}
               </span>
-              <span className="hidden xl:inline text-[10px] font-bold text-emerald-800">
+              <span className="hidden xl:inline text-[10px] font-bold text-emerald-800 notranslate">
                 {activeLang.nativeName}
               </span>
             </button>

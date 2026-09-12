@@ -87,6 +87,25 @@ export default function AdminLoginPage() {
             )}
 
 
+            {/* Quick Demo Credentials Box */}
+            <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-2xl flex items-center justify-between text-xs">
+              <div className="space-y-0.5">
+                <span className="font-bold text-purple-900 block text-[11px]">Administrator Credentials:</span>
+                <span className="text-[11px] text-purple-700 font-mono">admin@scrapmax.gov.in / admin123456</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIdentifier('admin@scrapmax.gov.in');
+                  setPassword('admin123456');
+                  setErrorMsg(null);
+                }}
+                className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[11px] font-bold shadow-xs transition active:scale-95"
+              >
+                Auto-fill
+              </button>
+            </div>
+
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Admin Email */}
