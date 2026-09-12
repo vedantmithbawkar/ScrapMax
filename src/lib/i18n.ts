@@ -1526,6 +1526,12 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
 export function getCurrentLanguage(): SupportedLanguage {
   if (typeof window !== 'undefined') {
     try {
+      // If language preference has not been set yet, strictly default to English
+      const isSet = localStorage.getItem('scrapmax_language_set');
+      if (!isSet) {
+        return 'English';
+      }
+
       const stored = localStorage.getItem('scrapmax_language') || localStorage.getItem('aicle_language');
       if (stored && stored in TRANSLATIONS) {
         return stored as SupportedLanguage;
@@ -1553,6 +1559,20 @@ export function setAppLanguage(lang: SupportedLanguage) {
     // Update document HTML lang attribute
     const iso = ISO_LANG_MAP[lang] || 'en';
     document.documentElement.lang = iso;
+
+    // When switching to English, purge any leftover googtrans cookies immediately
+    if (lang === 'English') {
+      try {
+        const host = window.location.hostname;
+        const domains = ['', host, '.' + host];
+        const paths = ['/', ''];
+        domains.forEach((dom) => {
+          paths.forEach((p) => {
+            document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${p};${dom ? ` domain=${dom};` : ''}`;
+          });
+        });
+      } catch {}
+    }
 
     try {
       const settings = localStorage.getItem('scrapmax_settings') || localStorage.getItem('aicle_settings');

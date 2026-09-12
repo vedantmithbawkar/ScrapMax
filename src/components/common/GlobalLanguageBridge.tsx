@@ -11,6 +11,31 @@ declare global {
   }
 }
 
+/**
+ * Completely purges all Google Translate cookies across all paths and domain variations.
+ * This guarantees the browser will not get stuck in a previously chosen language (e.g. Gujarati).
+ */
+function purgeGoogleTranslateCookies() {
+  if (typeof document === 'undefined') return;
+  try {
+    const host = window.location.hostname;
+    const parts = host.split('.');
+    const domains = ['', host, '.' + host];
+    if (parts.length > 1) {
+      domains.push('.' + parts.slice(-2).join('.'));
+    }
+    const paths = ['/', ''];
+
+    domains.forEach((dom) => {
+      paths.forEach((p) => {
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${p};${dom ? ` domain=${dom};` : ''}`;
+      });
+    });
+  } catch {
+    // ignore
+  }
+}
+
 export default function GlobalLanguageBridge() {
   const pathname = usePathname();
 
@@ -18,6 +43,32 @@ export default function GlobalLanguageBridge() {
     if (typeof window === 'undefined') return;
 
     const iso = ISO_LANG_MAP[lang] || 'en';
+
+    if (iso === 'en') {
+      // DEFAULT: English
+      // 1. Purge all translation cookies so Google Translate doesn't force Gujarati or any other language
+      purgeGoogleTranslateCookies();
+      document.documentElement.lang = 'en';
+
+      // 2. Reset the Google Translate combo dropdown back to original (empty value)
+      try {
+        const select = document.querySelector<HTMLSelectElement>('.goog-te-combo');
+        if (select && select.value) {
+          select.value = '';
+          select.dispatchEvent(new Event('change'));
+        }
+      } catch {
+        // ignore
+      }
+
+      // 3. Reset any top margin that Google Translate banner injected on <body>
+      if (document.body) {
+        document.body.style.top = '0px';
+      }
+      return;
+    }
+
+    // NON-ENGLISH: Apply translation for target language
     document.documentElement.lang = iso;
 
     try {
@@ -41,8 +92,14 @@ export default function GlobalLanguageBridge() {
     }
   }, []);
 
-  // Initialize Google Translate script once
+  // Initialize Google Translate script
   useEffect(() => {
+    // Immediately purge leftover translation cookies if current language is English
+    const current = getCurrentLanguage();
+    if (current === 'English') {
+      purgeGoogleTranslateCookies();
+    }
+
     window.googleTranslateElementInit = () => {
       try {
         if (window.google?.translate?.TranslateElement) {
@@ -93,7 +150,6 @@ export default function GlobalLanguageBridge() {
       setTimeout(() => applyLang(currentLang), 100),
       setTimeout(() => applyLang(currentLang), 350),
       setTimeout(() => applyLang(currentLang), 800),
-      setTimeout(() => applyLang(currentLang), 1500),
     ];
 
     return () => {

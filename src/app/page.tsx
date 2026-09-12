@@ -31,27 +31,29 @@ export default function HomePage() {
       <section className="flex-1 flex flex-col items-center justify-center text-center px-4 pt-8 pb-16 max-w-5xl mx-auto w-full">
         
         {/* PWA Multi-Language Quick Selector Banner */}
-        <div className="mb-6 flex flex-wrap items-center justify-center gap-1.5 p-1.5 bg-white border border-emerald-200/80 rounded-full shadow-2xs">
+        <div className="mb-6 flex flex-wrap items-center justify-center gap-1.5 p-1.5 bg-white border border-emerald-200/80 rounded-full shadow-2xs notranslate" translate="no">
           <button
             type="button"
             onClick={() => openLanguageModal()}
-            className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-emerald-800 hover:text-emerald-950 transition"
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-emerald-800 hover:text-emerald-950 transition notranslate"
+            translate="no"
           >
             <Globe2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>{t('switchLang')}:</span>
+            <span className="notranslate">{t('switchLang')}:</span>
           </button>
           {primaryLanguages.map((l) => (
             <button
               key={l.code}
               type="button"
               onClick={() => setLanguage(l.code as SupportedLanguage)}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition ${
+              className={`px-3 py-1 rounded-full text-xs font-bold transition notranslate ${
                 language === l.code
                   ? 'bg-[#136B3B] text-white shadow-2xs scale-105'
                   : 'bg-transparent text-gray-600 hover:bg-emerald-50 hover:text-emerald-900'
               }`}
+              translate="no"
             >
-              <span>{l.flag} {l.nativeName}</span>
+              <span className="notranslate">{l.flag} {l.nativeName}</span>
             </button>
           ))}
         </div>
