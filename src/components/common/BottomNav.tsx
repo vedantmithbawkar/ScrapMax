@@ -24,6 +24,7 @@ import {
   Settings,
   Store,
   History,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface BottomNavProps {
@@ -140,22 +141,6 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname === '/collector',
       },
       {
-        label: t('navFindBuyers'),
-        href: '/collector/find-buyers',
-        icon: (active: boolean) => (
-          <Sparkles className={`w-5 h-5 ${active ? 'text-amber-600' : 'text-[#6B7280]'}`} />
-        ),
-        isActive: pathname === '/collector/find-buyers',
-      },
-      {
-        label: t('navMyOffers'),
-        href: '/collector/offers',
-        icon: (active: boolean) => (
-          <FileCheck2 className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
-        ),
-        isActive: pathname === '/collector/offers',
-      },
-      {
         label: t('navMapRoute'),
         href: '/collector/map',
         icon: (active: boolean) => (
@@ -164,12 +149,20 @@ export default function BottomNav({ role = 'household' }: BottomNavProps) {
         isActive: pathname === '/collector/map',
       },
       {
-        label: t('navBottomChat'),
-        href: '/collector/chat',
+        label: t('navFindBuyers'),
+        href: '/collector/find-buyers',
         icon: (active: boolean) => (
-          <MessageSquare className={`w-5 h-5 ${active ? 'text-[#136B3B]' : 'text-[#6B7280]'}`} />
+          <Sparkles className={`w-5 h-5 ${active ? 'text-amber-600' : 'text-[#6B7280]'}`} />
         ),
-        isActive: pathname.startsWith('/collector/chat'),
+        isActive: pathname === '/collector/find-buyers',
+      },
+      {
+        label: t('navSafetyGuide'),
+        href: '/collector/safety',
+        icon: (active: boolean) => (
+          <ShieldAlert className={`w-5 h-5 ${active ? 'text-red-600' : 'text-[#6B7280]'}`} />
+        ),
+        isActive: pathname === '/collector/safety',
       },
       {
         label: t('navProfile'),

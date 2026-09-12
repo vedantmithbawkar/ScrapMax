@@ -13,6 +13,8 @@ import {
   Shield,
   ArrowRight,
   Globe2,
+  ShieldAlert,
+  Volume2,
 } from 'lucide-react';
 import { useTranslation, SUPPORTED_LANGUAGES, openLanguageModal, SupportedLanguage } from '@/lib/i18n';
 
@@ -149,6 +151,74 @@ export default function HomePage() {
           <div className="absolute -right-8 -bottom-10 w-44 h-44 rounded-full bg-white/10 pointer-events-none" />
         </div>
 
+        {/* WORKER HEALTH & HAZARD SAFETY GUIDANCE BANNER */}
+        <div className="mt-8 w-full max-w-4xl bg-gradient-to-r from-red-50 via-amber-50 to-orange-50 border border-red-200 rounded-3xl p-5 sm:p-6 shadow-xs text-left space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <ShieldAlert className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-black text-red-950">
+                    {t('navSafetyGuide')} &bull; E-Waste &amp; Hazardous Material Safety
+                  </h3>
+                  <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-600 text-white">
+                    CPCB Rules 2022
+                  </span>
+                </div>
+                <p className="text-xs text-red-800 font-medium">
+                  कबाड़ कामगारों के लिए जीवन रक्षक सुरक्षा नियम &bull; तार न जलाएं, तेजाब न डालें, बैटरी न फोड़ें।
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href="/collector/safety"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-full shadow-sm hover:shadow transition shrink-0"
+            >
+              <Volume2 className="w-4 h-4" />
+              <span>सुरक्षा मार्गदर्शिका खोलें (Safety Guide)</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+            <div className="p-2.5 bg-white/80 border border-red-200 rounded-xl space-y-0.5">
+              <span className="font-bold text-red-800 flex items-center gap-1 text-[11px]">
+                <span>🔋</span> <span>Batteries</span>
+              </span>
+              <p className="text-[10.5px] text-gray-700 leading-snug">
+                कभी न तोड़ें, 1200°C विस्फोट खतरा।
+              </p>
+            </div>
+            <div className="p-2.5 bg-white/80 border border-red-200 rounded-xl space-y-0.5">
+              <span className="font-bold text-red-800 flex items-center gap-1 text-[11px]">
+                <span>📺</span> <span>CRT Screens</span>
+              </span>
+              <p className="text-[10.5px] text-gray-700 leading-snug">
+                कांच न फोड़ें, 2-3kg लेड जहर व धमाका।
+              </p>
+            </div>
+            <div className="p-2.5 bg-white/80 border border-red-200 rounded-xl space-y-0.5">
+              <span className="font-bold text-red-800 flex items-center gap-1 text-[11px]">
+                <span>🔥</span> <span>Wire Burning</span>
+              </span>
+              <p className="text-[10.5px] text-gray-700 leading-snug">
+                तार न जलाएं, छीलकर ₹130/kg ज्यादा पाएं।
+              </p>
+            </div>
+            <div className="p-2.5 bg-white/80 border border-red-200 rounded-xl space-y-0.5">
+              <span className="font-bold text-red-800 flex items-center gap-1 text-[11px]">
+                <span>🧪</span> <span>PCBs &amp; Acid</span>
+              </span>
+              <p className="text-[10.5px] text-gray-700 leading-snug">
+                तेजाब न डालें, साबुत ₹550/kg तक बेचें।
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Feature Cards Grid */}
         <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full text-left max-w-6xl">
           
@@ -208,6 +278,11 @@ export default function HomePage() {
           <Link href="/directory" className="hover:text-[#136B3B] transition">{t('footerDirectory')}</Link>
           <span>•</span>
           <Link href="/stores" className="hover:text-[#136B3B] transition">{t('footerStores')}</Link>
+          <span>•</span>
+          <Link href="/collector/safety" className="text-red-700 hover:text-red-900 font-bold transition flex items-center gap-1">
+            <ShieldAlert className="w-3.5 h-3.5" />
+            <span>{t('navSafetyGuide')}</span>
+          </Link>
           <span>•</span>
           <Link href="/privacy" className="hover:text-[#136B3B] transition">{t('footerPrivacy')}</Link>
           <span>•</span>

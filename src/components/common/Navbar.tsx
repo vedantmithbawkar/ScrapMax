@@ -277,6 +277,19 @@ export default function Navbar() {
                   <span className="hidden md:inline">{t('navDealers')}</span>
                 </Link>
 
+                {/* Safety Guidance - Prominently accessible to all users & informal collectors */}
+                <Link
+                  href="/collector/safety"
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    pathname === '/collector/safety'
+                      ? 'bg-red-100 text-red-800 border border-red-200 shadow-2xs'
+                      : 'text-red-700 hover:text-red-900 hover:bg-red-50'
+                  }`}
+                >
+                  <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>{t('navSafetyGuide')}</span>
+                </Link>
+
                 {/* Admin Portal Link */}
                 <Link
                   href="/admin/login"
@@ -405,18 +418,6 @@ export default function Navbar() {
                           }`}
                         >
                           <span>{t('navMyOffers')}</span>
-                        </Link>
-
-                        <Link
-                          href="/collector/safety"
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                            pathname === '/collector/safety'
-                              ? 'bg-red-100 text-red-800 border border-red-200'
-                              : 'text-red-700 hover:text-red-900 hover:bg-red-50'
-                          }`}
-                        >
-                          <ShieldAlert className="w-4 h-4 text-red-600" />
-                          <span>{t('navSafetyGuide')}</span>
                         </Link>
                       </>
                     )}
