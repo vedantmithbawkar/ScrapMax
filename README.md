@@ -1,6 +1,6 @@
-# AiCLE - Eco-Waste & Circular Recycling Platform
+# ScrapMax - Eco-Waste & Circular Recycling Platform
 
-AiCLE connects households with local scrap collectors for honest doorstep waste pickups, transparent rates, instant digital payments, and circular recycling.
+ScrapMax connects households with local scrap collectors for honest doorstep waste pickups, transparent rates, instant digital payments, and circular recycling.
 
 ## Getting Started
 
